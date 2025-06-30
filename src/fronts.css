@@ -1,0 +1,15 @@
+@font-face {
+  font-family: 'FM Bindhumathi';
+  src: url('/fonts/FM-Bindhumathi.ttf') format('truetype'),
+       url('/fonts/FM-Bindhumathi.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'FM Bindhumathi';
+  src: url('/fonts/FM-Bindhumathi-Bold.ttf') format('truetype'),
+       url('/fonts/FM-Bindhumathi-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
