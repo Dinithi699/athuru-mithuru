@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import LoadingPage from './components/LoadingPage';
 import SigninPage from './components/SignInPage';
 import SignUpPage from './components/SignUpPage';
+import HomePage from './components/HomePage';
 import ThreeJSBackground from './components/ThreeJSBackground';
 
 import './App.css';
 
 const App = () => {
   const [currentScreen, setCurrentScreen] = useState('loading');
+  const [user, setUser] = useState(null);
   
   const handleLoadComplete = () => {
     setCurrentScreen('signin');
@@ -21,30 +23,34 @@ const App = () => {
     setCurrentScreen('signin');
   };
 
-  
-
   const handleSignup = (userData) => {
+    setUser(userData);
     alert('ලියාපදිංචිය සාර්ථකයි!');
-    setCurrentScreen('main');
+    setCurrentScreen('home');
   };
 
   const handleSignin = (userData) => {
+    setUser(userData);
     alert('ඇතුල්වීම සාර්ථකයි!');
-    setCurrentScreen('main');
+    setCurrentScreen('home');
   };
 
- 
+  const handleLogout = () => {
+    setUser(null);
+    setCurrentScreen('signin');
+  };
 
   return (
     <div>
-
       {currentScreen === 'loading' && <LoadingPage onLoadComplete={handleLoadComplete} />}
-      {currentScreen === 'signin'}
       {currentScreen === 'signup' && (
-        <SignUpPage onShowSignin={handleShowSignin} onSignup={handleSignin} />
+        <SignUpPage onShowSignin={handleShowSignin} onSignup={handleSignup} />
       )}
       {currentScreen === 'signin' && (
-        <SigninPage onShowSignup={handleShowSignup} onSignin={handleSignup} />
+        <SigninPage onShowSignup={handleShowSignup} onSignin={handleSignin} />
+      )}
+      {currentScreen === 'home' && (
+        <HomePage onLogout={handleLogout} user={user} />
       )}
     </div>
   );

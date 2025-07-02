@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
-
-const SignupForm = ({ onShowSignin }) => {
+const SignupForm = ({ onShowSignin, onSignup }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,7 +18,18 @@ const SignupForm = ({ onShowSignin }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    
+    if (!formData.name || !formData.email || !formData.mobile || !formData.password || !formData.confirmPassword) {
+      alert('කරුණාකර සියලු ක්ෂේත්‍ර පුරවන්න');
+      return;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      alert('මුර පද නොගැලපේ');
+      return;
+    }
+    
+    onSignup(formData);
   };
 
   return (
@@ -32,7 +42,7 @@ const SignupForm = ({ onShowSignin }) => {
       {/* Form positioned over the translucent box in the image */}
       <div className="w-full max-w-md">
         {/* The form content goes inside the existing translucent box from the image */}
-        <div className="px-8 py-12 mt-8">
+        <form onSubmit={handleSubmit} className="px-8 py-12 mt-8">
           <div className="space-y-2">
             <br></br><br></br><br></br>
             {/* Name input */}
@@ -104,7 +114,7 @@ const SignupForm = ({ onShowSignin }) => {
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full bg-[#3d266c] hover:bg-[#3d2881] text-white text-xl font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3d266c]/50 "
+                className="w-full bg-[#3d266c] hover:bg-[#3d2881] text-white text-xl font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3d266c]/50"
               >
                 ලියාපදිංචිය සම්පූර්ණයි
               </button>
@@ -112,20 +122,20 @@ const SignupForm = ({ onShowSignin }) => {
             
             {/* Login link */}
             <div className="text-center pt-1">
-              <p className="text-white/100 text-lg mb-4 font-semibold ">
+              <p className="text-white/100 text-lg mb-4 font-semibold">
                 දැනටත් ගිණුමක් තිබේද?
-              <a></a>
-              <button
-                type="button"
-               onClick={onShowSignin}
-                className="text-yellow-300 hover:text-yellow-200 font-semibold underline transition-colors duration-300"
-              >
-                ප්‍රවේශ වන්න
-              </button>
+                <a></a>
+                <button
+                  type="button"
+                  onClick={onShowSignin}
+                  className="text-yellow-300 hover:text-yellow-200 font-semibold underline transition-colors duration-300 ml-2"
+                >
+                  ප්‍රවේශ වන්න
+                </button>
               </p>
             </div>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
