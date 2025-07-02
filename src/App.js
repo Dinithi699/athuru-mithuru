@@ -3,7 +3,6 @@ import LoadingPage from './components/LoadingPage';
 import SigninPage from './components/SignInPage';
 import SignUpPage from './components/SignUpPage';
 import HomePage from './components/HomePage';
-import ThreeJSBackground from './components/ThreeJSBackground';
 
 import './App.css';
 

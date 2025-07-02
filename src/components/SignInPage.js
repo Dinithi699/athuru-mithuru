@@ -73,7 +73,6 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
             
             <div className="flex items-center justify-center gap-2 pt-1 mb-4 text-s font-semibold">
               <p className="text-white">ගිණුමක් නැද්ද?
-                <a></a>
                 {/* Sign up button */}
                 <button
                   type="button"

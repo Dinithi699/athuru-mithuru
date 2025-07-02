@@ -124,7 +124,6 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
             <div className="text-center pt-1">
               <p className="text-white/100 text-lg mb-4 font-semibold">
                 දැනටත් ගිණුමක් තිබේද?
-                <a></a>
                 <button
                   type="button"
                   onClick={onShowSignin}
