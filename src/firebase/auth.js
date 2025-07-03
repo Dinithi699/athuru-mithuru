@@ -11,16 +11,22 @@ import { auth, db } from "./config";
 // Sign up new user
 export const signUpUser = async (email, password, name, mobile) => {
   try {
+    console.log('Attempting to create user with email:', email);
+    
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+    
+    console.log('User created successfully:', user.uid);
     
     // Update user profile
     await updateProfile(user, {
       displayName: name
     });
     
+    console.log('Profile updated successfully');
+    
     // Save additional user data to Firestore
-    await setDoc(doc(db, "users", user.uid), {
+    const userData = {
       name: name,
       email: email,
       mobile: mobile,
@@ -29,7 +35,11 @@ export const signUpUser = async (email, password, name, mobile) => {
       points: 0,
       completedGames: 0,
       achievements: []
-    });
+    };
+    
+    await setDoc(doc(db, "users", user.uid), userData);
+    
+    console.log('User data saved to Firestore');
     
     return {
       success: true,
@@ -37,13 +47,18 @@ export const signUpUser = async (email, password, name, mobile) => {
         uid: user.uid,
         name: name,
         email: email,
-        mobile: mobile
+        mobile: mobile,
+        level: "ආරම්භක",
+        points: 0,
+        completedGames: 0,
+        achievements: []
       }
     };
   } catch (error) {
+    console.error('Signup error:', error);
     return {
       success: false,
-      error: error.message
+      error: error.code || error.message
     };
   }
 };
@@ -51,18 +66,22 @@ export const signUpUser = async (email, password, name, mobile) => {
 // Sign in existing user
 export const signInUser = async (email, password) => {
   try {
+    console.log('Attempting to sign in user with email:', email);
+    
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
+    console.log('User signed in successfully:', user.uid);
+    
     // Get additional user data from Firestore
     const userDoc = await getDoc(doc(db, "users", user.uid));
-    const userData = userDoc.data();
+    const userData = userDoc.exists() ? userDoc.data() : {};
     
     return {
       success: true,
       user: {
         uid: user.uid,
-        name: userData?.name || user.displayName,
+        name: userData?.name || user.displayName || 'පරිශීලකයා',
         email: user.email,
         mobile: userData?.mobile || "",
         level: userData?.level || "ආරම්භක",
@@ -72,9 +91,10 @@ export const signInUser = async (email, password) => {
       }
     };
   } catch (error) {
+    console.error('Signin error:', error);
     return {
       success: false,
-      error: error.message
+      error: error.code || error.message
     };
   }
 };
@@ -83,11 +103,13 @@ export const signInUser = async (email, password) => {
 export const signOutUser = async () => {
   try {
     await signOut(auth);
+    console.log('User signed out successfully');
     return { success: true };
   } catch (error) {
+    console.error('Signout error:', error);
     return {
       success: false,
-      error: error.message
+      error: error.code || error.message
     };
   }
 };

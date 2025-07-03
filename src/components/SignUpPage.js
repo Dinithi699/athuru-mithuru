@@ -39,7 +39,10 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
     setLoading(true);
     
     try {
+      console.log('Starting signup process...');
       const result = await signUpUser(formData.email, formData.password, formData.name, formData.mobile);
+      
+      console.log('Signup result:', result);
       
       if (result.success) {
         alert('ලියාපදිංචිය සාර්ථකයි!');
@@ -48,18 +51,25 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
         // Handle specific Firebase errors
         let errorMessage = 'ලියාපදිංචිය අසාර්ථකයි';
         
-        if (result.error.includes('email-already-in-use')) {
+        console.error('Signup failed:', result.error);
+        
+        if (result.error.includes('auth/email-already-in-use')) {
           errorMessage = 'මෙම විද්‍යුත් තැපෑල දැනටමත් භාවිතයේ ඇත';
-        } else if (result.error.includes('weak-password')) {
+        } else if (result.error.includes('auth/weak-password')) {
           errorMessage = 'මුර පදය ඉතා දුර්වලයි';
-        } else if (result.error.includes('invalid-email')) {
+        } else if (result.error.includes('auth/invalid-email')) {
           errorMessage = 'වලංගු නොවන විද්‍යුත් තැපෑල';
+        } else if (result.error.includes('auth/operation-not-allowed')) {
+          errorMessage = 'ලියාපදිංචිය සක්‍රිය කර නැත. කරුණාකර පරිපාලකයා සම්බන්ධ කරගන්න';
+        } else if (result.error.includes('auth/network-request-failed')) {
+          errorMessage = 'ජාල සම්බන්ධතා ගැටලුවක්. කරුණාකර නැවත උත්සාහ කරන්න';
         }
         
-        alert(errorMessage);
+        alert(errorMessage + '\n\nදෝෂය: ' + result.error);
       }
     } catch (error) {
-      alert('දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න');
+      console.error('Unexpected error:', error);
+      alert('අනපේක්ෂිත දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න\n\nදෝෂය: ' + error.message);
     }
     
     setLoading(false);
