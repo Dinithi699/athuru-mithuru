@@ -51,6 +51,10 @@ const HomePage = ({ onLogout, user }) => {
     }
   ];
 
+  const handlePlanetClick = (planetPage) => {
+    setCurrentPage(planetPage);
+  };
+
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'math':
@@ -67,7 +71,7 @@ const HomePage = ({ onLogout, user }) => {
         return (
           <div className="min-h-screen bg-gradient-to-b from-gray-900 via-blue-900 to-black relative overflow-hidden">
             {/* Stars Background */}
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 z-0">
               {[...Array(300)].map((_, i) => (
                 <div
                   key={i}
@@ -86,7 +90,7 @@ const HomePage = ({ onLogout, user }) => {
             </div>
 
             {/* Galactic Center - Sun */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
               <div className="w-24 h-24 bg-gradient-radial from-yellow-200 via-orange-400 to-red-500 rounded-full shadow-2xl relative"
                    style={{ 
                      boxShadow: '0 0 60px #FFA500, 0 0 120px #FF6347, 0 0 180px #FF4500',
@@ -104,7 +108,7 @@ const HomePage = ({ onLogout, user }) => {
             {planets.map((planet) => (
               <div
                 key={`orbit-${planet.id}`}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-white/20 rounded-full opacity-40"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border border-white/20 rounded-full opacity-40 z-5"
                 style={{
                   width: planet.orbitRadius * 2 + 'px',
                   height: planet.orbitRadius * 2 + 'px',
@@ -113,7 +117,7 @@ const HomePage = ({ onLogout, user }) => {
             ))}
 
             {/* Header */}
-            <header className="relative z-30 p-6 flex justify-between items-center">
+            <header className="relative z-50 p-6 flex justify-between items-center">
               <div className="flex items-center space-x-4">
                 <div className="text-4xl animate-spin" style={{ animationDuration: '20s' }}>🚀</div>
                 <h1 className="text-4xl font-bold text-white drop-shadow-lg">ගගනගාමී ඉගෙනුම</h1>
@@ -151,14 +155,14 @@ const HomePage = ({ onLogout, user }) => {
             {planets.map((planet, index) => (
               <div
                 key={planet.id}
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30"
                 style={{
                   animation: `horizontalOrbit-${planet.id} ${planet.orbitSpeed}s linear infinite`,
                   animationDelay: `${index * 2}s`
                 }}
               >
                 {/* Planet Ring System */}
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                   {/* Outer Ring */}
                   <div 
                     className="absolute border-2 rounded-full opacity-60"
@@ -183,30 +187,30 @@ const HomePage = ({ onLogout, user }) => {
                   />
                 </div>
 
-                {/* 3D Planet - NO SELF ROTATION */}
+                {/* 3D Planet Button */}
                 <button
-                  onClick={() => setCurrentPage(planet.page)}
-                  className={`${planet.size} rounded-full shadow-2xl transform transition-all duration-500 hover:scale-125 cursor-pointer group relative z-10`}
+                  onClick={() => handlePlanetClick(planet.page)}
+                  className={`${planet.size} rounded-full shadow-2xl transform transition-all duration-500 hover:scale-125 cursor-pointer group relative z-40 pointer-events-auto`}
                   style={{
                     background: `radial-gradient(circle at 25% 25%, ${planet.color}ff, ${planet.color}dd, ${planet.color}88, ${planet.color}44)`,
                     boxShadow: `0 0 40px ${planet.color}88, inset -8px -8px 16px rgba(0,0,0,0.4), inset 4px 4px 8px rgba(255,255,255,0.2)`
                   }}
                 >
-                  {/* Planet Surface Details - NO ROTATION */}
-                  <div className="absolute inset-1 rounded-full opacity-30"
+                  {/* Planet Surface Details */}
+                  <div className="absolute inset-1 rounded-full opacity-30 pointer-events-none"
                        style={{ 
                          background: `radial-gradient(circle at 70% 30%, transparent 30%, ${planet.color}66 50%, transparent 70%)`
                        }}>
                   </div>
                   
-                  {/* Planet Continents/Features - NO ROTATION */}
-                  <div className="absolute inset-2 rounded-full opacity-20"
+                  {/* Planet Continents/Features */}
+                  <div className="absolute inset-2 rounded-full opacity-20 pointer-events-none"
                        style={{ 
                          background: `radial-gradient(circle at 40% 60%, ${planet.color}aa 20%, transparent 40%)`
                        }}>
                   </div>
 
-                  <div className="w-full h-full flex items-center justify-center relative z-10">
+                  <div className="w-full h-full flex items-center justify-center relative z-50 pointer-events-none">
                     <span className="text-white font-black text-xl group-hover:text-2xl transition-all duration-300 text-center px-2 drop-shadow-lg leading-tight">
                       {planet.name}
                     </span>
@@ -323,9 +327,22 @@ const HomePage = ({ onLogout, user }) => {
           background: radial-gradient(circle, var(--tw-gradient-stops));
         }
 
-        /* 3D Perspective for better depth */
-        .perspective-1000 {
-          perspective: 1000px;
+        /* Ensure proper z-index stacking */
+        .z-40 {
+          z-index: 40;
+        }
+        
+        .z-50 {
+          z-index: 50;
+        }
+
+        /* Ensure buttons are clickable */
+        .pointer-events-auto {
+          pointer-events: auto !important;
+        }
+        
+        .pointer-events-none {
+          pointer-events: none !important;
         }
       `}</style>
     </>
