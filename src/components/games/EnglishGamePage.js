@@ -4,13 +4,13 @@ const EnglishGamePage = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center">
       <div className="text-center text-white">
-        <div className="text-8xl mb-8">🌍</div>
-        <h1 className="text-5xl font-bold mb-8">English Planet</h1>
-        <p className="text-2xl mb-12">English language games will be created here</p>
+        <div className="text-8xl mb-8">🪙</div>
+        <h1 className="text-5xl font-bold mb-8">නිධානය ග්‍රහලෝකය</h1>
+        <p className="text-2xl mb-12">නිධානය ක්‍රීඩා මෙහි නිර්මාණය වනු ඇත</p>
         
         <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
-          <h2 className="text-2xl font-bold mb-4">Game Area</h2>
-          <p className="text-lg mb-6">English games will be added here in the future</p>
+          <h2 className="text-2xl font-bold mb-4">ක්‍රීඩා ප්‍රදේශය</h2>
+          <p className="text-lg mb-6">ක්‍රීඩාව ඉදිරියේදී මෙහි එකතු කරනු ඇත</p>
           
           <button
             onClick={onBack}

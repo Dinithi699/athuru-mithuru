@@ -4,13 +4,13 @@ const ScienceGamePage = ({ onBack }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-900 via-yellow-700 to-yellow-500 flex items-center justify-center">
       <div className="text-center text-white">
-        <div className="text-8xl mb-8">🔬</div>
-        <h1 className="text-5xl font-bold mb-8">විද්‍යා ග්‍රහලෝකය</h1>
-        <p className="text-2xl mb-12">විද්‍යා ක්‍රීඩා මෙහි නිර්මාණය වනු ඇත</p>
+        <div className="text-8xl mb-8">📖</div>
+        <h1 className="text-5xl font-bold mb-8">ශබ්දකෝෂය ග්‍රහලෝකය</h1>
+        <p className="text-2xl mb-12">ශබ්දකෝෂය ක්‍රීඩා මෙහි නිර්මාණය වනු ඇත</p>
         
         <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
           <h2 className="text-2xl font-bold mb-4">ක්‍රීඩා ප්‍රදේශය</h2>
-          <p className="text-lg mb-6">විද්‍යා ක්‍රීඩාව ඉදිරියේදී මෙහි එකතු කරනු ඇත</p>
+          <p className="text-lg mb-6">ක්‍රීඩාව ඉදිරියේදී මෙහි එකතු කරනු ඇත</p>
           
           <button
             onClick={onBack}
