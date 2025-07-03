@@ -74,8 +74,42 @@ export const signInUser = async (email, password) => {
     console.log('User signed in successfully:', user.uid);
     
     // Get additional user data from Firestore
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    const userData = userDoc.exists() ? userDoc.data() : {};
+    let userData = {};
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        userData = userDoc.data();
+        console.log('User data retrieved from Firestore:', userData);
+      } else {
+        console.log('No user document found in Firestore, using default data');
+        // Create default user data if document doesn't exist
+        userData = {
+          name: user.displayName || 'පරිශීලකයා',
+          email: user.email,
+          mobile: "",
+          level: "ආරම්භක",
+          points: 0,
+          completedGames: 0,
+          achievements: [],
+          createdAt: new Date().toISOString()
+        };
+        
+        // Save the default data to Firestore
+        await setDoc(doc(db, "users", user.uid), userData);
+        console.log('Default user data saved to Firestore');
+      }
+    } catch (firestoreError) {
+      console.warn('Error accessing Firestore, using basic user data:', firestoreError);
+      userData = {
+        name: user.displayName || 'පරිශීලකයා',
+        email: user.email,
+        mobile: "",
+        level: "ආරම්භක",
+        points: 0,
+        completedGames: 0,
+        achievements: []
+      };
+    }
     
     return {
       success: true,

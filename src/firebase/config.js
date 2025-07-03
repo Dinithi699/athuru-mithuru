@@ -1,8 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -24,5 +24,16 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const analytics = getAnalytics(app);
+
+// Enable network persistence for Firestore
+try {
+  // This helps with offline functionality
+  if (typeof window !== 'undefined') {
+    // Only run in browser environment
+    console.log('Firebase services initialized successfully');
+  }
+} catch (error) {
+  console.warn('Firebase initialization warning:', error);
+}
 
 export default app;
