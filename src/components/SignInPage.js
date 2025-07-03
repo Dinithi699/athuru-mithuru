@@ -35,7 +35,9 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
         // Handle specific Firebase errors
         let errorMessage = 'ඇතුල්වීම අසාර්ථකයි';
         
-        if (result.error.includes('user-not-found')) {
+        if (result.error.includes('client is offline')) {
+          errorMessage = 'ජාල සම්බන්ධතාවයේ ගැටලුවක්. කරුණාකර ඔබේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කරන්න.';
+        } else if (result.error.includes('user-not-found')) {
           errorMessage = 'පරිශීලකයා සොයාගත නොහැක';
         } else if (result.error.includes('wrong-password')) {
           errorMessage = 'වැරදි මුර පදයක්';
