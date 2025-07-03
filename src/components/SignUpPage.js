@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { signUpUser } from '../firebase/auth';
 
 const SignupForm = ({ onShowSignin, onSignup }) => {
   const [formData, setFormData] = useState({
@@ -8,6 +9,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
     password: '',
     confirmPassword: ''
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -16,7 +18,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.mobile || !formData.password || !formData.confirmPassword) {
@@ -28,8 +30,39 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
       alert('මුර පද නොගැලපේ');
       return;
     }
+
+    if (formData.password.length < 6) {
+      alert('මුර පදය අවම වශයෙන් අක්ෂර 6ක් විය යුතුය');
+      return;
+    }
     
-    onSignup(formData);
+    setLoading(true);
+    
+    try {
+      const result = await signUpUser(formData.email, formData.password, formData.name, formData.mobile);
+      
+      if (result.success) {
+        alert('ලියාපදිංචිය සාර්ථකයි!');
+        onSignup(result.user);
+      } else {
+        // Handle specific Firebase errors
+        let errorMessage = 'ලියාපදිංචිය අසාර්ථකයි';
+        
+        if (result.error.includes('email-already-in-use')) {
+          errorMessage = 'මෙම විද්‍යුත් තැපෑල දැනටමත් භාවිතයේ ඇත';
+        } else if (result.error.includes('weak-password')) {
+          errorMessage = 'මුර පදය ඉතා දුර්වලයි';
+        } else if (result.error.includes('invalid-email')) {
+          errorMessage = 'වලංගු නොවන විද්‍යුත් තැපෑල';
+        }
+        
+        alert(errorMessage);
+      }
+    } catch (error) {
+      alert('දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න');
+    }
+    
+    setLoading(false);
   };
 
   return (
@@ -39,13 +72,11 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
         backgroundImage: 'url("images/sign-up-test.png")'
       }}
     >
-      {/* Form positioned over the translucent box in the image */}
       <div className="w-full max-w-md">
-        {/* The form content goes inside the existing translucent box from the image */}
         <form onSubmit={handleSubmit} className="px-8 py-12 mt-8">
           <div className="space-y-2">
             <br></br><br></br><br></br>
-            {/* Name input */}
+            
             <div>
               <input
                 type="text"
@@ -55,10 +86,10 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 onChange={handleChange}
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
+                disabled={loading}
               />
             </div>
             
-            {/* Email input */}
             <div>
               <input
                 type="email"
@@ -68,10 +99,10 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 onChange={handleChange}
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
+                disabled={loading}
               />
             </div>
             
-            {/* Mobile input */}
             <div>
               <input
                 type="tel"
@@ -81,23 +112,24 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 onChange={handleChange}
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
+                disabled={loading}
               />
             </div>
             
-            {/* Password input */}
             <div>
               <input
                 type="password"
                 name="password"
-                placeholder="මුර පදය"
+                placeholder="මුර පදය (අවම අක්ෂර 6ක්)"
                 value={formData.password}
                 onChange={handleChange}
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
+                disabled={loading}
+                minLength={6}
               />
             </div>
             
-            {/* Confirm Password input */}
             <div>
               <input
                 type="password"
@@ -107,27 +139,28 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 onChange={handleChange}
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
+                disabled={loading}
               />
             </div>
             
-            {/* Submit button */}
             <div className="pt-4">
               <button
                 type="submit"
-                className="w-full bg-[#3d266c] hover:bg-[#3d2881] text-white text-xl font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3d266c]/50"
+                disabled={loading}
+                className="w-full bg-[#3d266c] hover:bg-[#3d2881] text-white text-xl font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3d266c]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                ලියාපදිංචිය සම්පූර්ණයි
+                {loading ? 'ලියාපදිංචි වෙමින්...' : 'ලියාපදිංචිය සම්පූර්ණයි'}
               </button>
             </div>
             
-            {/* Login link */}
             <div className="text-center pt-1">
               <p className="text-white/100 text-lg mb-4 font-semibold">
                 දැනටත් ගිණුමක් තිබේද?
                 <button
                   type="button"
                   onClick={onShowSignin}
-                  className="text-yellow-300 hover:text-yellow-200 font-semibold underline transition-colors duration-300 ml-2"
+                  disabled={loading}
+                  className="text-yellow-300 hover:text-yellow-200 font-semibold underline transition-colors duration-300 ml-2 disabled:opacity-50"
                 >
                   ප්‍රවේශ වන්න
                 </button>
