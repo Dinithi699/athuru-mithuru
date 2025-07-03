@@ -5,7 +5,7 @@ const ProfilePage = ({ onBack, user }) => {
     <div className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-700 to-purple-500 flex items-center justify-center">
       <div className="text-center text-white">
         <div className="text-8xl mb-8">👤</div>
-        <h1 className="text-5xl font-bold mb-8">පරිශීලක පැතිකඩ</h1>
+        <h1 className="text-5xl font-bold mb-8">පරිශීලක විස්තර</h1>
         
         <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
           <div className="mb-6">

@@ -11,7 +11,7 @@ const HomePage = ({ onLogout, user }) => {
   const planets = [
     {
       id: 'math',
-      name: 'ගණිතය',
+      name: 'තරු රටා',
       color: '#FF6B6B',
       size: 'w-20 h-20',
       orbitRadius: 200,
@@ -21,7 +21,7 @@ const HomePage = ({ onLogout, user }) => {
     },
     {
       id: 'sinhala',
-      name: 'සිංහල',
+      name: 'පැන්සල් ඉරි',
       color: '#4ECDC4',
       size: 'w-24 h-24',
       orbitRadius: 320,
@@ -31,9 +31,9 @@ const HomePage = ({ onLogout, user }) => {
     },
     {
       id: 'english',
-      name: 'English',
-      color: '#45B7D1',
-      size: 'w-18 h-18',
+      name: 'නිධානය',
+      color: '#B2B7D1',
+      size: 'w-24 h-24',
       orbitRadius: 120,
       orbitSpeed: 25,
       page: 'english',
@@ -41,7 +41,7 @@ const HomePage = ({ onLogout, user }) => {
     },
     {
       id: 'science',
-      name: 'විද්‍යාව',
+      name: 'ශබ්දකෝෂය',
       color: '#F9CA24',
       size: 'w-28 h-28',
       orbitRadius: 420,
@@ -119,8 +119,7 @@ const HomePage = ({ onLogout, user }) => {
             {/* Header */}
             <header className="relative z-50 p-6 flex justify-between items-center">
               <div className="flex items-center space-x-4">
-                <div className="text-4xl animate-spin" style={{ animationDuration: '20s' }}>🚀</div>
-                <h1 className="text-4xl font-bold text-white drop-shadow-lg">ගගනගාමී ඉගෙනුම</h1>
+                
               </div>
               <div className="flex items-center space-x-4">
                 <button
