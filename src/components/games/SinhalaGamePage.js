@@ -17,12 +17,8 @@ const SinhalaGamePage = ({ onBack, user }) => {
   const [currentStroke, setCurrentStroke] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [levelCompleted, setLevelCompleted] = useState(false);
-  const [strokeColor, setStrokeColor] = useState('#FF6B6B');
 
-  // Color palette for writing strokes
-  const strokeColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
-
-  // Reduced to 3 words per level as requested - English words to write
+  // Reduced to 3 words per level as requested
   const gameWords = {
     1: [
       { english: 'CAT', sinhala: 'බළලා', image: '🐱' },
@@ -66,7 +62,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
     const ctx = canvas.getContext('2d');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.lineWidth = 8;
+    ctx.lineWidth = 6;
     
     // Set canvas size to be large
     canvas.width = 800;
@@ -75,28 +71,28 @@ const SinhalaGamePage = ({ onBack, user }) => {
     // Clear canvas with transparent background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw the English word outline in light gray for tracing
-    ctx.font = 'bold 120px Arial, sans-serif';
+    // Draw the word outline in light gray for tracing
+    ctx.font = 'bold 120px "Noto Sans Sinhala", Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
     // Draw outline/shadow of the word
     ctx.strokeStyle = '#E2E8F0';
-    ctx.lineWidth = 12;
-    ctx.strokeText(currentWord.english, canvas.width / 2, canvas.height / 2);
+    ctx.lineWidth = 8;
+    ctx.strokeText(currentWord.sinhala, canvas.width / 2, canvas.height / 2);
     
     // Fill with very light color for guidance
-    ctx.fillStyle = 'rgba(226, 232, 240, 0.2)';
-    ctx.fillText(currentWord.english, canvas.width / 2, canvas.height / 2);
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.3)';
+    ctx.fillText(currentWord.sinhala, canvas.width / 2, canvas.height / 2);
     
     // Reset for user drawing
-    ctx.strokeStyle = strokeColor;
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = '#2D3748';
+    ctx.lineWidth = 6;
   };
 
   useEffect(() => {
     initializeCanvas();
-  }, [currentWord, strokeColor]);
+  }, [currentWord]);
 
   const getMousePos = (e) => {
     const canvas = canvasRef.current;
@@ -124,16 +120,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
     e.preventDefault();
     setIsDrawing(true);
     const pos = e.type.includes('touch') ? getTouchPos(e) : getMousePos(e);
-    
-    // Change stroke color for each new stroke
-    const newColor = strokeColors[strokeData.length % strokeColors.length];
-    setStrokeColor(newColor);
-    
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = newColor;
-    
-    setCurrentStroke([{ ...pos, color: newColor }]);
+    setCurrentStroke([pos]);
   };
 
   const draw = (e) => {
@@ -144,14 +131,10 @@ const SinhalaGamePage = ({ onBack, user }) => {
     const ctx = canvas.getContext('2d');
     const pos = e.type.includes('touch') ? getTouchPos(e) : getMousePos(e);
 
-    const strokePoint = { ...pos, color: strokeColor };
-    setCurrentStroke(prev => [...prev, strokePoint]);
+    setCurrentStroke(prev => [...prev, pos]);
 
-    // Draw with current stroke color
-    ctx.strokeStyle = strokeColor;
     ctx.beginPath();
-    const lastPoint = currentStroke[currentStroke.length - 1] || strokePoint;
-    ctx.moveTo(lastPoint.x, lastPoint.y);
+    ctx.moveTo(currentStroke[currentStroke.length - 1]?.x || pos.x, currentStroke[currentStroke.length - 1]?.y || pos.y);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
   };
@@ -171,28 +154,6 @@ const SinhalaGamePage = ({ onBack, user }) => {
     setShowNextButton(false);
   };
 
-  const redrawAllStrokes = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    // Redraw background
-    initializeCanvas();
-    
-    // Redraw all previous strokes with their colors
-    strokeData.forEach(stroke => {
-      if (stroke.length > 0) {
-        ctx.strokeStyle = stroke[0].color;
-        ctx.beginPath();
-        ctx.moveTo(stroke[0].x, stroke[0].y);
-        
-        for (let i = 1; i < stroke.length; i++) {
-          ctx.lineTo(stroke[i].x, stroke[i].y);
-        }
-        ctx.stroke();
-      }
-    });
-  };
-
   const analyzeWriting = () => {
     if (strokeData.length === 0) {
       setFeedback('කරුණාකර පළමුව ලියන්න!');
@@ -200,12 +161,12 @@ const SinhalaGamePage = ({ onBack, user }) => {
     }
 
     // Enhanced analysis
-    const expectedStrokes = currentWord.english.length * 1.2;
+    const expectedStrokes = currentWord.sinhala.length * 1.5;
     const actualStrokes = strokeData.length;
     const strokeAccuracy = Math.max(0, 100 - Math.abs(expectedStrokes - actualStrokes) * 8);
     
     // Time analysis - more lenient for children
-    const timePerCharacter = timeSpent / currentWord.english.length;
+    const timePerCharacter = timeSpent / currentWord.sinhala.length;
     const timeScore = timePerCharacter < 8 ? 100 : Math.max(0, 100 - (timePerCharacter - 8) * 5);
     
     // Overall score
@@ -279,39 +240,39 @@ const SinhalaGamePage = ({ onBack, user }) => {
     clearCanvas();
   };
 
-  // Celebration Component with varied animations
+  // Celebration Component
   const CelebrationOverlay = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="text-center animate-pulse">
-        <div className="text-9xl mb-4 animate-spin">🎉</div>
-        <div className="text-6xl font-bold text-yellow-300 animate-bounce">
+      <div className="text-center animate-bounce">
+        <div className="text-9xl mb-4">🎉</div>
+        <div className="text-6xl font-bold text-yellow-300 animate-pulse">
           අපූරුයි!
         </div>
         <div className="flex justify-center space-x-4 mt-4">
-          <div className="text-4xl animate-ping">⭐</div>
+          <div className="text-4xl animate-spin">⭐</div>
           <div className="text-4xl animate-bounce" style={{ animationDelay: '0.1s' }}>🌟</div>
-          <div className="text-4xl animate-pulse" style={{ animationDelay: '0.2s' }}>✨</div>
+          <div className="text-4xl animate-spin" style={{ animationDelay: '0.2s' }}>✨</div>
         </div>
       </div>
     </div>
   );
 
-  // Level Completion Component with varied animations
+  // Level Completion Component
   const LevelCompletionOverlay = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="text-center text-white">
-        <div className="text-9xl mb-4 animate-spin">🏆</div>
-        <div className="text-5xl font-bold mb-4 animate-pulse">
+      <div className="text-center text-white animate-pulse">
+        <div className="text-9xl mb-4">🏆</div>
+        <div className="text-5xl font-bold mb-4">
           මට්ටම {currentLevel} සම්පූර්ණයි!
         </div>
-        <div className="text-3xl animate-bounce">
+        <div className="text-3xl">
           ඊළඟ මට්ටමට යමු...
         </div>
         <div className="flex justify-center space-x-4 mt-6">
           {[...Array(5)].map((_, i) => (
             <div 
               key={i}
-              className={`text-4xl ${i % 2 === 0 ? 'animate-ping' : 'animate-pulse'}`}
+              className="text-4xl animate-bounce"
               style={{ animationDelay: `${i * 0.1}s` }}
             >
               🎊
@@ -325,34 +286,34 @@ const SinhalaGamePage = ({ onBack, user }) => {
   if (!gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-teal-900 via-teal-700 to-teal-500 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Floating Elements with varied animations */}
-        <div className="absolute top-10 left-10 text-6xl animate-ping" style={{ animationDelay: '0s' }}>✨</div>
-        <div className="absolute top-20 right-20 text-5xl animate-pulse" style={{ animationDelay: '1s' }}>🌟</div>
-        <div className="absolute bottom-20 left-20 text-4xl animate-spin" style={{ animationDelay: '2s' }}>⭐</div>
+        {/* Floating Elements */}
+        <div className="absolute top-10 left-10 text-6xl animate-bounce" style={{ animationDelay: '0s' }}>✨</div>
+        <div className="absolute top-20 right-20 text-5xl animate-bounce" style={{ animationDelay: '1s' }}>🌟</div>
+        <div className="absolute bottom-20 left-20 text-4xl animate-bounce" style={{ animationDelay: '2s' }}>⭐</div>
         <div className="absolute bottom-10 right-10 text-6xl animate-bounce" style={{ animationDelay: '0.5s' }}>💫</div>
         
         <div className="text-center text-white max-w-4xl relative z-10">
-          <div className="text-9xl mb-8 animate-pulse">✍🏻</div>
-          <h1 className="text-6xl font-bold mb-8 animate-bounce">පැන්සල් ඉරි ග්‍රහලෝකය</h1>
-          <p className="text-3xl mb-12 animate-fade-in">ඉංග්‍රීසි වචන ලියන්න</p>
+          <div className="text-9xl mb-8 animate-bounce">✍🏻</div>
+          <h1 className="text-6xl font-bold mb-8 animate-pulse">පැන්සල් ඉරි ග්‍රහලෝකය</h1>
+          <p className="text-3xl mb-12 animate-fade-in">ඉංග්‍රීසි වචන සිංහලෙන් ලියන්න</p>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-3xl p-10 mb-12 transform hover:scale-105 transition-all duration-300">
-            <h2 className="text-3xl font-bold mb-8 animate-pulse">ක්‍රීඩා මට්ටම්</h2>
+            <h2 className="text-3xl font-bold mb-8">ක්‍රීඩා මට්ටම්</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xl">
               <div className="bg-gradient-to-br from-green-400/30 to-green-600/30 rounded-2xl p-6 transform hover:scale-110 transition-all duration-300">
-                <div className="text-6xl mb-4 animate-spin">🥉</div>
+                <div className="text-6xl mb-4 animate-bounce">🥉</div>
                 <div className="font-bold text-2xl">මට්ටම 1</div>
                 <div className="text-lg mt-2">සරල වචන</div>
                 <div className="text-sm mt-2 opacity-80">CAT, DOG, COW</div>
               </div>
               <div className="bg-gradient-to-br from-blue-400/30 to-blue-600/30 rounded-2xl p-6 transform hover:scale-110 transition-all duration-300">
-                <div className="text-6xl mb-4 animate-pulse" style={{ animationDelay: '0.2s' }}>🥈</div>
+                <div className="text-6xl mb-4 animate-bounce" style={{ animationDelay: '0.2s' }}>🥈</div>
                 <div className="font-bold text-2xl">මට්ටම 2</div>
                 <div className="text-lg mt-2">මධ්‍යම වචන</div>
                 <div className="text-sm mt-2 opacity-80">RABBIT, MONKEY, TIGER</div>
               </div>
               <div className="bg-gradient-to-br from-yellow-400/30 to-yellow-600/30 rounded-2xl p-6 transform hover:scale-110 transition-all duration-300">
-                <div className="text-6xl mb-4 animate-ping" style={{ animationDelay: '0.4s' }}>🥇</div>
+                <div className="text-6xl mb-4 animate-bounce" style={{ animationDelay: '0.4s' }}>🥇</div>
                 <div className="font-bold text-2xl">මට්ටම 3</div>
                 <div className="text-lg mt-2">දුෂ්කර වචන</div>
                 <div className="text-sm mt-2 opacity-80">ELEPHANT, PEACOCK, BUTTERFLY</div>
@@ -382,11 +343,11 @@ const SinhalaGamePage = ({ onBack, user }) => {
   if (gameCompleted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-purple-900 via-pink-800 to-red-700 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Celebration Background with varied animations */}
+        {/* Celebration Background */}
         {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className={`absolute text-4xl ${i % 3 === 0 ? 'animate-bounce' : i % 3 === 1 ? 'animate-ping' : 'animate-pulse'}`}
+            className="absolute text-4xl animate-bounce"
             style={{
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
@@ -399,7 +360,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
         ))}
         
         <div className="text-center text-white max-w-4xl relative z-10">
-          <div className="text-9xl mb-8 animate-spin">🏆</div>
+          <div className="text-9xl mb-8 animate-bounce">🏆</div>
           <h1 className="text-6xl font-bold mb-8 animate-pulse">ක්‍රීඩාව සම්පූර්ණයි!</h1>
           <div className="text-4xl mb-12 animate-fade-in">ඔබ විශිෂ්ට ලෙස ක්‍රීඩා කළා!</div>
           
@@ -407,29 +368,29 @@ const SinhalaGamePage = ({ onBack, user }) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-gradient-to-br from-yellow-400/30 to-yellow-600/30 rounded-2xl p-6">
                 <div className="text-sm opacity-80">මුළු ලකුණු</div>
-                <div className="text-5xl font-bold animate-bounce">{score}</div>
-                <div className="text-2xl animate-spin">🏆</div>
+                <div className="text-5xl font-bold">{score}</div>
+                <div className="text-2xl">🏆</div>
               </div>
               <div className="bg-gradient-to-br from-blue-400/30 to-blue-600/30 rounded-2xl p-6">
                 <div className="text-sm opacity-80">ගත වූ කාලය</div>
-                <div className="text-5xl font-bold animate-pulse">{Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
-                <div className="text-2xl animate-ping">⏱️</div>
+                <div className="text-5xl font-bold">{Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
+                <div className="text-2xl">⏱️</div>
               </div>
               <div className="bg-gradient-to-br from-green-400/30 to-green-600/30 rounded-2xl p-6">
                 <div className="text-sm opacity-80">සම්පූර්ණ කළ මට්ටම්</div>
-                <div className="text-5xl font-bold animate-bounce">{currentLevel}</div>
-                <div className="text-2xl animate-pulse">📈</div>
+                <div className="text-5xl font-bold">{currentLevel}</div>
+                <div className="text-2xl">📈</div>
               </div>
             </div>
             
             <div className="mb-8">
               {score >= 240 && (
-                <div className="text-3xl mb-4 animate-ping">
+                <div className="text-3xl mb-4 animate-bounce">
                   🌟 ඔබ සුපිරි ලේඛකයෙක්! 🌟
                 </div>
               )}
               {score >= 180 && score < 240 && (
-                <div className="text-3xl mb-4 animate-pulse">
+                <div className="text-3xl mb-4 animate-bounce">
                   ⭐ හොඳ කාර්ය සාධනයක්! ⭐
                 </div>
               )}
@@ -480,8 +441,8 @@ const SinhalaGamePage = ({ onBack, user }) => {
           <div className="text-2xl font-bold animate-pulse">මට්ටම {currentLevel}</div>
         </div>
         <div className="flex items-center space-x-6">
-          <div className="text-xl bg-white/20 px-4 py-2 rounded-full animate-pulse">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
-          <div className="text-xl bg-white/20 px-4 py-2 rounded-full animate-bounce">🏆 {score}</div>
+          <div className="text-xl bg-white/20 px-4 py-2 rounded-full">⏱️ {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}</div>
+          <div className="text-xl bg-white/20 px-4 py-2 rounded-full">🏆 {score}</div>
         </div>
       </div>
 
@@ -490,14 +451,14 @@ const SinhalaGamePage = ({ onBack, user }) => {
         {/* Word Display */}
         <div className="text-center mb-8">
           <div className="bg-white/20 backdrop-blur-sm rounded-3xl p-8 inline-block">
-            <div className="text-9xl mb-4 animate-spin">{currentWord.image}</div>
-            <div className="text-5xl font-bold text-white mb-4 animate-pulse">{currentWord.english}</div>
-            <div className="text-2xl text-teal-100 mb-6 animate-fade-in">"{currentWord.english}" ලියන්න</div>
+            <div className="text-9xl mb-4 animate-bounce">{currentWord.image}</div>
+            <div className="text-5xl font-bold text-white mb-4">{currentWord.english}</div>
+            <div className="text-2xl text-teal-100 mb-6">"{currentWord.sinhala}" ලෙස ලියන්න</div>
             
             {/* Progress */}
             <div className="bg-white/20 rounded-full h-6 mb-4 w-64 mx-auto">
               <div 
-                className="bg-gradient-to-r from-yellow-400 to-orange-500 h-6 rounded-full transition-all duration-500 flex items-center justify-center animate-pulse"
+                className="bg-gradient-to-r from-yellow-400 to-orange-500 h-6 rounded-full transition-all duration-500 flex items-center justify-center"
                 style={{ 
                   width: `${((currentWordIndex + 1) / gameWords[currentLevel].length) * 100}%` 
                 }}
@@ -506,27 +467,6 @@ const SinhalaGamePage = ({ onBack, user }) => {
                   {currentWordIndex + 1}/{gameWords[currentLevel].length}
                 </span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Color Palette Display */}
-        <div className="text-center mb-6">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 inline-block">
-            <div className="text-white text-lg mb-3 animate-bounce">🎨 ලේඛන වර්ණ</div>
-            <div className="flex gap-3 justify-center">
-              {strokeColors.map((color, index) => (
-                <div
-                  key={index}
-                  className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${
-                    strokeColor === color ? 'border-white scale-125 animate-ping' : 'border-gray-400'
-                  }`}
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-            <div className="text-white text-sm mt-2 opacity-80 animate-fade-in">
-              ලිවීමේදී වර්ණ ස්වයංක්‍රීයව වෙනස් වේ
             </div>
           </div>
         </div>
@@ -556,13 +496,13 @@ const SinhalaGamePage = ({ onBack, user }) => {
           <div className="flex gap-6 justify-center mb-6">
             <button
               onClick={clearCanvas}
-              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-lg animate-pulse"
+              className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-lg"
             >
               🗑️ මකන්න
             </button>
             <button
               onClick={analyzeWriting}
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-lg animate-bounce"
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-lg"
               disabled={strokeData.length === 0}
             >
               ✅ පරීක්ෂා කරන්න
@@ -572,7 +512,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
           {/* Feedback */}
           {feedback && (
             <div className="text-center mb-6">
-              <div className="bg-gradient-to-r from-blue-400/30 to-purple-500/30 rounded-2xl p-6 text-white text-2xl font-bold animate-ping">
+              <div className="bg-gradient-to-r from-blue-400/30 to-purple-500/30 rounded-2xl p-6 text-white text-2xl font-bold animate-pulse">
                 {feedback}
               </div>
             </div>
@@ -583,7 +523,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
             <div className="text-center">
               <button
                 onClick={nextWord}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-10 py-4 rounded-full font-bold text-xl transition-all duration-300 transform hover:scale-110 shadow-2xl animate-pulse"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-10 py-4 rounded-full font-bold text-xl transition-all duration-300 transform hover:scale-110 shadow-2xl animate-bounce"
               >
                 {currentWordIndex < gameWords[currentLevel].length - 1 ? '➡️ ඊළඟ වචනය' : 
                  currentLevel < 3 ? '🔼 ඊළඟ මට්ටම' : '🏁 ක්‍රීඩාව අවසන්'}
