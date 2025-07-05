@@ -17,6 +17,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
   const [currentStroke, setCurrentStroke] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [levelCompleted, setLevelCompleted] = useState(false);
+  const [allUserStrokes, setAllUserStrokes] = useState([]); // Store all user drawing data
 
   // Updated to show English words for writing
   const gameWords = {
@@ -84,14 +85,38 @@ const SinhalaGamePage = ({ onBack, user }) => {
     ctx.fillStyle = 'rgba(226, 232, 240, 0.3)';
     ctx.fillText(currentWord.english, canvas.width / 2, canvas.height / 2);
     
-    // Reset for user drawing - GREEN COLOR
-    ctx.strokeStyle = '#10B981'; // Green color for writing
-    ctx.lineWidth = 8;
+    // Redraw all previous user strokes in green
+    redrawAllUserStrokes();
+  };
+
+  const redrawAllUserStrokes = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Draw all stored user strokes
+    allUserStrokes.forEach(stroke => {
+      if (stroke.length > 1) {
+        ctx.strokeStyle = '#10B981'; // Green color
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.beginPath();
+        ctx.moveTo(stroke[0].x, stroke[0].y);
+        
+        for (let i = 1; i < stroke.length; i++) {
+          ctx.lineTo(stroke[i].x, stroke[i].y);
+        }
+        ctx.stroke();
+      }
+    });
   };
 
   useEffect(() => {
     initializeCanvas();
-  }, [currentWord]);
+  }, [currentWord, allUserStrokes]);
 
   const getMousePos = (e) => {
     const canvas = canvasRef.current;
@@ -157,16 +182,34 @@ const SinhalaGamePage = ({ onBack, user }) => {
   const stopDrawing = () => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    setStrokeData(prev => [...prev, currentStroke]);
+    
+    // Add current stroke to both strokeData and allUserStrokes
+    if (currentStroke.length > 0) {
+      setStrokeData(prev => [...prev, currentStroke]);
+      setAllUserStrokes(prev => [...prev, currentStroke]);
+    }
     setCurrentStroke([]);
   };
 
   const clearCanvas = () => {
-    initializeCanvas();
+    // Only clear current word's strokes, but keep all previous writing
     setStrokeData([]);
     setCurrentStroke([]);
     setFeedback('');
     setShowNextButton(false);
+    
+    // Reinitialize canvas but keep all user strokes
+    initializeCanvas();
+  };
+
+  const clearAllWriting = () => {
+    // This function completely clears all writing (for restart)
+    setAllUserStrokes([]);
+    setStrokeData([]);
+    setCurrentStroke([]);
+    setFeedback('');
+    setShowNextButton(false);
+    initializeCanvas();
   };
 
   const analyzeWriting = () => {
@@ -206,7 +249,9 @@ const SinhalaGamePage = ({ onBack, user }) => {
   const nextWord = () => {
     if (currentWordIndex < gameWords[currentLevel].length - 1) {
       setCurrentWordIndex(prev => prev + 1);
-      clearCanvas();
+      // Clear only current word data, keep all user strokes
+      setStrokeData([]);
+      setCurrentStroke([]);
       setShowNextButton(false);
       setFeedback('');
     } else if (currentLevel < 3) {
@@ -214,7 +259,8 @@ const SinhalaGamePage = ({ onBack, user }) => {
       setTimeout(() => {
         setCurrentLevel(prev => prev + 1);
         setCurrentWordIndex(0);
-        clearCanvas();
+        setStrokeData([]);
+        setCurrentStroke([]);
         setShowNextButton(false);
         setFeedback('');
         setLevelCompleted(false);
@@ -252,7 +298,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
     setCurrentStroke([]);
     setShowCelebration(false);
     setLevelCompleted(false);
-    clearCanvas();
+    clearAllWriting(); // Clear all writing on restart
   };
 
   // Celebration Component
@@ -490,7 +536,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
         {/* Writing Canvas */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 mb-6">
           <h3 className="text-3xl font-bold text-white mb-6 text-center animate-pulse">
-            වචනය මත ලියන්න
+            වචනය මත ලියන්න - ඔබේ ලිඛිත ආකාරය සුරකිනු ඇත
           </h3>
           
           <div className="bg-white rounded-2xl p-6 mb-6 shadow-2xl">
@@ -512,9 +558,15 @@ const SinhalaGamePage = ({ onBack, user }) => {
           <div className="flex gap-6 justify-center mb-6">
             <button
               onClick={clearCanvas}
+              className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-lg"
+            >
+              🗑️ මෙම වචනය මකන්න
+            </button>
+            <button
+              onClick={clearAllWriting}
               className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-lg"
             >
-              🗑️ මකන්න
+              🗑️ සියල්ල මකන්න
             </button>
             <button
               onClick={analyzeWriting}
