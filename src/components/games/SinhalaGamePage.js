@@ -17,7 +17,9 @@ const SinhalaGamePage = ({ onBack, user }) => {
   const [currentStroke, setCurrentStroke] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
   const [levelCompleted, setLevelCompleted] = useState(false);
-  const [allUserStrokes, setAllUserStrokes] = useState([]); // Store all user drawing data
+  const [allUserStrokes, setAllUserStrokes] = useState([]);
+  const [liveAccuracy, setLiveAccuracy] = useState(0); // Live accuracy tracking
+  const [liveProgress, setLiveProgress] = useState(0); // Live progress tracking
 
   // Updated to show English words for writing
   const gameWords = {
@@ -55,6 +57,31 @@ const SinhalaGamePage = ({ onBack, user }) => {
     }
     return () => clearInterval(interval);
   }, [gameStarted, gameCompleted, startTime]);
+
+  // Live analysis effect - runs whenever strokeData changes
+  useEffect(() => {
+    if (strokeData.length > 0) {
+      calculateLiveMetrics();
+    } else {
+      setLiveAccuracy(0);
+      setLiveProgress(0);
+    }
+  }, [strokeData, currentWord]);
+
+  const calculateLiveMetrics = () => {
+    if (strokeData.length === 0) return;
+
+    // Calculate live accuracy based on stroke count vs expected
+    const expectedStrokes = currentWord.english.length * 1.2;
+    const actualStrokes = strokeData.length;
+    const accuracy = Math.max(0, Math.min(100, 100 - Math.abs(expectedStrokes - actualStrokes) * 8));
+    
+    // Calculate progress based on stroke coverage
+    const progress = Math.min(100, (actualStrokes / expectedStrokes) * 100);
+    
+    setLiveAccuracy(Math.round(accuracy));
+    setLiveProgress(Math.round(progress));
+  };
 
   const initializeCanvas = () => {
     const canvas = canvasRef.current;
@@ -191,12 +218,14 @@ const SinhalaGamePage = ({ onBack, user }) => {
     setCurrentStroke([]);
   };
 
-  const clearCanvas = () => {
+  const clearCurrentWordOnly = () => {
     // Only clear current word's strokes, but keep all previous writing
     setStrokeData([]);
     setCurrentStroke([]);
     setFeedback('');
     setShowNextButton(false);
+    setLiveAccuracy(0);
+    setLiveProgress(0);
     
     // Reinitialize canvas but keep all user strokes
     initializeCanvas();
@@ -209,6 +238,8 @@ const SinhalaGamePage = ({ onBack, user }) => {
     setCurrentStroke([]);
     setFeedback('');
     setShowNextButton(false);
+    setLiveAccuracy(0);
+    setLiveProgress(0);
     initializeCanvas();
   };
 
@@ -249,21 +280,26 @@ const SinhalaGamePage = ({ onBack, user }) => {
   const nextWord = () => {
     if (currentWordIndex < gameWords[currentLevel].length - 1) {
       setCurrentWordIndex(prev => prev + 1);
-      // Clear only current word data, keep all user strokes
+      // AUTOMATICALLY clear current word data when moving to next word
       setStrokeData([]);
       setCurrentStroke([]);
       setShowNextButton(false);
       setFeedback('');
+      setLiveAccuracy(0);
+      setLiveProgress(0);
     } else if (currentLevel < 3) {
       setLevelCompleted(true);
       setTimeout(() => {
         setCurrentLevel(prev => prev + 1);
         setCurrentWordIndex(0);
+        // AUTOMATICALLY clear when moving to next level
         setStrokeData([]);
         setCurrentStroke([]);
         setShowNextButton(false);
         setFeedback('');
         setLevelCompleted(false);
+        setLiveAccuracy(0);
+        setLiveProgress(0);
       }, 3000);
     } else {
       completeGame();
@@ -298,8 +334,74 @@ const SinhalaGamePage = ({ onBack, user }) => {
     setCurrentStroke([]);
     setShowCelebration(false);
     setLevelCompleted(false);
-    clearAllWriting(); // Clear all writing on restart
+    setLiveAccuracy(0);
+    setLiveProgress(0);
+    clearAllWriting();
   };
+
+  // Live Preview Component
+  const LivePreview = () => (
+    <div className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl p-6 mb-6">
+      <h4 className="text-2xl font-bold text-white mb-4 text-center animate-pulse">
+        🔴 සජීව පෙරදසුන
+      </h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Live Accuracy */}
+        <div className="bg-white/10 rounded-xl p-4">
+          <div className="text-lg font-semibold text-white mb-2">නිරවද්‍යතාව</div>
+          <div className="bg-gray-300 rounded-full h-6 mb-2">
+            <div 
+              className={`h-6 rounded-full transition-all duration-500 flex items-center justify-center ${
+                liveAccuracy >= 80 ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                liveAccuracy >= 60 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
+                'bg-gradient-to-r from-red-400 to-red-600'
+              }`}
+              style={{ width: `${liveAccuracy}%` }}
+            >
+              <span className="text-white font-bold text-sm">{liveAccuracy}%</span>
+            </div>
+          </div>
+          <div className="text-sm text-gray-200">
+            {liveAccuracy >= 80 ? '🟢 විශිෂ්ට!' : 
+             liveAccuracy >= 60 ? '🟡 හොඳයි!' : 
+             liveAccuracy > 0 ? '🔴 වැඩිදියුණු කරන්න' : '⚪ ලිවීම ආරම්භ කරන්න'}
+          </div>
+        </div>
+
+        {/* Live Progress */}
+        <div className="bg-white/10 rounded-xl p-4">
+          <div className="text-lg font-semibold text-white mb-2">ප්‍රගතිය</div>
+          <div className="bg-gray-300 rounded-full h-6 mb-2">
+            <div 
+              className="bg-gradient-to-r from-blue-400 to-purple-600 h-6 rounded-full transition-all duration-500 flex items-center justify-center"
+              style={{ width: `${liveProgress}%` }}
+            >
+              <span className="text-white font-bold text-sm">{liveProgress}%</span>
+            </div>
+          </div>
+          <div className="text-sm text-gray-200">
+            {liveProgress >= 90 ? '🎯 සම්පූර්ණයට ආසන්නයි!' : 
+             liveProgress >= 50 ? '📝 හොඳ ප්‍රගතියක්!' : 
+             liveProgress > 0 ? '✏️ ලිවීම ආරම්භ වී ඇත' : '📋 ලිවීමට සූදානම්'}
+          </div>
+        </div>
+      </div>
+
+      {/* Live Stroke Count */}
+      <div className="mt-4 text-center">
+        <div className="bg-white/10 rounded-xl p-3 inline-block">
+          <span className="text-white font-semibold">
+            ✍️ ඉරි ගණන: <span className="text-yellow-300">{strokeData.length}</span>
+            {strokeData.length > 0 && (
+              <span className="ml-4 text-green-300">
+                🟢 සජීව ලිවීම සක්‍රියයි
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 
   // Celebration Component
   const CelebrationOverlay = () => (
@@ -326,7 +428,10 @@ const SinhalaGamePage = ({ onBack, user }) => {
         <div className="text-5xl font-bold mb-4">
           මට්ටම {currentLevel} සම්පූර්ණයි!
         </div>
-        <div className="text-3xl">
+        <div className="text-3xl mb-4">
+          වචනය ස්වයංක්‍රීයව මකනු ඇත...
+        </div>
+        <div className="text-2xl">
           ඊළඟ මට්ටමට යමු...
         </div>
         <div className="flex justify-center space-x-4 mt-6">
@@ -356,10 +461,24 @@ const SinhalaGamePage = ({ onBack, user }) => {
         <div className="text-center text-white max-w-4xl relative z-10">
           <div className="text-9xl mb-8 animate-bounce">✍🏻</div>
           <h1 className="text-6xl font-bold mb-8 animate-pulse">පැන්සල් ඉරි ග්‍රහලෝකය</h1>
-          <p className="text-3xl mb-12 animate-fade-in">ඉංග්‍රීසි වචන ලියන්න</p>
+          <p className="text-3xl mb-12 animate-fade-in">ඉංග්‍රීසි වචන ලියන්න - සජීව පෙරදසුන සමඟ!</p>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-3xl p-10 mb-12 transform hover:scale-105 transition-all duration-300">
-            <h2 className="text-3xl font-bold mb-8">ක්‍රීඩා මට්ටම්</h2>
+            <h2 className="text-3xl font-bold mb-8">🔴 නව විශේෂාංග</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="bg-gradient-to-br from-green-400/30 to-green-600/30 rounded-2xl p-6">
+                <div className="text-4xl mb-2">📊</div>
+                <div className="font-bold text-xl">සජීව පෙරදසුන</div>
+                <div className="text-sm mt-2">ලිවීමේදී ක්ෂණික ප්‍රතිපෝෂණ</div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-400/30 to-blue-600/30 rounded-2xl p-6">
+                <div className="text-4xl mb-2">🔄</div>
+                <div className="font-bold text-xl">ස්වයංක්‍රීය මකාදැමීම</div>
+                <div className="text-sm mt-2">ඊළඟ වචනයට යාමේදී ස්වයංක්‍රීයව මකනු ඇත</div>
+              </div>
+            </div>
+            
+            <h3 className="text-2xl font-bold mb-6">ක්‍රීඩා මට්ටම්</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xl">
               <div className="bg-gradient-to-br from-green-400/30 to-green-600/30 rounded-2xl p-6 transform hover:scale-110 transition-all duration-300">
                 <div className="text-6xl mb-4 animate-bounce">🥉</div>
@@ -533,10 +652,13 @@ const SinhalaGamePage = ({ onBack, user }) => {
           </div>
         </div>
 
+        {/* Live Preview Section */}
+        <LivePreview />
+
         {/* Writing Canvas */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 mb-6">
           <h3 className="text-3xl font-bold text-white mb-6 text-center animate-pulse">
-            වචනය මත ලියන්න - ඔබේ ලිඛිත ආකාරය සුරකිනු ඇත
+            වචනය මත ලියන්න - ස්වයංක්‍රීය මකාදැමීම සක්‍රියයි
           </h3>
           
           <div className="bg-white rounded-2xl p-6 mb-6 shadow-2xl">
@@ -557,7 +679,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
           {/* Controls */}
           <div className="flex gap-6 justify-center mb-6">
             <button
-              onClick={clearCanvas}
+              onClick={clearCurrentWordOnly}
               className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-8 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-110 shadow-lg"
             >
               🗑️ මෙම වචනය මකන්න
@@ -593,8 +715,8 @@ const SinhalaGamePage = ({ onBack, user }) => {
                 onClick={nextWord}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-10 py-4 rounded-full font-bold text-xl transition-all duration-300 transform hover:scale-110 shadow-2xl animate-bounce"
               >
-                {currentWordIndex < gameWords[currentLevel].length - 1 ? '➡️ ඊළඟ වචනය' : 
-                 currentLevel < 3 ? '🔼 ඊළඟ මට්ටම' : '🏁 ක්‍රීඩාව අවසන්'}
+                {currentWordIndex < gameWords[currentLevel].length - 1 ? '➡️ ඊළඟ වචනය (ස්වයංක්‍රීයව මකනු ඇත)' : 
+                 currentLevel < 3 ? '🔼 ඊළඟ මට්ටම (ස්වයංක්‍රීයව මකනු ඇත)' : '🏁 ක්‍රීඩාව අවසන්'}
               </button>
             </div>
           )}
