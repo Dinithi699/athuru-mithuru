@@ -18,7 +18,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
   const [showCelebration, setShowCelebration] = useState(false);
   const [levelCompleted, setLevelCompleted] = useState(false);
 
-  // Reduced to 3 words per level as requested
+  // Updated to show English words for writing
   const gameWords = {
     1: [
       { english: 'CAT', sinhala: 'බළලා', image: '🐱' },
@@ -62,7 +62,6 @@ const SinhalaGamePage = ({ onBack, user }) => {
     const ctx = canvas.getContext('2d');
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.lineWidth = 6;
     
     // Set canvas size to be large
     canvas.width = 800;
@@ -71,23 +70,23 @@ const SinhalaGamePage = ({ onBack, user }) => {
     // Clear canvas with transparent background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw the word outline in light gray for tracing
-    ctx.font = 'bold 120px "Noto Sans Sinhala", Arial, sans-serif';
+    // Draw the English word outline in light gray for tracing
+    ctx.font = 'bold 120px Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
     // Draw outline/shadow of the word
     ctx.strokeStyle = '#E2E8F0';
     ctx.lineWidth = 8;
-    ctx.strokeText(currentWord.sinhala, canvas.width / 2, canvas.height / 2);
+    ctx.strokeText(currentWord.english, canvas.width / 2, canvas.height / 2);
     
     // Fill with very light color for guidance
     ctx.fillStyle = 'rgba(226, 232, 240, 0.3)';
-    ctx.fillText(currentWord.sinhala, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(currentWord.english, canvas.width / 2, canvas.height / 2);
     
-    // Reset for user drawing
-    ctx.strokeStyle = '#2D3748';
-    ctx.lineWidth = 6;
+    // Reset for user drawing - GREEN COLOR
+    ctx.strokeStyle = '#10B981'; // Green color for writing
+    ctx.lineWidth = 8;
   };
 
   useEffect(() => {
@@ -121,6 +120,14 @@ const SinhalaGamePage = ({ onBack, user }) => {
     setIsDrawing(true);
     const pos = e.type.includes('touch') ? getTouchPos(e) : getMousePos(e);
     setCurrentStroke([pos]);
+    
+    // Set green color for drawing
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#10B981'; // Green color
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
   };
 
   const draw = (e) => {
@@ -131,12 +138,20 @@ const SinhalaGamePage = ({ onBack, user }) => {
     const ctx = canvas.getContext('2d');
     const pos = e.type.includes('touch') ? getTouchPos(e) : getMousePos(e);
 
-    setCurrentStroke(prev => [...prev, pos]);
+    // Ensure green color is maintained
+    ctx.strokeStyle = '#10B981'; // Green color
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 
+    const lastPos = currentStroke[currentStroke.length - 1] || pos;
+    
     ctx.beginPath();
-    ctx.moveTo(currentStroke[currentStroke.length - 1]?.x || pos.x, currentStroke[currentStroke.length - 1]?.y || pos.y);
+    ctx.moveTo(lastPos.x, lastPos.y);
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
+
+    setCurrentStroke(prev => [...prev, pos]);
   };
 
   const stopDrawing = () => {
@@ -161,12 +176,12 @@ const SinhalaGamePage = ({ onBack, user }) => {
     }
 
     // Enhanced analysis
-    const expectedStrokes = currentWord.sinhala.length * 1.5;
+    const expectedStrokes = currentWord.english.length * 1.2;
     const actualStrokes = strokeData.length;
     const strokeAccuracy = Math.max(0, 100 - Math.abs(expectedStrokes - actualStrokes) * 8);
     
     // Time analysis - more lenient for children
-    const timePerCharacter = timeSpent / currentWord.sinhala.length;
+    const timePerCharacter = timeSpent / currentWord.english.length;
     const timeScore = timePerCharacter < 8 ? 100 : Math.max(0, 100 - (timePerCharacter - 8) * 5);
     
     // Overall score
@@ -295,7 +310,7 @@ const SinhalaGamePage = ({ onBack, user }) => {
         <div className="text-center text-white max-w-4xl relative z-10">
           <div className="text-9xl mb-8 animate-bounce">✍🏻</div>
           <h1 className="text-6xl font-bold mb-8 animate-pulse">පැන්සල් ඉරි ග්‍රහලෝකය</h1>
-          <p className="text-3xl mb-12 animate-fade-in">ඉංග්‍රීසි වචන සිංහලෙන් ලියන්න</p>
+          <p className="text-3xl mb-12 animate-fade-in">ඉංග්‍රීසි වචන ලියන්න</p>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-3xl p-10 mb-12 transform hover:scale-105 transition-all duration-300">
             <h2 className="text-3xl font-bold mb-8">ක්‍රීඩා මට්ටම්</h2>
@@ -453,7 +468,8 @@ const SinhalaGamePage = ({ onBack, user }) => {
           <div className="bg-white/20 backdrop-blur-sm rounded-3xl p-8 inline-block">
             <div className="text-9xl mb-4 animate-bounce">{currentWord.image}</div>
             <div className="text-5xl font-bold text-white mb-4">{currentWord.english}</div>
-            <div className="text-2xl text-teal-100 mb-6">"{currentWord.sinhala}" ලෙස ලියන්න</div>
+            <div className="text-2xl text-teal-100 mb-6">"{currentWord.english}" ලෙස ලියන්න</div>
+            <div className="text-lg text-teal-200 mb-6">🟢 හරිත වර්ණයෙන් ලියන්න</div>
             
             {/* Progress */}
             <div className="bg-white/20 rounded-full h-6 mb-4 w-64 mx-auto">
