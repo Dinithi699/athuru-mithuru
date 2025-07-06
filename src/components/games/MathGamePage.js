@@ -66,6 +66,59 @@ const MathGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
+  // Audio effects
+  const playWinSound = () => {
+    // Create a simple winning sound using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Victory melody: C-E-G-C (major chord progression)
+    const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+    
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1 + index * 0.15);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4 + index * 0.15);
+      
+      oscillator.start(audioContext.currentTime + index * 0.15);
+      oscillator.stop(audioContext.currentTime + 0.4 + index * 0.15);
+    });
+  };
+
+  const playLoseSound = () => {
+    // Create a simple losing sound using Web Audio API
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Descending sad melody
+    const frequencies = [440, 392, 349.23, 293.66]; // A4, G4, F4, D4
+    
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'triangle';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1 + index * 0.2);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5 + index * 0.2);
+      
+      oscillator.start(audioContext.currentTime + index * 0.2);
+      oscillator.stop(audioContext.currentTime + 0.5 + index * 0.2);
+    });
+  };
+
   // Text-to-speech function
   const speakWord = (word) => {
     if ('speechSynthesis' in window) {
@@ -100,10 +153,11 @@ const MathGamePage = ({ onBack }) => {
     const currentWord = currentQuestions[currentQuestion];
     const letters = currentWord.word.split('');
     
-    // Add some extra letters to make it challenging
+    // Add exactly enough extra letters to make total 6 letters
     const extraLetters = ['A', 'E', 'I', 'O', 'U', 'B', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
     const shuffledExtras = extraLetters.filter(letter => !letters.includes(letter)).sort(() => Math.random() - 0.5);
-    const additionalLetters = shuffledExtras.slice(0, Math.min(4, 8 - letters.length));
+    const additionalLettersNeeded = 6 - letters.length;
+    const additionalLetters = shuffledExtras.slice(0, additionalLettersNeeded);
     
     const allLetters = [...letters, ...additionalLetters].sort(() => Math.random() - 0.5);
     
@@ -134,6 +188,9 @@ const MathGamePage = ({ onBack }) => {
       isCorrect: false,
       completed: false
     }]);
+    
+    // Play lose sound for timeout
+    playLoseSound();
     
     nextQuestion();
   };
@@ -256,6 +313,9 @@ const MathGamePage = ({ onBack }) => {
     
     if (isCorrect) {
       setScore(score + 1);
+      playWinSound(); // Play winning sound
+    } else {
+      playLoseSound(); // Play losing sound
     }
     
     setShowResult(true);
@@ -392,8 +452,8 @@ const MathGamePage = ({ onBack }) => {
                 <div className="text-2xl font-bold">60 තත්පර</div>
               </div>
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">මට්ටම</div>
-                <div className="text-2xl font-bold">{currentLevel}/3</div>
+                <div className="text-sm opacity-80">අකුරු ගණන</div>
+                <div className="text-2xl font-bold">6</div>
               </div>
             </div>
             
@@ -401,10 +461,11 @@ const MathGamePage = ({ onBack }) => {
               <h3 className="text-lg font-bold mb-3">ක්‍රීඩා කරන ආකාරය</h3>
               <ul className="text-left space-y-2 max-w-md mx-auto">
                 <li>• පින්තූරය බලන්න සහ ශබ්දය අසන්න</li>
+                <li>• 6 අකුරු වලින් නිවැරදි වචනය සාදන්න</li>
                 <li>• අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න</li>
-                <li>• වචනය සම්පූර්ණ කරන්න</li>
                 <li>• 🔊 බොත්තම ක්ලික් කර නැවත අසන්න</li>
                 <li>• වැරදි අකුරු ඉවත් කිරීමට ඒවා ක්ලික් කරන්න</li>
+                <li>• 🎵 නිවැරදි/වැරදි පිළිතුරු සඳහා ශබ්ද ප්‍රතිපෝෂණ</li>
               </ul>
             </div>
             
@@ -575,10 +636,10 @@ const MathGamePage = ({ onBack }) => {
             </div>
           </div>
 
-          {/* Available Letters */}
+          {/* Available Letters - Always 6 letters */}
           <div className="mb-6">
-            <h3 className="text-lg font-bold mb-4">අකුරු:</h3>
-            <div className="flex flex-wrap justify-center gap-3">
+            <h3 className="text-lg font-bold mb-4">අකුරු (6):</h3>
+            <div className="flex justify-center gap-3">
               {availableLetters.map((letter) => (
                 <div
                   key={letter.id}
@@ -603,7 +664,7 @@ const MathGamePage = ({ onBack }) => {
               <div className={`text-2xl font-bold mb-2 ${
                 responses[responses.length - 1]?.isCorrect ? 'text-green-300' : 'text-red-300'
               }`}>
-                {responses[responses.length - 1]?.isCorrect ? '🎉 නිවැරදියි!' : '❌ වැරදියි!'}
+                {responses[responses.length - 1]?.isCorrect ? '🎉 නිවැරදියි! 🎵' : '❌ වැරදියි! 🎵'}
               </div>
               <div className="text-lg">
                 ඔබේ පිළිතුර: <span className="font-bold">{responses[responses.length - 1]?.userAnswer}</span>
@@ -617,7 +678,7 @@ const MathGamePage = ({ onBack }) => {
 
         {/* Instructions */}
         <div className="text-sm opacity-80">
-          අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න. වැරදි අකුරු ඉවත් කිරීමට ඒවා ක්ලික් කරන්න.
+          6 අකුරු වලින් නිවැරදි වචනය සාදන්න. අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න.
         </div>
       </div>
     </div>
