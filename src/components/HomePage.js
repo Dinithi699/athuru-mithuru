@@ -142,7 +142,7 @@ const HomePage = ({ onLogout, user }) => {
             <div className="relative z-10 flex-1 flex items-center justify-center">
               <div className="text-center mb-12">
                 <h2 className="text-6xl font-bold text-white mb-6 animate-pulse drop-shadow-lg">
-                  🌟 ගගනගාමී ලෝකයට සාදරයෙන් පිළිගනිමු! 🌟
+                   ගගනගාමී ලෝකයට සාදරයෙන් පිළිගනිමු! 
                 </h2>
                 <p className="text-2xl text-gray-300 mb-8 drop-shadow-md">
                   ඔබේ ඉගෙනුම් ගමන ආරම්භ කිරීමට ග්‍රහලෝකයක් තෝරන්න

@@ -22,13 +22,14 @@ const MathGamePage = ({ onBack }) => {
     1: [
       { 
         word: 'CAT', 
-        image: '🐱', 
+        image: '/images/cat.png', 
         audio: 'cat',
-        description: 'බළලා'
+        description: 'බළලා',
+        isCustomImage: true
       },
       { 
         word: 'SUN', 
-        image: '/images/sun-27.gif', 
+        image: '/images/sun.png', 
         audio: 'sun',
         description: 'සූර්යයා',
         isCustomImage: true
@@ -37,29 +38,33 @@ const MathGamePage = ({ onBack }) => {
     2: [
       { 
         word: 'BOOK', 
-        image: '📚', 
+        image: '/images/book.png', 
         audio: 'book',
-        description: 'පොත'
+        description: 'පොත',
+        isCustomImage: true
       },
       { 
         word: 'SHIP', 
-        image: '🚢', 
+        image: '/images/ship.png', 
         audio: 'ship',
-        description: 'නැව'
+        description: 'නැව',
+        isCustomImage: true
       }
     ],
     3: [
       { 
         word: 'APPLE', 
-        image: '🍎', 
+        image: '/images/apple.png', 
         audio: 'apple',
-        description: 'ඇපල්'
+        description: 'ඇපල්',
+        isCustomImage: true
       },
       { 
         word: 'CHAIR', 
-        image: '🪑', 
+        image: '/images/chair.png', 
         audio: 'chair',
-        description: 'පුටුව'
+        description: 'පුටුව',
+        isCustomImage: true
       }
     ]
   };
@@ -438,7 +443,7 @@ const MathGamePage = ({ onBack }) => {
         <img 
           src={currentQ.image} 
           alt={currentQ.description}
-          className="w-32 h-32 mx-auto mb-4 object-contain animate-pulse"
+          className="w-48 h-48 mx-auto mb-4 object-contain animate-pulse"
           style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}
         />
       );
@@ -480,7 +485,7 @@ const MathGamePage = ({ onBack }) => {
               <h3 className="text-lg font-bold mb-3">ක්‍රීඩා කරන ආකාරය</h3>
               <ul className="text-left space-y-2 max-w-md mx-auto">
                 <li>• පින්තූරය බලන්න සහ ශබ්දය අසන්න</li>
-                <li>• 6 අකුරු වලින් නිවැරදි වචනය සාදන්න</li>
+                <li>• අකුරු වලින් නිවැරදි වචනය සාදන්න</li>
                 <li>• අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න</li>
                 <li>• 🔊 බොත්තම ක්ලික් කර නැවත අසන්න</li>
                 <li>• වැරදි අකුරු ඉවත් කිරීමට ඒවා ක්ලික් කරන්න</li>
@@ -697,7 +702,7 @@ const MathGamePage = ({ onBack }) => {
 
         {/* Instructions */}
         <div className="text-sm opacity-80">
-          6 අකුරු වලින් නිවැරදි වචනය සාදන්න. අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න.
+          අකුරු වලින් නිවැරදි වචනය සාදන්න. අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න.
         </div>
       </div>
     </div>
