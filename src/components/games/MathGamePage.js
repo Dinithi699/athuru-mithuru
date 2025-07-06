@@ -28,9 +28,10 @@ const MathGamePage = ({ onBack }) => {
       },
       { 
         word: 'SUN', 
-        image: '☀️', 
+        image: '/images/sun-27.gif', 
         audio: 'sun',
-        description: 'සූර්යයා'
+        description: 'සූර්යයා',
+        isCustomImage: true
       }
     ],
     2: [
@@ -430,6 +431,24 @@ const MathGamePage = ({ onBack }) => {
     };
   };
 
+  // Helper function to render image
+  const renderImage = (currentQ) => {
+    if (currentQ.isCustomImage) {
+      return (
+        <img 
+          src={currentQ.image} 
+          alt={currentQ.description}
+          className="w-32 h-32 mx-auto mb-4 object-contain animate-pulse"
+          style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}
+        />
+      );
+    } else {
+      return (
+        <div className="text-9xl mb-4 animate-pulse">{currentQ.image}</div>
+      );
+    }
+  };
+
   if (!gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-700 to-red-500 flex items-center justify-center p-4">
@@ -608,7 +627,7 @@ const MathGamePage = ({ onBack }) => {
         <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 mb-6">
           {/* Image and Audio */}
           <div className="mb-8">
-            <div className="text-9xl mb-4 animate-pulse">{currentQ.image}</div>
+            {renderImage(currentQ)}
             <div className="text-2xl font-bold mb-2">{currentQ.description}</div>
             <button
               onClick={() => speakWord(currentQ.word)}
