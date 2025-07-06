@@ -157,9 +157,9 @@ const EnglishGamePage = ({ onBack }) => {
 
   const getLevelDescription = (level) => {
     const descriptions = {
-      1: 'Basic Number Comparison (1-10)',
-      2: 'Large Numbers & Place Values',
-      3: 'Simple Addition Expressions'
+      1: 'මූලික සංඛ්‍යා සංසන්දනය (1-10)',
+      2: 'විශාල සංඛ්‍යා සහ ස්ථාන අගයන්',
+      3: 'සරල එකතු කිරීම් ප්‍රකාශන'
     };
     return descriptions[level];
   };
@@ -171,81 +171,81 @@ const EnglishGamePage = ({ onBack }) => {
     const averageReactionTime = reactionTimes.reduce((sum, time) => sum + time, 0) / reactionTimes.length;
     const accuracy = (correctResponses / totalResponses) * 100;
     
-    let riskLevel = 'Low';
+    let riskLevel = 'අඩු';
     let analysis = '';
     let recommendations = [];
     
     // Dyscalculia risk assessment
     if (currentLevel === 1) {
       if (accuracy < 70 || averageReactionTime > 8000) {
-        riskLevel = 'High';
-        analysis = 'Difficulty with basic number recognition and comparison may indicate dyscalculia risk.';
+        riskLevel = 'ඉහළ';
+        analysis = 'මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දනයේ දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් පෙන්නුම් කරයි.';
         recommendations = [
-          'Practice number recognition activities',
-          'Use visual aids for number comparison',
-          'Consider professional assessment'
+          'සංඛ්‍යා හඳුනාගැනීමේ ක්‍රියාකාරකම් අභ්‍යාස කරන්න',
+          'සංඛ්‍යා සංසන්දනය සඳහා දෘශ්‍ය උපකරණ භාවිතා කරන්න',
+          'වෘත්තීය තක්සේරුවක් සලකා බලන්න'
         ];
       } else if (accuracy < 85 || averageReactionTime > 5000) {
-        riskLevel = 'Medium';
-        analysis = 'Some challenges with number processing. Monitor progress with additional practice.';
+        riskLevel = 'මධ්‍යම';
+        analysis = 'සංඛ්‍යා සැකසීමේ සමහර අභියෝග. අමතර අභ්‍යාස සමඟ ප්‍රගතිය නිරීක්ෂණය කරන්න.';
         recommendations = [
-          'Regular number comparison exercises',
-          'Use manipulatives for counting',
-          'Practice with number lines'
+          'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස',
+          'ගණන් කිරීම සඳහා හස්ත ද්‍රව්‍ය භාවිතා කරන්න',
+          'සංඛ්‍යා රේඛා සමඟ අභ්‍යාස කරන්න'
         ];
       } else {
-        analysis = 'Good basic number recognition and comparison skills.';
+        analysis = 'හොඳ මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දන කුසලතා.';
         recommendations = [
-          'Continue with more challenging number activities',
-          'Introduce place value concepts'
+          'වඩාත් අභියෝගාත්මක සංඛ්‍යා ක්‍රියාකාරකම් සමඟ ඉදිරියට යන්න',
+          'ස්ථාන අගය සංකල්ප හඳුන්වා දෙන්න'
         ];
       }
     } else if (currentLevel === 2) {
       if (accuracy < 60 || averageReactionTime > 10000) {
-        riskLevel = 'High';
-        analysis = 'Significant difficulty with place value understanding suggests dyscalculia risk.';
+        riskLevel = 'ඉහළ';
+        analysis = 'ස්ථාන අගය අවබෝධයේ සැලකිය යුතු දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
         recommendations = [
-          'Focus on place value understanding',
-          'Use base-10 blocks for visualization',
-          'Seek educational support specialist'
+          'ස්ථාන අගය අවබෝධය කෙරෙහි අවධානය යොමු කරන්න',
+          'දෘශ්‍යකරණය සඳහා base-10 කුට්ටි භාවිතා කරන්න',
+          'අධ්‍යාපන සහාය විශේෂඥයෙකු සොයන්න'
         ];
       } else if (accuracy < 75 || averageReactionTime > 7000) {
-        riskLevel = 'Medium';
-        analysis = 'Place value concepts need reinforcement. Continue targeted practice.';
+        riskLevel = 'මධ්‍යම';
+        analysis = 'ස්ථාන අගය සංකල්ප ශක්තිමත් කිරීම අවශ්‍යයි. ඉලක්කගත අභ්‍යාස දිගටම කරන්න.';
         recommendations = [
-          'Practice with tens and ones',
-          'Use visual place value charts',
-          'Regular number comparison drills'
+          'දහයන් සහ ඒකයන් සමඟ අභ්‍යාස කරන්න',
+          'දෘශ්‍ය ස්ථාන අගය ප්‍රස්ථාර භාවිතා කරන්න',
+          'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස'
         ];
       } else {
-        analysis = 'Good understanding of place value and number comparison.';
+        analysis = 'ස්ථාන අගය සහ සංඛ්‍යා සංසන්දනය පිළිබඳ හොඳ අවබෝධයක්.';
         recommendations = [
-          'Introduce more complex number concepts',
-          'Practice with larger numbers'
+          'වඩාත් සංකීර්ණ සංඛ්‍යා සංකල්ප හඳුන්වා දෙන්න',
+          'විශාල සංඛ්‍යා සමඟ අභ්‍යාස කරන්න'
         ];
       }
     } else if (currentLevel === 3) {
       if (accuracy < 50 || averageReactionTime > 12000) {
-        riskLevel = 'High';
-        analysis = 'Difficulty with basic arithmetic suggests significant dyscalculia risk.';
+        riskLevel = 'ඉහළ';
+        analysis = 'මූලික ගණිතයේ දුෂ්කරතා සැලකිය යුතු ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
         recommendations = [
-          'Focus on concrete addition strategies',
-          'Use manipulatives for arithmetic',
-          'Consider comprehensive assessment'
+          'ස්පර්ශනීය එකතු කිරීමේ උපාය මාර්ග කෙරෙහි අවධානය යොමු කරන්න',
+          'ගණිතය සඳහා හස්ත ද්‍රව්‍ය භාවිතා කරන්න',
+          'සවිස්තරාත්මක තක්සේරුවක් සලකා බලන්න'
         ];
       } else if (accuracy < 70 || averageReactionTime > 8000) {
-        riskLevel = 'Medium';
-        analysis = 'Arithmetic processing needs support. Practice basic operations.';
+        riskLevel = 'මධ්‍යම';
+        analysis = 'ගණිත සැකසීමට සහාය අවශ්‍යයි. මූලික ක්‍රියාකාරකම් අභ්‍යාස කරන්න.';
         recommendations = [
-          'Practice addition facts',
-          'Use visual addition strategies',
-          'Regular arithmetic drills'
+          'එකතු කිරීමේ කරුණු අභ්‍යාස කරන්න',
+          'දෘශ්‍ය එකතු කිරීමේ උපාය මාර්ග භාවිතා කරන්න',
+          'නිතිපතා ගණිත අභ්‍යාස'
         ];
       } else {
-        analysis = 'Good basic arithmetic and comparison skills.';
+        analysis = 'හොඳ මූලික ගණිත සහ සංසන්දන කුසලතා.';
         recommendations = [
-          'Continue with more complex expressions',
-          'Introduce subtraction comparisons'
+          'වඩාත් සංකීර්ණ ප්‍රකාශන සමඟ ඉදිරියට යන්න',
+          'අඩු කිරීමේ සංසන්දන හඳුන්වා දෙන්න'
         ];
       }
     }
@@ -257,10 +257,7 @@ const EnglishGamePage = ({ onBack }) => {
     if (isExpression) {
       return (
         <div className="text-center">
-          <div className="text-6xl font-bold mb-2">{value}</div>
-          <div className="text-2xl opacity-80">
-            = {currentLevel === 3 ? eval(value.replace(/[^0-9+\-*/]/g, '')) : ''}
-          </div>
+          <div className="text-6xl font-bold">{value}</div>
         </div>
       );
     }
@@ -272,36 +269,36 @@ const EnglishGamePage = ({ onBack }) => {
       <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
         <div className="text-center text-white max-w-2xl">
           <div className="text-8xl mb-8 animate-bounce">🔢</div>
-          <h1 className="text-5xl font-bold mb-8">Number Comparison Game</h1>
-          <p className="text-2xl mb-8">Choose the larger number or identify if they're the same!</p>
+          <h1 className="text-5xl font-bold mb-8">සංඛ්‍යා සංසන්දන ක්‍රීඩාව</h1>
+          <p className="text-2xl mb-8">විශාල සංඛ්‍යාව තෝරන්න හෝ ඒවා සමාන දැයි හඳුනාගන්න!</p>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 mb-8">
-            <h2 className="text-3xl font-bold mb-6">Level {currentLevel}</h2>
+            <h2 className="text-3xl font-bold mb-6">මට්ටම {currentLevel}</h2>
             <p className="text-xl mb-6">{getLevelDescription(currentLevel)}</p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">Questions</div>
+                <div className="text-sm opacity-80">ප්‍රශ්න</div>
                 <div className="text-2xl font-bold">{totalQuestions}</div>
               </div>
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">Time per Question</div>
-                <div className="text-2xl font-bold">15 seconds</div>
+                <div className="text-sm opacity-80">ප්‍රශ්නයකට කාලය</div>
+                <div className="text-2xl font-bold">15 තත්පර</div>
               </div>
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">Level</div>
+                <div className="text-sm opacity-80">මට්ටම</div>
                 <div className="text-2xl font-bold">{currentLevel}/3</div>
               </div>
             </div>
             
             <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3">How to Play</h3>
+              <h3 className="text-lg font-bold mb-3">ක්‍රීඩා කරන ආකාරය</h3>
               <ul className="text-left space-y-2 max-w-md mx-auto">
-                <li>• Compare two numbers or expressions</li>
-                <li>• Click "Left" if left number is larger</li>
-                <li>• Click "Right" if right number is larger</li>
-                <li>• Click "Same" if both are equal</li>
-                <li>• Answer as quickly and accurately as possible</li>
+                <li>• සංඛ්‍යා දෙකක් හෝ ප්‍රකාශන සංසන්දනය කරන්න</li>
+                <li>• වම් සංඛ්‍යාව විශාල නම් එය ක්ලික් කරන්න</li>
+                <li>• දකුණු සංඛ්‍යාව විශාල නම් එය ක්ලික් කරන්න</li>
+                <li>• දෙකම සමාන නම් "සමාන" ක්ලික් කරන්න</li>
+                <li>• හැකි ඉක්මනින් සහ නිවැරදිව පිළිතුරු දෙන්න</li>
               </ul>
             </div>
             
@@ -309,7 +306,7 @@ const EnglishGamePage = ({ onBack }) => {
               onClick={startGame}
               className="bg-white text-blue-600 px-8 py-4 rounded-full font-bold text-xl hover:bg-gray-100 transition-all duration-300 shadow-lg transform hover:scale-105"
             >
-              🚀 Start Game
+              🚀 ක්‍රීඩාව ආරම්භ කරන්න
             </button>
           </div>
           
@@ -317,7 +314,7 @@ const EnglishGamePage = ({ onBack }) => {
             onClick={onBack}
             className="bg-white/20 text-white px-6 py-3 rounded-full font-bold hover:bg-white/30 transition-colors duration-300"
           >
-            ← Go Back
+            ← ආපසු යන්න
           </button>
         </div>
       </div>
@@ -331,29 +328,29 @@ const EnglishGamePage = ({ onBack }) => {
       <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
         <div className="text-center text-white max-w-3xl">
           <div className="text-8xl mb-8">
-            {analysis.riskLevel === 'Low' ? '🎉' : analysis.riskLevel === 'Medium' ? '⚠️' : '🔍'}
+            {analysis.riskLevel === 'අඩු' ? '🎉' : analysis.riskLevel === 'මධ්‍යම' ? '⚠️' : '🔍'}
           </div>
-          <h1 className="text-5xl font-bold mb-8">Level {currentLevel} Complete!</h1>
+          <h1 className="text-5xl font-bold mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">Score</div>
+                <div className="text-sm opacity-80">ලකුණු</div>
                 <div className="text-3xl font-bold">{score}/{totalQuestions}</div>
               </div>
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">Accuracy</div>
+                <div className="text-sm opacity-80">නිරවද්‍යතාව</div>
                 <div className="text-3xl font-bold">{analysis.accuracy.toFixed(1)}%</div>
               </div>
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">Avg Time</div>
-                <div className="text-3xl font-bold">{analysis.averageTime.toFixed(1)}s</div>
+                <div className="text-sm opacity-80">සාමාන්‍ය කාලය</div>
+                <div className="text-3xl font-bold">{analysis.averageTime.toFixed(1)}තත්</div>
               </div>
               <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">Risk Level</div>
+                <div className="text-sm opacity-80">අවදානම් මට්ටම</div>
                 <div className={`text-2xl font-bold ${
-                  analysis.riskLevel === 'Low' ? 'text-green-300' : 
-                  analysis.riskLevel === 'Medium' ? 'text-yellow-300' : 'text-red-300'
+                  analysis.riskLevel === 'අඩු' ? 'text-green-300' : 
+                  analysis.riskLevel === 'මධ්‍යම' ? 'text-yellow-300' : 'text-red-300'
                 }`}>
                   {analysis.riskLevel}
                 </div>
@@ -361,10 +358,10 @@ const EnglishGamePage = ({ onBack }) => {
             </div>
             
             <div className="mb-6 p-4 bg-white/10 rounded-lg text-left">
-              <h3 className="text-xl font-bold mb-3">Assessment Analysis</h3>
+              <h3 className="text-xl font-bold mb-3">තක්සේරු විශ්ලේෂණය</h3>
               <p className="text-lg mb-4">{analysis.analysis}</p>
               
-              <h4 className="text-lg font-bold mb-2">Recommendations:</h4>
+              <h4 className="text-lg font-bold mb-2">නිර්දේශ:</h4>
               <ul className="space-y-1">
                 {analysis.recommendations.map((rec, index) => (
                   <li key={index} className="text-sm">• {rec}</li>
@@ -378,7 +375,7 @@ const EnglishGamePage = ({ onBack }) => {
                   onClick={nextLevel}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105"
                 >
-                  Next Level →
+                  ඊළඟ මට්ටම →
                 </button>
               )}
               
@@ -386,14 +383,14 @@ const EnglishGamePage = ({ onBack }) => {
                 onClick={restartGame}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105"
               >
-                🔄 Restart
+                🔄 නැවත ආරම්භ කරන්න
               </button>
               
               <button
                 onClick={onBack}
                 className="bg-white text-blue-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105"
               >
-                ← Go Back
+                ← ආපසු යන්න
               </button>
             </div>
           </div>
@@ -410,11 +407,11 @@ const EnglishGamePage = ({ onBack }) => {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div className="text-left">
-            <div className="text-lg font-bold">Level {currentLevel}</div>
-            <div className="text-sm opacity-80">Question {currentQuestion + 1}/{totalQuestions}</div>
+            <div className="text-lg font-bold">මට්ටම {currentLevel}</div>
+            <div className="text-sm opacity-80">ප්‍රශ්නය {currentQuestion + 1}/{totalQuestions}</div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold">Score: {score}</div>
+            <div className="text-lg font-bold">ලකුණු: {score}</div>
             <div className={`text-2xl font-bold ${timeLeft <= 5 ? 'text-red-300 animate-pulse' : ''}`}>
               ⏰ {timeLeft}
             </div>
@@ -431,49 +428,69 @@ const EnglishGamePage = ({ onBack }) => {
 
         {/* Question */}
         <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 mb-8">
-          <h2 className="text-3xl font-bold mb-8">Which is larger?</h2>
+          <h2 className="text-3xl font-bold mb-8">කුමන එක විශාලද?</h2>
           
           {/* Numbers/Expressions Display */}
           <div className="flex justify-center items-center gap-16 mb-12">
-            {/* Left Number */}
-            <div className="bg-white rounded-3xl w-64 h-48 flex items-center justify-center shadow-2xl transform hover:scale-105 transition-all duration-300">
-              <div className="text-blue-800">
-                {getNumberDisplay(currentQ.left, currentQ.type === 'expressions')}
-              </div>
-            </div>
-            
-            <div className="text-6xl font-bold animate-pulse">VS</div>
-            
-            {/* Right Number */}
-            <div className="bg-white rounded-3xl w-64 h-48 flex items-center justify-center shadow-2xl transform hover:scale-105 transition-all duration-300">
-              <div className="text-blue-800">
-                {getNumberDisplay(currentQ.right, currentQ.type === 'expressions')}
-              </div>
-            </div>
-          </div>
-
-          {/* Answer Buttons */}
-          <div className="flex gap-8 justify-center">
+            {/* Left Number - Clickable */}
             <button
               onClick={() => handleAnswer('left')}
               disabled={selectedAnswer || showResult}
-              className={`px-8 py-4 rounded-full font-bold text-xl transition-all duration-300 shadow-lg transform hover:scale-110 ${
+              className={`bg-white rounded-3xl w-64 h-48 flex items-center justify-center shadow-2xl transition-all duration-300 ${
+                selectedAnswer || showResult ? 'cursor-not-allowed' : 'transform hover:scale-110 hover:shadow-3xl cursor-pointer'
+              } ${
                 showResult && currentQ.correct === 'left'
-                  ? 'bg-green-500 text-white animate-bounce'
+                  ? 'bg-green-400 animate-bounce'
                   : showResult && selectedAnswer === 'left' && currentQ.correct !== 'left'
-                  ? 'bg-red-500 text-white'
+                  ? 'bg-red-400'
                   : selectedAnswer === 'left'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-blue-600 hover:bg-gray-100'
-              } ${selectedAnswer || showResult ? 'cursor-not-allowed' : ''}`}
+                  ? 'bg-blue-400'
+                  : 'bg-white hover:bg-gray-100'
+              }`}
             >
-              ← Left
+              <div className={`${
+                showResult && currentQ.correct === 'left' ? 'text-white' :
+                showResult && selectedAnswer === 'left' && currentQ.correct !== 'left' ? 'text-white' :
+                selectedAnswer === 'left' ? 'text-white' : 'text-blue-800'
+              }`}>
+                {getNumberDisplay(currentQ.left, currentQ.type === 'expressions')}
+              </div>
             </button>
             
+            <div className="text-6xl font-bold animate-pulse">VS</div>
+            
+            {/* Right Number - Clickable */}
+            <button
+              onClick={() => handleAnswer('right')}
+              disabled={selectedAnswer || showResult}
+              className={`bg-white rounded-3xl w-64 h-48 flex items-center justify-center shadow-2xl transition-all duration-300 ${
+                selectedAnswer || showResult ? 'cursor-not-allowed' : 'transform hover:scale-110 hover:shadow-3xl cursor-pointer'
+              } ${
+                showResult && currentQ.correct === 'right'
+                  ? 'bg-green-400 animate-bounce'
+                  : showResult && selectedAnswer === 'right' && currentQ.correct !== 'right'
+                  ? 'bg-red-400'
+                  : selectedAnswer === 'right'
+                  ? 'bg-blue-400'
+                  : 'bg-white hover:bg-gray-100'
+              }`}
+            >
+              <div className={`${
+                showResult && currentQ.correct === 'right' ? 'text-white' :
+                showResult && selectedAnswer === 'right' && currentQ.correct !== 'right' ? 'text-white' :
+                selectedAnswer === 'right' ? 'text-white' : 'text-blue-800'
+              }`}>
+                {getNumberDisplay(currentQ.right, currentQ.type === 'expressions')}
+              </div>
+            </button>
+          </div>
+
+          {/* Same Button */}
+          <div className="flex justify-center mb-8">
             <button
               onClick={() => handleAnswer('same')}
               disabled={selectedAnswer || showResult}
-              className={`px-8 py-4 rounded-full font-bold text-xl transition-all duration-300 shadow-lg transform hover:scale-110 ${
+              className={`px-12 py-6 rounded-full font-bold text-2xl transition-all duration-300 shadow-lg transform hover:scale-110 ${
                 showResult && currentQ.correct === 'same'
                   ? 'bg-green-500 text-white animate-bounce'
                   : showResult && selectedAnswer === 'same' && currentQ.correct !== 'same'
@@ -483,23 +500,7 @@ const EnglishGamePage = ({ onBack }) => {
                   : 'bg-white text-blue-600 hover:bg-gray-100'
               } ${selectedAnswer || showResult ? 'cursor-not-allowed' : ''}`}
             >
-              = Same
-            </button>
-            
-            <button
-              onClick={() => handleAnswer('right')}
-              disabled={selectedAnswer || showResult}
-              className={`px-8 py-4 rounded-full font-bold text-xl transition-all duration-300 shadow-lg transform hover:scale-110 ${
-                showResult && currentQ.correct === 'right'
-                  ? 'bg-green-500 text-white animate-bounce'
-                  : showResult && selectedAnswer === 'right' && currentQ.correct !== 'right'
-                  ? 'bg-red-500 text-white'
-                  : selectedAnswer === 'right'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-blue-600 hover:bg-gray-100'
-              } ${selectedAnswer || showResult ? 'cursor-not-allowed' : ''}`}
-            >
-              Right →
+              = සමාන
             </button>
           </div>
 
@@ -509,10 +510,13 @@ const EnglishGamePage = ({ onBack }) => {
               <div className={`text-2xl font-bold mb-3 ${
                 selectedAnswer === currentQ.correct ? 'text-green-300' : 'text-red-300'
               }`}>
-                {selectedAnswer === currentQ.correct ? '🎉 Correct!' : '❌ Incorrect!'}
+                {selectedAnswer === currentQ.correct ? '🎉 නිවැරදියි!' : '❌ වැරදියි!'}
               </div>
               <div className="text-lg">
-                Correct answer: <span className="font-bold capitalize">{currentQ.correct}</span>
+                නිවැරදි පිළිතුර: <span className="font-bold">
+                  {currentQ.correct === 'left' ? 'වම්' : 
+                   currentQ.correct === 'right' ? 'දකුණ' : 'සමාන'}
+                </span>
               </div>
               {currentQ.type === 'expressions' && (
                 <div className="text-sm opacity-80 mt-2">
@@ -525,7 +529,7 @@ const EnglishGamePage = ({ onBack }) => {
 
         {/* Instructions */}
         <div className="text-sm opacity-80">
-          Compare the numbers and choose which is larger, or select "Same" if they're equal
+          සංඛ්‍යා සංසන්දනය කර විශාල එක ක්ලික් කරන්න, හෝ සමාන නම් "සමාන" තෝරන්න
         </div>
       </div>
     </div>
