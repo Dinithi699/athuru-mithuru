@@ -11,7 +11,7 @@ const HomePage = ({ onLogout, user }) => {
   const planets = [
     {
       id: 'math',
-      name: 'තරු රටා',
+      name: 'අකුරු මාරු',
       color: '#FF6B6B',
       size: 'w-20 h-20',
       orbitRadius: 200,
@@ -21,7 +21,7 @@ const HomePage = ({ onLogout, user }) => {
     },
     {
       id: 'sinhala',
-      name: 'පැන්සල් ඉරි',
+      name: 'තරු රටා',
       color: '#4ECDC4',
       size: 'w-24 h-24',
       orbitRadius: 320,
@@ -31,7 +31,7 @@ const HomePage = ({ onLogout, user }) => {
     },
     {
       id: 'english',
-      name: 'නිධානය',
+      name: 'ලොකු පොඩි',
       color: '#B2B7D1',
       size: 'w-24 h-24',
       orbitRadius: 120,
@@ -41,7 +41,7 @@ const HomePage = ({ onLogout, user }) => {
     },
     {
       id: 'science',
-      name: 'ශබ්දකෝෂය',
+      name: 'හෝඩිපොත',
       color: '#F9CA24',
       size: 'w-28 h-28',
       orbitRadius: 420,

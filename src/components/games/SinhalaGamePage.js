@@ -5,8 +5,8 @@ const SinhalaGamePage = ({ onBack }) => {
     <div className="min-h-screen bg-gradient-to-b from-teal-900 via-teal-700 to-teal-500 flex items-center justify-center">
       <div className="text-center text-white">
         <div className="text-8xl mb-8">✍🏻</div>
-        <h1 className="text-5xl font-bold mb-8">පැන්සල් ඉරි ග්‍රහලෝකය</h1>
-        <p className="text-2xl mb-12">පැන්සල් ඉරි ක්‍රීඩා මෙහි නිර්මාණය වනු ඇත</p>
+        <h1 className="text-5xl font-bold mb-8">තරු රටා ග්‍රහලෝකය</h1>
+        <p className="text-2xl mb-12">තරු රටා ක්‍රීඩා මෙහි නිර්මාණය වනු ඇත</p>
 
         
         <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 max-w-md mx-auto">
