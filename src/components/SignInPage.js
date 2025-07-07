@@ -7,42 +7,40 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear error when user starts typing
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
-      alert('කරුණාකර සියලු ක්ෂේත්‍ර පුරවන්න');
+      setError('කරුණාකර සියලු ක්ෂේත්‍ර පුරවන්න');
       return;
     }
     
     setLoading(true);
+    setError('');
     
     try {
-      console.log('Starting sign-in process for:', formData.email);
       const result = await signInUser(formData.email, formData.password);
       
-      console.log('Sign-in result:', result);
-      
       if (result.success) {
-        console.log('Sign-in successful, calling onSignin with user:', result.user);
-        alert('ඇතුල්වීම සාර්ථකයි!');
+        console.log('Sign-in successful');
         onSignin(result.user);
       } else {
         // Handle specific Firebase errors
         let errorMessage = 'ඇතුල්වීම අසාර්ථකයි';
         
-        console.error('Sign-in failed:', result.error);
-        
-        if (result.error.includes('client is offline') || result.error.includes('network-request-failed')) {
-          errorMessage = 'ජාල සම්බන්ධතාවයේ ගැටලුවක්. කරුණාකර ඔබේ අන්තර්ජාල සම්බන්ධතාවය පරීක්ෂා කරන්න.';
+        if (result.error.includes('network-request-failed')) {
+          errorMessage = 'ජාල සම්බන්ධතාවයේ ගැටලුවක්. කරුණාකර නැවත උත්සාහ කරන්න.';
         } else if (result.error.includes('user-not-found')) {
           errorMessage = 'පරිශීලකයා සොයාගත නොහැක. කරුණාකර ලියාපදිංචි වන්න.';
         } else if (result.error.includes('wrong-password') || result.error.includes('invalid-credential')) {
@@ -51,15 +49,13 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
           errorMessage = 'වලංගු නොවන විද්‍යුත් තැපෑල';
         } else if (result.error.includes('too-many-requests')) {
           errorMessage = 'ඉතා වැඩි උත්සාහයන්. කරුණාකර පසුව උත්සාහ කරන්න';
-        } else if (result.error.includes('user-disabled')) {
-          errorMessage = 'මෙම ගිණුම අක්‍රිය කර ඇත';
         }
         
-        alert(errorMessage + '\n\nදෝෂය: ' + result.error);
+        setError(errorMessage);
       }
     } catch (error) {
       console.error('Unexpected error during sign-in:', error);
-      alert('අනපේක්ෂිත දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න\n\nදෝෂය: ' + error.message);
+      setError('අනපේක්ෂිත දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න');
     }
     
     setLoading(false);
@@ -77,6 +73,12 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
           <div className="space-y-2">
             <br></br><br></br><br></br>
             
+            {error && (
+              <div className="bg-red-500/80 text-white p-3 rounded-lg text-center mb-4">
+                {error}
+              </div>
+            )}
+            
             <div>
               <input
                 type="email"
@@ -87,6 +89,7 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
             
@@ -100,6 +103,7 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
                 disabled={loading}
+                autoComplete="current-password"
               />
             </div>
             

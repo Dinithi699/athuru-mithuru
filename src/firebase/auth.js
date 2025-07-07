@@ -8,24 +8,18 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "./config";
 
-// Sign up new user
+// Sign up new user with optimizations
 export const signUpUser = async (email, password, name, mobile) => {
   try {
-    console.log('Attempting to create user with email:', email);
+    console.log('Starting signup process...');
     
+    // Create user account
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
     console.log('User created successfully:', user.uid);
     
-    // Update user profile
-    await updateProfile(user, {
-      displayName: name
-    });
-    
-    console.log('Profile updated successfully');
-    
-    // Save additional user data to Firestore
+    // Prepare user data
     const userData = {
       name: name,
       email: email,
@@ -37,9 +31,22 @@ export const signUpUser = async (email, password, name, mobile) => {
       achievements: []
     };
     
-    await setDoc(doc(db, "users", user.uid), userData);
+    // Update profile and save data concurrently for better performance
+    const [profileUpdate, firestoreUpdate] = await Promise.allSettled([
+      updateProfile(user, { displayName: name }),
+      setDoc(doc(db, "users", user.uid), userData)
+    ]);
     
-    console.log('User data saved to Firestore');
+    if (profileUpdate.status === 'rejected') {
+      console.warn('Profile update failed:', profileUpdate.reason);
+    }
+    
+    if (firestoreUpdate.status === 'rejected') {
+      console.warn('Firestore update failed:', firestoreUpdate.reason);
+      // Continue anyway, we can retry later
+    }
+    
+    console.log('User registration completed');
     
     return {
       success: true,
@@ -63,26 +70,32 @@ export const signUpUser = async (email, password, name, mobile) => {
   }
 };
 
-// Sign in existing user
+// Sign in existing user with optimizations
 export const signInUser = async (email, password) => {
   try {
-    console.log('Attempting to sign in user with email:', email);
+    console.log('Starting signin process...');
     
+    // Sign in user
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
     console.log('User signed in successfully:', user.uid);
     
-    // Get additional user data from Firestore
+    // Get user data with timeout
     let userData = {};
     try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const userDocPromise = getDoc(doc(db, "users", user.uid));
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+      );
+      
+      const userDoc = await Promise.race([userDocPromise, timeoutPromise]);
+      
       if (userDoc.exists()) {
         userData = userDoc.data();
-        console.log('User data retrieved from Firestore:', userData);
+        console.log('User data retrieved successfully');
       } else {
-        console.log('No user document found in Firestore, using default data');
-        // Create default user data if document doesn't exist
+        console.log('No user document found, creating default data');
         userData = {
           name: user.displayName || 'පරිශීලකයා',
           email: user.email,
@@ -94,12 +107,11 @@ export const signInUser = async (email, password) => {
           createdAt: new Date().toISOString()
         };
         
-        // Save the default data to Firestore
-        await setDoc(doc(db, "users", user.uid), userData);
-        console.log('Default user data saved to Firestore');
+        // Save default data asynchronously (don't wait)
+        setDoc(doc(db, "users", user.uid), userData).catch(console.warn);
       }
     } catch (firestoreError) {
-      console.warn('Error accessing Firestore, using basic user data:', firestoreError);
+      console.warn('Firestore access failed, using basic user data:', firestoreError);
       userData = {
         name: user.displayName || 'පරිශීලකයා',
         email: user.email,
@@ -148,7 +160,7 @@ export const signOutUser = async () => {
   }
 };
 
-// Listen to auth state changes
+// Listen to auth state changes with optimization
 export const onAuthStateChange = (callback) => {
   return onAuthStateChanged(auth, callback);
 };

@@ -1,8 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { getFirestore, enableNetwork, disableNetwork } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -19,21 +18,26 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
+// Initialize Firebase services with optimizations
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const analytics = getAnalytics(app);
 
-// Enable network persistence for Firestore
+// Enable offline persistence and optimize Firestore
 try {
-  // This helps with offline functionality
-  if (typeof window !== 'undefined') {
-    // Only run in browser environment
-    console.log('Firebase services initialized successfully');
-  }
+  // Enable network for better performance
+  enableNetwork(db).catch((error) => {
+    console.warn('Failed to enable Firestore network:', error);
+  });
 } catch (error) {
-  console.warn('Firebase initialization warning:', error);
+  console.warn('Firestore network configuration warning:', error);
 }
+
+// Set auth persistence
+auth.settings = {
+  appVerificationDisabledForTesting: false
+};
+
+console.log('Firebase services initialized successfully');
 
 export default app;

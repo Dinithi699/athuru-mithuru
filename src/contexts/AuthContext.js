@@ -17,19 +17,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+    
     const unsubscribe = onAuthStateChange(async (firebaseUser) => {
-      if (firebaseUser) {
-        // Get additional user data from Firestore
-        const userData = await getUserData(firebaseUser.uid);
-        
-        if (userData.success) {
-          setUser({
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            ...userData.data
-          });
-        } else {
-          setUser({
+      if (!mounted) return;
+      
+      try {
+        if (firebaseUser) {
+          console.log('Auth state changed: User logged in');
+          
+          // Set basic user data immediately
+          const basicUserData = {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             name: firebaseUser.displayName || 'පරිශීලකයා',
@@ -37,15 +35,62 @@ export const AuthProvider = ({ children }) => {
             points: 0,
             completedGames: 0,
             achievements: []
-          });
+          };
+          
+          if (mounted) {
+            setUser(basicUserData);
+            setLoading(false);
+          }
+          
+          // Get additional user data asynchronously
+          try {
+            const userData = await Promise.race([
+              getUserData(firebaseUser.uid),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 3000)
+              )
+            ]);
+            
+            if (mounted && userData.success) {
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                ...userData.data
+              });
+            }
+          } catch (error) {
+            console.warn('Failed to load additional user data:', error);
+            // Continue with basic data
+          }
+        } else {
+          console.log('Auth state changed: User logged out');
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+          }
         }
-      } else {
-        setUser(null);
+      } catch (error) {
+        console.error('Auth state change error:', error);
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    // Set a maximum loading time
+    const loadingTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth loading timeout, proceeding without user');
+        setLoading(false);
+      }
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      clearTimeout(loadingTimeout);
+      unsubscribe();
+    };
   }, []);
 
   const value = {
@@ -56,7 +101,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

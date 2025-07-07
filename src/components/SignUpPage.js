@@ -10,66 +10,71 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear error when user starts typing
+    if (error) setError('');
+  };
+
+  const validateForm = () => {
+    if (!formData.name || !formData.email || !formData.mobile || !formData.password || !formData.confirmPassword) {
+      setError('කරුණාකර සියලු ක්ෂේත්‍ර පුරවන්න');
+      return false;
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('මුර පද නොගැලපේ');
+      return false;
+    }
+
+    if (formData.password.length < 6) {
+      setError('මුර පදය අවම වශයෙන් අක්ෂර 6ක් විය යුතුය');
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.mobile || !formData.password || !formData.confirmPassword) {
-      alert('කරුණාකර සියලු ක්ෂේත්‍ර පුරවන්න');
-      return;
-    }
-    
-    if (formData.password !== formData.confirmPassword) {
-      alert('මුර පද නොගැලපේ');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      alert('මුර පදය අවම වශයෙන් අක්ෂර 6ක් විය යුතුය');
+    if (!validateForm()) {
       return;
     }
     
     setLoading(true);
+    setError('');
     
     try {
-      console.log('Starting signup process...');
       const result = await signUpUser(formData.email, formData.password, formData.name, formData.mobile);
       
-      console.log('Signup result:', result);
-      
       if (result.success) {
-        alert('ලියාපදිංචිය සාර්ථකයි!');
+        console.log('Signup successful');
         onSignup(result.user);
       } else {
         // Handle specific Firebase errors
         let errorMessage = 'ලියාපදිංචිය අසාර්ථකයි';
         
-        console.error('Signup failed:', result.error);
-        
-        if (result.error.includes('auth/email-already-in-use')) {
+        if (result.error.includes('email-already-in-use')) {
           errorMessage = 'මෙම විද්‍යුත් තැපෑල දැනටමත් භාවිතයේ ඇත';
-        } else if (result.error.includes('auth/weak-password')) {
+        } else if (result.error.includes('weak-password')) {
           errorMessage = 'මුර පදය ඉතා දුර්වලයි';
-        } else if (result.error.includes('auth/invalid-email')) {
+        } else if (result.error.includes('invalid-email')) {
           errorMessage = 'වලංගු නොවන විද්‍යුත් තැපෑල';
-        } else if (result.error.includes('auth/operation-not-allowed')) {
-          errorMessage = 'ලියාපදිංචිය සක්‍රිය කර නැත. කරුණාකර පරිපාලකයා සම්බන්ධ කරගන්න';
-        } else if (result.error.includes('auth/network-request-failed')) {
+        } else if (result.error.includes('network-request-failed')) {
           errorMessage = 'ජාල සම්බන්ධතා ගැටලුවක්. කරුණාකර නැවත උත්සාහ කරන්න';
         }
         
-        alert(errorMessage + '\n\nදෝෂය: ' + result.error);
+        setError(errorMessage);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
-      alert('අනපේක්ෂිත දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න\n\nදෝෂය: ' + error.message);
+      setError('අනපේක්ෂිත දෝෂයක් ඇතිවිය. කරුණාකර නැවත උත්සාහ කරන්න');
     }
     
     setLoading(false);
@@ -87,6 +92,12 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
           <div className="space-y-2">
             <br></br><br></br><br></br>
             
+            {error && (
+              <div className="bg-red-500/80 text-white p-3 rounded-lg text-center mb-4">
+                {error}
+              </div>
+            )}
+            
             <div>
               <input
                 type="text"
@@ -97,6 +108,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
                 disabled={loading}
+                autoComplete="name"
               />
             </div>
             
@@ -110,6 +122,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
             
@@ -123,6 +136,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
                 disabled={loading}
+                autoComplete="tel"
               />
             </div>
             
@@ -137,6 +151,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 required
                 disabled={loading}
                 minLength={6}
+                autoComplete="new-password"
               />
             </div>
             
@@ -150,6 +165,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
                 required
                 disabled={loading}
+                autoComplete="new-password"
               />
             </div>
             
