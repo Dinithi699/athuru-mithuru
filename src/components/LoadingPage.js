@@ -55,7 +55,7 @@ const LoadingPage = ({ onLoadComplete }) => {
     >
       <div className="text-center relative z-10 w-full max-w-sm">
         {/* Responsive spacing */}
-        <div className="h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64"></div>
+        <div className="h-32 sm:h-40 md:h-48 lg:h-72 xl:h-96"></div>
         
         <div className="w-full px-4">          
           <div className="w-full h-3 sm:h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
