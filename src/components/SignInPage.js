@@ -65,16 +65,28 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
     <div 
       className="min-h-screen w-full bg-cover bg-center bg-no-repeat flex items-center justify-center p-4"
       style={{
-        backgroundImage: 'url("images/Login bg.png")',
+        backgroundImage: 'url("images/Login-bg.png")',
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }}
     >
+      <div className="relative flex items-center justify-center min-h-screen p-4" style={{ zIndex: 5 }}>
+        <div className="w-full max-w-md">
+          {/* Glassmorphism Container */}
+          <div className="h-[500px] w-[500px] backdrop-blur-xl bg-white/10 border border-white/20 rounded-3xl shadow-2xl p-8 relative overflow-hidden flex flex-col justify-center">
+            {/* Subtle gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-purple-500/5 rounded-3xl pointer-events-none" />
+            
       <div className="w-full max-w-sm sm:max-w-md">
-        <form onSubmit={handleSubmit} className="px-4 sm:px-8 py-8 sm:py-12">
-          <div className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-8 py-4 sm:py-12">
+          <div className="space-y-4 sm:space-y-4">
+            <div className="text-center mt-2 mb-10">
+              <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">
+               ඇතුල් වෙන්න
+              </h1>
+            </div>
             {/* Responsive spacing */}
-            <div className="h-16 sm:h-24 md:h-32 lg:h-40"></div>
+            {/* <div className="h-16 sm:h-24 md:h-32 lg:h-40"></div> */}
             
             {error && (
               <div className="bg-red-500/90 text-white p-3 rounded-lg text-center mb-4 text-sm sm:text-base">
@@ -136,6 +148,9 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
           </div>
         </form>
       </div>
+    </div>
+    </div>
+    </div>
     </div>
   );
 };
