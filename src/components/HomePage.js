@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import MathGamePage from './games/MathGamePage';
-import SinhalaGamePage from './games/SinhalaGamePage';
-import EnglishGamePage from './games/EnglishGamePage';
-import ScienceGamePage from './games/ScienceGamePage';
+import DysgraphiaGamePage from './games/DysgraphiaGamePage';
+import DyspraxiaGamePage from './games/DyspraxiaGamePage';
+import DyscalculiaGamePage from './games/DyscalculiaGamePage';
+import DyslexiaGamePage from './games/DyslexiaGamePage';
 import ProfilePage from './ProfilePage';
 
 const HomePage = ({ onLogout, user }) => {
@@ -10,43 +10,43 @@ const HomePage = ({ onLogout, user }) => {
 
   const planets = [
     {
-      id: 'math',
+      id: 'Dysgraphia',
       name: 'අකුරු මාරු',
       color: '#FF6B6B',
       size: 'w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24',
       orbitRadius: { mobile: 80, tablet: 120, desktop: 200 },
       orbitSpeed: 20,
-      page: 'math',
+      page: 'Dysgraphia',
       ringColor: '#FF9999'
     },
     {
-      id: 'sinhala',
+      id: 'Dyspraxia',
       name: 'තරු රටා',
       color: '#4ECDC4',
       size: 'w-18 h-18 sm:w-24 sm:h-24 lg:w-28 lg:h-28',
       orbitRadius: { mobile: 140, tablet: 200, desktop: 320 },
       orbitSpeed: 15,
-      page: 'sinhala',
+      page: 'Dyspraxia',
       ringColor: '#7EEEE6'
     },
     {
-      id: 'english',
+      id: 'Dyscalculia',
       name: 'ලොකු පොඩි',
       color: '#B2B7D1',
       size: 'w-18 h-18 sm:w-24 sm:h-24 lg:w-28 lg:h-28',
       orbitRadius: { mobile: 60, tablet: 80, desktop: 120 },
       orbitSpeed: 25,
-      page: 'english',
+      page: 'Dyscalculia',
       ringColor: '#78C5E8'
     },
     {
-      id: 'science',
+      id: 'Dyslexia',
       name: 'හෝඩිපොත',
       color: '#F9CA24',
       size: 'w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32',
       orbitRadius: { mobile: 180, tablet: 280, desktop: 420 },
       orbitSpeed: 12,
-      page: 'science',
+      page: 'Dyslexia',
       ringColor: '#FDD757'
     }
   ];
@@ -57,14 +57,14 @@ const HomePage = ({ onLogout, user }) => {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'math':
-        return <MathGamePage onBack={() => setCurrentPage('home')} />;
-      case 'sinhala':
-        return <SinhalaGamePage onBack={() => setCurrentPage('home')} />;
-      case 'english':
-        return <EnglishGamePage onBack={() => setCurrentPage('home')} />;
-      case 'science':
-        return <ScienceGamePage onBack={() => setCurrentPage('home')} />;
+      case 'Dysgraphia':
+        return <DysgraphiaGamePage onBack={() => setCurrentPage('home')} />;
+      case 'Dyspraxia':
+        return <DyspraxiaGamePage onBack={() => setCurrentPage('home')} />;
+      case 'Dyscalculia':
+        return <DyscalculiaGamePage onBack={() => setCurrentPage('home')} />;
+      case 'Dyslexia':
+        return <DyslexiaGamePage onBack={() => setCurrentPage('home')} />;
       case 'profile':
         return <ProfilePage onBack={() => setCurrentPage('home')} user={user} />;
       default:
@@ -294,17 +294,17 @@ const HomePage = ({ onLogout, user }) => {
           100% { transform: translate(-50%, -50%) rotate(360deg) translateX(80px) rotate(-360deg); }
         }
         
-        @keyframes horizontalOrbit-sinhala {
+        @keyframes horizontalOrbit-Dyspraxia {
           0% { transform: translate(-50%, -50%) rotate(0deg) translateX(140px) rotate(0deg); }
           100% { transform: translate(-50%, -50%) rotate(360deg) translateX(140px) rotate(-360deg); }
         }
         
-        @keyframes horizontalOrbit-english {
+        @keyframes horizontalOrbit-Dyscalculia {
           0% { transform: translate(-50%, -50%) rotate(0deg) translateX(60px) rotate(0deg); }
           100% { transform: translate(-50%, -50%) rotate(360deg) translateX(60px) rotate(-360deg); }
         }
         
-        @keyframes horizontalOrbit-science {
+        @keyframes horizontalOrbit-Dyslexia {
           0% { transform: translate(-50%, -50%) rotate(0deg) translateX(180px) rotate(0deg); }
           100% { transform: translate(-50%, -50%) rotate(360deg) translateX(180px) rotate(-360deg); }
         }
@@ -316,17 +316,17 @@ const HomePage = ({ onLogout, user }) => {
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(120px) rotate(-360deg); }
           }
           
-          @keyframes horizontalOrbit-sinhala {
+          @keyframes horizontalOrbit-Dyspraxia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(200px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(200px) rotate(-360deg); }
           }
           
-          @keyframes horizontalOrbit-english {
+          @keyframes horizontalOrbit-Dyscalculia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(80px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(80px) rotate(-360deg); }
           }
           
-          @keyframes horizontalOrbit-science {
+          @keyframes horizontalOrbit-Dyslexia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(280px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(280px) rotate(-360deg); }
           }
@@ -339,17 +339,17 @@ const HomePage = ({ onLogout, user }) => {
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(200px) rotate(-360deg); }
           }
           
-          @keyframes horizontalOrbit-sinhala {
+          @keyframes horizontalOrbit-Dyspraxia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(320px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(320px) rotate(-360deg); }
           }
           
-          @keyframes horizontalOrbit-english {
+          @keyframes horizontalOrbit-Dyscalculia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(120px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(120px) rotate(-360deg); }
           }
           
-          @keyframes horizontalOrbit-science {
+          @keyframes horizontalOrbit-Dyslexia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(420px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(420px) rotate(-360deg); }
           }

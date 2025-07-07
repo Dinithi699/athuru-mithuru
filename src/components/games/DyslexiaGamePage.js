@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const ScienceGamePage = ({ onBack }) => {
+const DyslexiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -349,7 +349,7 @@ const ScienceGamePage = ({ onBack }) => {
                   : 'bg-white text-yellow-600 hover:bg-gray-100'
               } ${selectedAnswer || showResult ? 'cursor-not-allowed' : 'hover:scale-105'}`}
             >
-              සමාන
+              සමාන ✔️
             </button>
             
             <button
@@ -365,7 +365,7 @@ const ScienceGamePage = ({ onBack }) => {
                   : 'bg-white text-yellow-600 hover:bg-gray-100'
               } ${selectedAnswer || showResult ? 'cursor-not-allowed' : 'hover:scale-105'}`}
             >
-              වෙනස්
+              වෙනස් ❌
             </button>
           </div>
 
@@ -394,4 +394,4 @@ const ScienceGamePage = ({ onBack }) => {
   );
 };
 
-export default ScienceGamePage;
+export default DyslexiaGamePage;

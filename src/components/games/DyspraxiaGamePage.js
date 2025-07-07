@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const SinhalaGamePage = ({ onBack }) => {
+const DyspraxiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentStar, setCurrentStar] = useState(0);
   const [score, setScore] = useState(0);
@@ -632,4 +632,4 @@ const SinhalaGamePage = ({ onBack }) => {
   );
 };
 
-export default SinhalaGamePage;
+export default DyspraxiaGamePage;

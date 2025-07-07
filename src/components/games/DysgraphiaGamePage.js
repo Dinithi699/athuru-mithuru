@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const MathGamePage = ({ onBack }) => {
+const DysgraphiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -708,4 +708,4 @@ const MathGamePage = ({ onBack }) => {
   );
 };
 
-export default MathGamePage;
+export default DysgraphiaGamePage;
