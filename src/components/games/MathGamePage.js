@@ -458,7 +458,6 @@ const MathGamePage = ({ onBack }) => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-700 to-red-500 flex items-center justify-center p-4">
         <div className="text-center text-white max-w-2xl w-full">
-          <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8 animate-bounce">✍️</div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">වචන අකුරු සැකසීම</h1>
           <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 px-4">පින්තූරය බලා, ශබ්දය අසා, අකුරු ඇදගෙන වචනය සාදන්න!</p>
           

@@ -375,7 +375,6 @@ const SinhalaGamePage = ({ onBack }) => {
 
         <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
           <div className="text-center text-white max-w-2xl w-full">
-            <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8 animate-bounce">⭐</div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">තරු රටා ක්‍රීඩාව</h1>
             <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 px-4">දිලිසෙන තරු ක්ලික් කර ඔබේ ප්‍රතික්‍රියා වේගය පරීක්ෂා කරන්න!</p>
             
@@ -595,7 +594,7 @@ const SinhalaGamePage = ({ onBack }) => {
             style={{
               left: `${Math.min(Math.max(position.x, 40), window.innerWidth - 40)}px`,
               top: `${Math.min(Math.max(position.y, 100), window.innerHeight - 100)}px`,
-              fontSize: index === activeStarIndex && isFlashing ? '3rem' : '2rem',
+              fontSize: index === activeStarIndex && isFlashing ? '5rem' : '3.5rem',
               filter: index === activeStarIndex && isFlashing 
                 ? 'drop-shadow(0 0 20px #fbbf24) drop-shadow(0 0 40px #f59e0b)' 
                 : 'none',
@@ -625,8 +624,8 @@ const SinhalaGamePage = ({ onBack }) => {
 
       {/* Instructions */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center z-20">
-        <div className="text-xs sm:text-sm opacity-80 px-4">
-          දිලිසෙන තරුව ක්ලික් කරන්න - හැකි ඉක්මනින්!
+        <div className="text-xs sm:text-sm opacity-80 px-6">
+          දිලිසෙන තරුව හැකි ඉක්මනින් ක්ලික් කරන්න!
         </div>
       </div>
     </div>

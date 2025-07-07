@@ -179,7 +179,6 @@ const ScienceGamePage = ({ onBack }) => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-yellow-900 via-yellow-700 to-yellow-500 flex items-center justify-center p-4">
         <div className="text-center text-white max-w-2xl w-full">
-          <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8">🧠</div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">දෘශ්‍ය වෙනස්කම් ක්‍රීඩාව</h1>
           <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 px-4">අකුරු වල සමානකම් සහ වෙනස්කම් හඳුනාගන්න</p>
           
