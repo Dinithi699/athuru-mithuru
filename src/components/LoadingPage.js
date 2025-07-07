@@ -45,7 +45,7 @@ const LoadingPage = ({ onLoadComplete }) => {
 
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center"
+      className="fixed inset-0 flex items-center justify-center p-4"
       style={{
         backgroundImage: imageLoaded ? `url('/images/Loading bg.png')` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         backgroundSize: 'cover',
@@ -53,20 +53,20 @@ const LoadingPage = ({ onLoadComplete }) => {
         backgroundRepeat: 'no-repeat'
       }}
     >
-      <div className="text-center relative z-10">
-        <div className="flex-col items-center text-center"></div>
-        <br></br><br></br><br></br><br></br><br></br><br></br><br></br><br></br><br></br><br></br><br></br><br></br><br></br>
+      <div className="text-center relative z-10 w-full max-w-sm">
+        {/* Responsive spacing */}
+        <div className="h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64"></div>
         
-        <div className="w-96 max-w-sm">          
-          <div className="w-96 h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner justify-center items-center text-center">
+        <div className="w-full px-4">          
+          <div className="w-full h-3 sm:h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
             <div 
-              className="h-full bg-gradient-to-r from-teal-400 to-teal-600 transition-all duration-200 ease-out rounded-full justify-center"
+              className="h-full bg-gradient-to-r from-teal-400 to-teal-600 transition-all duration-200 ease-out rounded-full"
               style={{ width: `${progress}%` }}
             ></div>
           </div>
           
           {/* Loading text */}
-          <div className="mt-4 text-white text-lg font-semibold">
+          <div className="mt-3 sm:mt-4 text-white text-base sm:text-lg font-semibold">
             පූරණය වෙමින්... {progress}%
           </div>
         </div>

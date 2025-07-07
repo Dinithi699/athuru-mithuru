@@ -443,13 +443,13 @@ const MathGamePage = ({ onBack }) => {
         <img 
           src={currentQ.image} 
           alt={currentQ.description}
-          className="w-48 h-48 mx-auto mb-4 object-contain animate-pulse"
+          className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 mx-auto mb-3 sm:mb-4 object-contain animate-pulse"
           style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))' }}
         />
       );
     } else {
       return (
-        <div className="text-9xl mb-4 animate-pulse">{currentQ.image}</div>
+        <div className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl mb-3 sm:mb-4 animate-pulse">{currentQ.image}</div>
       );
     }
   };
@@ -457,33 +457,33 @@ const MathGamePage = ({ onBack }) => {
   if (!gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-700 to-red-500 flex items-center justify-center p-4">
-        <div className="text-center text-white max-w-2xl">
-          <div className="text-8xl mb-8 animate-bounce">✍️</div>
-          <h1 className="text-5xl font-bold mb-8">වචන අකුරු සැකසීම</h1>
-          <p className="text-2xl mb-8">පින්තූරය බලා, ශබ්දය අසා, අකුරු ඇදගෙන වචනය සාදන්න!</p>
+        <div className="text-center text-white max-w-2xl w-full">
+          <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8 animate-bounce">✍️</div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">වචන අකුරු සැකසීම</h1>
+          <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 px-4">පින්තූරය බලා, ශබ්දය අසා, අකුරු ඇදගෙන වචනය සාදන්න!</p>
           
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 mb-8">
-            <h2 className="text-3xl font-bold mb-6">මට්ටම {currentLevel}</h2>
-            <p className="text-xl mb-6">{getLevelDescription(currentLevel)}</p>
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">මට්ටම {currentLevel}</h2>
+            <p className="text-lg sm:text-xl mb-4 sm:mb-6">{getLevelDescription(currentLevel)}</p>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">වචන ගණන</div>
-                <div className="text-2xl font-bold">{totalQuestions}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">වචන ගණන</div>
+                <div className="text-xl sm:text-2xl font-bold">{totalQuestions}</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">වචනයකට කාලය</div>
-                <div className="text-2xl font-bold">60 තත්පර</div>
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">වචනයකට කාලය</div>
+                <div className="text-xl sm:text-2xl font-bold">60 තත්පර</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">අකුරු ගණන</div>
-                <div className="text-2xl font-bold">6</div>
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">අකුරු ගණන</div>
+                <div className="text-xl sm:text-2xl font-bold">6</div>
               </div>
             </div>
             
-            <div className="mb-6">
-              <h3 className="text-lg font-bold mb-3">ක්‍රීඩා කරන ආකාරය</h3>
-              <ul className="text-left space-y-2 max-w-md mx-auto">
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-bold mb-2 sm:mb-3">ක්‍රීඩා කරන ආකාරය</h3>
+              <ul className="text-left space-y-1 sm:space-y-2 max-w-md mx-auto text-sm sm:text-base">
                 <li>• පින්තූරය බලන්න සහ ශබ්දය අසන්න</li>
                 <li>• අකුරු වලින් නිවැරදි වචනය සාදන්න</li>
                 <li>• අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න</li>
@@ -495,7 +495,7 @@ const MathGamePage = ({ onBack }) => {
             
             <button
               onClick={startGame}
-              className="bg-white text-red-600 px-8 py-4 rounded-full font-bold text-xl hover:bg-gray-100 transition-all duration-300 shadow-lg transform hover:scale-105"
+              className="bg-white text-red-600 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-lg sm:text-xl hover:bg-gray-100 transition-all duration-300 shadow-lg transform hover:scale-105"
             >
               🚀 ක්‍රීඩාව ආරම්භ කරන්න
             </button>
@@ -503,7 +503,7 @@ const MathGamePage = ({ onBack }) => {
           
           <button
             onClick={onBack}
-            className="bg-white/20 text-white px-6 py-3 rounded-full font-bold hover:bg-white/30 transition-colors duration-300"
+            className="bg-white/20 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-white/30 transition-colors duration-300 text-sm sm:text-base"
           >
             ← ආපසු යන්න
           </button>
@@ -517,29 +517,29 @@ const MathGamePage = ({ onBack }) => {
     
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-700 to-red-500 flex items-center justify-center p-4">
-        <div className="text-center text-white max-w-3xl">
-          <div className="text-8xl mb-8">
+        <div className="text-center text-white max-w-3xl w-full">
+          <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8">
             {analysis.riskLevel === 'අඩු' ? '🎉' : analysis.riskLevel === 'මධ්‍යම' ? '⚠️' : '🔍'}
           </div>
-          <h1 className="text-5xl font-bold mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
           
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 mb-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">ලකුණු</div>
-                <div className="text-3xl font-bold">{score}/{totalQuestions}</div>
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">ලකුණු</div>
+                <div className="text-2xl sm:text-3xl font-bold">{score}/{totalQuestions}</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">නිරවද්‍යතාව</div>
-                <div className="text-3xl font-bold">{analysis.accuracy.toFixed(1)}%</div>
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">නිරවද්‍යතාව</div>
+                <div className="text-2xl sm:text-3xl font-bold">{analysis.accuracy.toFixed(1)}%</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">සාමාන්‍ය කාලය</div>
-                <div className="text-2xl font-bold">{analysis.averageTime.toFixed(1)}තත්</div>
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය කාලය</div>
+                <div className="text-lg sm:text-xl font-bold">{analysis.averageTime.toFixed(1)}තත්</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">අවදානම් මට්ටම</div>
-                <div className={`text-xl font-bold ${
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">අවදානම් මට්ටම</div>
+                <div className={`text-lg sm:text-xl font-bold ${
                   analysis.riskLevel === 'අඩු' ? 'text-green-300' : 
                   analysis.riskLevel === 'මධ්‍යම' ? 'text-yellow-300' : 'text-red-300'
                 }`}>
@@ -548,34 +548,34 @@ const MathGamePage = ({ onBack }) => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">සාමාන්‍ය ඇදගැනීමේ කාලය</div>
-                <div className="text-xl font-bold">{(analysis.averageDragTime / 1000).toFixed(1)}තත්</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය ඇදගැනීමේ කාලය</div>
+                <div className="text-lg sm:text-xl font-bold">{(analysis.averageDragTime / 1000).toFixed(1)}තත්</div>
               </div>
-              <div className="bg-white/10 rounded-lg p-4">
-                <div className="text-sm opacity-80">සාමාන්‍ය ඇදගැනීම් ගණන</div>
-                <div className="text-xl font-bold">{analysis.averageDragCount.toFixed(1)}</div>
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය ඇදගැනීම් ගණන</div>
+                <div className="text-lg sm:text-xl font-bold">{analysis.averageDragCount.toFixed(1)}</div>
               </div>
             </div>
             
-            <div className="mb-6 p-4 bg-white/10 rounded-lg text-left">
-              <h3 className="text-xl font-bold mb-3">ඩිස්ග්‍රැෆියා තක්සේරු විශ්ලේෂණය</h3>
-              <p className="text-lg mb-4">{analysis.analysis}</p>
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white/10 rounded-lg text-left">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">ඩිස්ග්‍රැෆියා තක්සේරු විශ්ලේෂණය</h3>
+              <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4">{analysis.analysis}</p>
               
-              <h4 className="text-lg font-bold mb-2">නිර්දේශ:</h4>
+              <h4 className="text-base sm:text-lg font-bold mb-2">නිර්දේශ:</h4>
               <ul className="space-y-1">
                 {analysis.recommendations.map((rec, index) => (
-                  <li key={index} className="text-sm">• {rec}</li>
+                  <li key={index} className="text-xs sm:text-sm">• {rec}</li>
                 ))}
               </ul>
             </div>
             
-            <div className="flex gap-4 justify-center flex-wrap">
+            <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
               {currentLevel < 3 && analysis.accuracy >= 40 && (
                 <button
                   onClick={nextLevel}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
                 >
                   ඊළඟ මට්ටම →
                 </button>
@@ -583,14 +583,14 @@ const MathGamePage = ({ onBack }) => {
               
               <button
                 onClick={restartGame}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
               >
                 🔄 නැවත ආරම්භ කරන්න
               </button>
               
               <button
                 onClick={onBack}
-                className="bg-white text-red-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105"
+                className="bg-white text-red-600 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
               >
                 ← ආපසු යන්න
               </button>
@@ -607,49 +607,49 @@ const MathGamePage = ({ onBack }) => {
     <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-700 to-red-500 flex items-center justify-center p-4">
       <div className="text-center text-white max-w-4xl w-full">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
           <div className="text-left">
-            <div className="text-lg font-bold">මට්ටම {currentLevel}</div>
-            <div className="text-sm opacity-80">වචනය {currentQuestion + 1}/{totalQuestions}</div>
+            <div className="text-sm sm:text-base md:text-lg font-bold">මට්ටම {currentLevel}</div>
+            <div className="text-xs sm:text-sm opacity-80">වචනය {currentQuestion + 1}/{totalQuestions}</div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold">ලකුණු: {score}</div>
-            <div className={`text-2xl font-bold ${timeLeft <= 10 ? 'text-red-300 animate-pulse' : ''}`}>
+            <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
+            <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 10 ? 'text-red-300 animate-pulse' : ''}`}>
               ⏰ {timeLeft}
             </div>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full bg-white/20 rounded-full h-3 mb-6">
+        <div className="w-full bg-white/20 rounded-full h-2 sm:h-3 mb-4 sm:mb-6">
           <div 
-            className="bg-white h-3 rounded-full transition-all duration-300"
+            className="bg-white h-2 sm:h-3 rounded-full transition-all duration-300"
             style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
           ></div>
         </div>
 
         {/* Game Area */}
-        <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 mb-6">
+        <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6">
           {/* Image and Audio */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             {renderImage(currentQ)}
-            <div className="text-2xl font-bold mb-2">{currentQ.description}</div>
+            <div className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3">{currentQ.description}</div>
             <button
               onClick={() => speakWord(currentQ.word)}
-              className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 flex items-center gap-2 mx-auto"
+              className="bg-white/20 hover:bg-white/30 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 flex items-center gap-2 mx-auto text-sm sm:text-base"
             >
               🔊 නැවත අසන්න
             </button>
           </div>
 
           {/* Word Slots */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold mb-4">වචනය සාදන්න:</h3>
-            <div className="flex justify-center gap-2 mb-6">
+          <div className="mb-6 sm:mb-8">
+            <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">වචනය සාදන්න:</h3>
+            <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 flex-wrap">
               {draggedLetters.map((letter, index) => (
                 <div
                   key={index}
-                  className="w-16 h-16 bg-white/30 border-2 border-white/50 rounded-lg flex items-center justify-center text-2xl font-bold cursor-pointer hover:bg-white/40 transition-colors duration-300"
+                  className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/30 border-2 border-white/50 rounded-lg flex items-center justify-center text-lg sm:text-xl md:text-2xl font-bold cursor-pointer hover:bg-white/40 transition-colors duration-300"
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, index)}
                   onClick={() => removeLetterFromSlot(index)}
@@ -661,16 +661,16 @@ const MathGamePage = ({ onBack }) => {
           </div>
 
           {/* Available Letters - Always 6 letters */}
-          <div className="mb-6">
-            <h3 className="text-lg font-bold mb-4">අකුරු (6):</h3>
-            <div className="flex justify-center gap-3">
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">අකුරු (6):</h3>
+            <div className="flex justify-center gap-2 sm:gap-3 flex-wrap">
               {availableLetters.map((letter) => (
                 <div
                   key={letter.id}
                   draggable={!letter.used}
                   onDragStart={(e) => handleDragStart(e, letter.id)}
                   onClick={() => handleLetterClick(letter.id)}
-                  className={`w-14 h-14 rounded-lg flex items-center justify-center text-xl font-bold cursor-pointer transition-all duration-300 transform hover:scale-110 ${
+                  className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center text-base sm:text-lg md:text-xl font-bold cursor-pointer transition-all duration-300 transform hover:scale-110 ${
                     letter.used 
                       ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50' 
                       : 'bg-white text-red-600 hover:bg-gray-100 shadow-lg'
@@ -684,16 +684,16 @@ const MathGamePage = ({ onBack }) => {
 
           {/* Result Display */}
           {showResult && (
-            <div className="mt-6 p-4 bg-white/10 rounded-lg">
-              <div className={`text-2xl font-bold mb-2 ${
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white/10 rounded-lg">
+              <div className={`text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 ${
                 responses[responses.length - 1]?.isCorrect ? 'text-green-300' : 'text-red-300'
               }`}>
                 {responses[responses.length - 1]?.isCorrect ? '🎉 නිවැරදියි! 🎵' : '❌ වැරදියි! 🎵'}
               </div>
-              <div className="text-lg">
+              <div className="text-sm sm:text-base md:text-lg">
                 ඔබේ පිළිතුර: <span className="font-bold">{responses[responses.length - 1]?.userAnswer}</span>
               </div>
-              <div className="text-lg">
+              <div className="text-sm sm:text-base md:text-lg">
                 නිවැරදි වචනය: <span className="font-bold">{currentQ.word}</span>
               </div>
             </div>
@@ -701,7 +701,7 @@ const MathGamePage = ({ onBack }) => {
         </div>
 
         {/* Instructions */}
-        <div className="text-sm opacity-80">
+        <div className="text-xs sm:text-sm opacity-80 px-4">
           අකුරු වලින් නිවැරදි වචනය සාදන්න. අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න.
         </div>
       </div>

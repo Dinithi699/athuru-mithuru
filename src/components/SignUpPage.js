@@ -84,16 +84,19 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
     <div 
       className="min-h-screen w-full bg-cover bg-center bg-no-repeat flex items-center justify-center p-4"
       style={{
-        backgroundImage: 'url("images/sign-up-test.png")'
+        backgroundImage: 'url("images/sign-up-test.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
       }}
     >
-      <div className="w-full max-w-md">
-        <form onSubmit={handleSubmit} className="px-8 py-12 mt-8">
-          <div className="space-y-2">
-            <br></br><br></br><br></br>
+      <div className="w-full max-w-sm sm:max-w-md">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-8 py-6 sm:py-8">
+          <div className="space-y-2.5 sm:space-y-3">
+            {/* Responsive spacing */}
+            <div className="h-12 sm:h-16 md:h-20 lg:h-24"></div>
             
             {error && (
-              <div className="bg-red-500/80 text-white p-3 rounded-lg text-center mb-4">
+              <div className="bg-red-500/90 text-white p-3 rounded-lg text-center mb-3 text-sm sm:text-base">
                 {error}
               </div>
             )}
@@ -105,7 +108,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 placeholder="නම"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic text-sm sm:text-base"
                 required
                 disabled={loading}
                 autoComplete="name"
@@ -119,7 +122,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 placeholder="විද්‍යුත් තැපෑල"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic text-sm sm:text-base"
                 required
                 disabled={loading}
                 autoComplete="email"
@@ -133,7 +136,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 placeholder="දුරකථන අංකය"
                 value={formData.mobile}
                 onChange={handleChange}
-                className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic text-sm sm:text-base"
                 required
                 disabled={loading}
                 autoComplete="tel"
@@ -147,7 +150,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 placeholder="මුර පදය (අවම අක්ෂර 6ක්)"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic text-sm sm:text-base"
                 required
                 disabled={loading}
                 minLength={6}
@@ -162,35 +165,35 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 placeholder="මුර පදය තහවුරු කිරීම"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-5 py-2 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic"
+                className="w-full px-4 sm:px-5 py-2.5 sm:py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-white/30 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 transition-all duration-300 placeholder-gray-600 text-gray-800 text-center italic text-sm sm:text-base"
                 required
                 disabled={loading}
                 autoComplete="new-password"
               />
             </div>
             
-            <div className="pt-4">
+            <div className="pt-3 sm:pt-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#3d266c] hover:bg-[#3d2881] text-white text-xl font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3d266c]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-[#3d266c] hover:bg-[#3d2881] text-white text-lg sm:text-xl font-semibold py-3 sm:py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3d266c]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {loading ? 'ලියාපදිංචි වෙමින්...' : 'ලියාපදිංචිය සම්පූර්ණයි'}
               </button>
             </div>
             
-            <div className="text-center pt-1">
-              <p className="text-white/100 text-lg mb-4 font-semibold">
+            <div className="text-center pt-2">
+              <p className="text-white text-sm sm:text-base font-semibold mb-2">
                 දැනටත් ගිණුමක් තිබේද?
-                <button
-                  type="button"
-                  onClick={onShowSignin}
-                  disabled={loading}
-                  className="text-yellow-300 hover:text-yellow-200 font-semibold underline transition-colors duration-300 ml-2 disabled:opacity-50"
-                >
-                  ප්‍රවේශ වන්න
-                </button>
               </p>
+              <button
+                type="button"
+                onClick={onShowSignin}
+                disabled={loading}
+                className="text-yellow-300 hover:text-yellow-200 font-semibold underline transition-colors duration-300 disabled:opacity-50 text-sm sm:text-base"
+              >
+                ප්‍රවේශ වන්න
+              </button>
             </div>
           </div>
         </form>

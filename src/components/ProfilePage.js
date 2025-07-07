@@ -43,45 +43,45 @@ const ProfilePage = ({ onBack, user }) => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-700 to-purple-500 flex items-center justify-center p-4">
       <div className="text-center text-white max-w-2xl w-full">
-        <div className="text-8xl mb-8">👤</div>
-        <h1 className="text-5xl font-bold mb-8">පරිශීලක විස්තර</h1>
+        <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8">👤</div>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">පරිශීලක විස්තර</h1>
         
-        <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-8 mx-auto">
-          <div className="mb-6">
-            <div className="w-24 h-24 bg-white/30 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-4xl">👨‍🎓</span>
+        <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mx-auto">
+          <div className="mb-4 sm:mb-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white/30 rounded-full mx-auto mb-3 sm:mb-4 flex items-center justify-center">
+              <span className="text-2xl sm:text-3xl md:text-4xl">👨‍🎓</span>
             </div>
-            <h2 className="text-2xl font-bold mb-2">{user?.name || 'පරිශීලකයා'}</h2>
-            <p className="text-lg opacity-80">{user?.email || 'user@example.com'}</p>
+            <h2 className="text-xl sm:text-2xl font-bold mb-2">{user?.name || 'පරිශීලකයා'}</h2>
+            <p className="text-base sm:text-lg opacity-80">{user?.email || 'user@example.com'}</p>
             {user?.mobile && (
-              <p className="text-md opacity-70">{user.mobile}</p>
+              <p className="text-sm sm:text-base opacity-70">{user.mobile}</p>
             )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white/10 rounded-lg p-4">
-              <div className="text-sm opacity-80">මට්ටම</div>
-              <div className="text-xl font-bold">{user?.level || 'ආරම්භක'}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+              <div className="text-xs sm:text-sm opacity-80">මට්ටම</div>
+              <div className="text-lg sm:text-xl font-bold">{user?.level || 'ආරම්භක'}</div>
             </div>
-            <div className="bg-white/10 rounded-lg p-4">
-              <div className="text-sm opacity-80">ලකුණු</div>
-              <div className="text-xl font-bold">{user?.points || 0}</div>
+            <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+              <div className="text-xs sm:text-sm opacity-80">ලකුණු</div>
+              <div className="text-lg sm:text-xl font-bold">{user?.points || 0}</div>
             </div>
-            <div className="bg-white/10 rounded-lg p-4">
-              <div className="text-sm opacity-80">සම්පූර්ණ කළ ක්‍රීඩා</div>
-              <div className="text-xl font-bold">{user?.completedGames || 0}</div>
+            <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+              <div className="text-xs sm:text-sm opacity-80">සම්පූර්ණ කළ ක්‍රීඩා</div>
+              <div className="text-lg sm:text-xl font-bold">{user?.completedGames || 0}</div>
             </div>
           </div>
 
           {/* Achievements Section */}
           {user?.achievements && user.achievements.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-xl font-bold mb-3">ජයග්‍රහණ</h3>
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">ජයග්‍රහණ</h3>
               <div className="flex flex-wrap gap-2 justify-center">
                 {user.achievements.map((achievement, index) => (
                   <span 
                     key={index}
-                    className="bg-yellow-500/20 text-yellow-200 px-3 py-1 rounded-full text-sm"
+                    className="bg-yellow-500/20 text-yellow-200 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm"
                   >
                     🏆 {achievement}
                   </span>
@@ -91,42 +91,42 @@ const ProfilePage = ({ onBack, user }) => {
           )}
 
           {/* Recent Game History */}
-          <div className="mb-6">
-            <h3 className="text-xl font-bold mb-3">මෑත ක්‍රීඩා ඉතිහාසය</h3>
+          <div className="mb-4 sm:mb-6">
+            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">මෑත ක්‍රීඩා ඉතිහාසය</h3>
             {loading ? (
               <div className="text-center py-4">
                 <div className="spinner mx-auto"></div>
-                <p className="mt-2">පූරණය වෙමින්...</p>
+                <p className="mt-2 text-sm sm:text-base">පූරණය වෙමින්...</p>
               </div>
             ) : gameHistory.length > 0 ? (
-              <div className="max-h-40 overflow-y-auto space-y-2">
+              <div className="max-h-32 sm:max-h-40 overflow-y-auto space-y-2">
                 {gameHistory.slice(0, 5).map((game, index) => (
-                  <div key={index} className="bg-white/10 rounded-lg p-3 text-left">
+                  <div key={index} className="bg-white/10 rounded-lg p-2 sm:p-3 text-left">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold">{getGameTypeInSinhala(game.gameType)}</span>
-                      <span className="text-yellow-300">{game.score} ලකුණු</span>
+                      <span className="font-semibold text-sm sm:text-base">{getGameTypeInSinhala(game.gameType)}</span>
+                      <span className="text-yellow-300 text-sm sm:text-base">{game.score} ලකුණු</span>
                     </div>
-                    <div className="text-sm opacity-70">
+                    <div className="text-xs sm:text-sm opacity-70">
                       {new Date(game.timestamp).toLocaleDateString('si-LK')}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-300">තවම ක්‍රීඩා කර නැත</p>
+              <p className="text-gray-300 text-sm sm:text-base">තවම ක්‍රීඩා කර නැත</p>
             )}
           </div>
           
-          <div className="flex gap-4 justify-center">
+          <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
             <button
               onClick={onBack}
-              className="bg-white text-purple-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300"
+              className="bg-white text-purple-600 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 text-sm sm:text-base"
             >
               ← ආපසු යන්න
             </button>
             <button
               onClick={handleSignOut}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
             >
               ඉවත්වන්න
             </button>
