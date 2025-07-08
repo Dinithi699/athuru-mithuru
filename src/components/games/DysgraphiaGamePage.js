@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const DysgraphiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -137,26 +137,8 @@ const DysgraphiaGamePage = ({ onBack }) => {
     }
   };
 
-  // Timer effect
-  useEffect(() => {
-    if (gameStarted && !gameCompleted && !showResult && timeLeft > 0) {
-      const timer = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !showResult) {
-      handleTimeUp();
-    }
-  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
-
   // Initialize question
-  useEffect(() => {
-    if (gameStarted && currentQuestion < totalQuestions) {
-      initializeQuestion();
-    }
-  }, [currentQuestion, gameStarted, initializeQuestion, totalQuestions]);
-
-  const initializeQuestion = () => {
+  const initializeQuestion = useCallback(() => {
     const currentWord = currentQuestions[currentQuestion];
     const letters = currentWord.word.split('');
     
@@ -173,27 +155,15 @@ const DysgraphiaGamePage = ({ onBack }) => {
     setShowResult(false);
     setQuestionStartTime(Date.now());
     setTotalDragTime(0);
-  const handleExit = () => {
-    setShowExitConfirm(true);
-  };
-
-  const confirmExit = () => {
-    onBack();
-  };
-
-  const cancelExit = () => {
-    setShowExitConfirm(false);
-  };
-
     setDragCount(0);
     
     // Auto-play the word pronunciation
     setTimeout(() => {
       speakWord(currentWord.word);
     }, 1000);
-  };
+  }, [currentQuestion, currentQuestions]);
 
-  const handleTimeUp = () => {
+  const handleTimeUp = useCallback(() => {
     const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 60;
     const averageDragTime = dragCount > 0 ? totalDragTime / dragCount : 0;
     
@@ -212,7 +182,25 @@ const DysgraphiaGamePage = ({ onBack }) => {
     playLoseSound();
     
     nextQuestion();
-  };
+  }, [questionStartTime, dragCount, totalDragTime, currentQuestion, currentQuestions, draggedLetters]);
+
+  // Timer effect
+  useEffect(() => {
+    if (gameStarted && !gameCompleted && !showResult && timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (timeLeft === 0 && !showResult) {
+      handleTimeUp();
+    }
+  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
+
+  useEffect(() => {
+    if (gameStarted && currentQuestion < totalQuestions) {
+      initializeQuestion();
+    }
+  }, [currentQuestion, gameStarted, initializeQuestion, totalQuestions]);
 
   const startGame = () => {
     setGameStarted(true);
@@ -377,7 +365,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
     setGameStarted(false);
     setGameCompleted(false);
     setAllLevelsCompleted(false);
-    setAllLevelsCompleted(false);
     setCurrentQuestion(0);
     setScore(0);
     setResponses([]);
@@ -452,6 +439,18 @@ const DysgraphiaGamePage = ({ onBack }) => {
       analysis, 
       recommendations 
     };
+  };
+
+  const handleExit = () => {
+    setShowExitConfirm(true);
+  };
+
+  const confirmExit = () => {
+    onBack();
+  };
+
+  const cancelExit = () => {
+    setShowExitConfirm(false);
   };
 
   // Exit confirmation modal

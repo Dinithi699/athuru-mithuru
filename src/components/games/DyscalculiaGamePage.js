@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const DyscalculiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -62,7 +62,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
     }
   }, [currentQuestion, gameStarted, showResult]);
 
-  const handleTimeUp = () => {
+  const handleTimeUp = useCallback(() => {
     const reactionTime = questionStartTime ? Date.now() - questionStartTime : 15000;
     setReactionTimes(prev => [...prev, reactionTime]);
     
@@ -75,7 +75,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
       isCorrect: false
     }]);
     nextQuestion();
-  };
+  }, [questionStartTime, currentQuestion, currentQuestions, reactionTimes]);
 
   const startGame = () => {
     setGameStarted(true);
@@ -157,7 +157,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
     setCurrentLevel(1);
     setGameStarted(false);
     setGameCompleted(false);
-    setAllLevelsCompleted(false);
     setAllLevelsCompleted(false);
     setCurrentQuestion(0);
     setScore(0);
