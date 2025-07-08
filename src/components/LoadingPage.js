@@ -79,23 +79,3 @@ const LoadingPage = ({ onLoadComplete }) => {
 };
 
 export default LoadingPage;
-        
-        <div className="w-full px-4">          
-          <div className="w-full h-3 sm:h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-            <div 
-              className="h-full bg-gradient-to-r from-teal-400 to-teal-600 transition-all duration-200 ease-out rounded-full"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-          
-          {/* Loading text */}
-          <div className="mt-3 sm:mt-4 text-white text-base sm:text-lg font-semibold">
-            පූරණය වෙමින්... {progress}%
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default LoadingPage;
