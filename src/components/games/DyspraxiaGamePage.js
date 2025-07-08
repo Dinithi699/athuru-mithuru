@@ -6,6 +6,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
+  const [allLevelsCompleted, setAllLevelsCompleted] = useState(false);
   const [starPositions, setStarPositions] = useState([]);
   const [activeStarIndex, setActiveStarIndex] = useState(-1);
   const [isFlashing, setIsFlashing] = useState(false);
@@ -15,7 +16,8 @@ const DyspraxiaGamePage = ({ onBack }) => {
   const [resultType, setResultType] = useState('');
   const [timeLeft, setTimeLeft] = useState(0);
   const [missedClicks, setMissedClicks] = useState(0);
-  const audioRef = useRef(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const gameAreaRef = useRef(null);
 
   // Game configuration for each level
   const gameConfig = {
@@ -98,11 +100,15 @@ const DyspraxiaGamePage = ({ onBack }) => {
     oscillator.stop(audioContext.currentTime + 0.8);
   };
 
-  // Generate random star positions
+  // Generate random star positions within the game area
   const generateStarPositions = (count) => {
     const positions = [];
-    const minDistance = 80; // Minimum distance between stars
-    const margin = 60; // Margin from edges
+    const minDistance = 60; // Minimum distance between stars
+    const margin = 40; // Margin from game area edges
+    
+    // Game area dimensions (responsive)
+    const gameAreaWidth = window.innerWidth < 640 ? 280 : window.innerWidth < 1024 ? 400 : 600;
+    const gameAreaHeight = window.innerWidth < 640 ? 200 : window.innerWidth < 1024 ? 280 : 400;
     
     for (let i = 0; i < count; i++) {
       let position;
@@ -110,8 +116,8 @@ const DyspraxiaGamePage = ({ onBack }) => {
       
       do {
         position = {
-          x: margin + Math.random() * (window.innerWidth - 2 * margin),
-          y: margin + Math.random() * (window.innerHeight - 2 * margin),
+          x: margin + Math.random() * (gameAreaWidth - 2 * margin),
+          y: margin + Math.random() * (gameAreaHeight - 2 * margin),
           id: i
         };
         attempts++;
@@ -246,14 +252,17 @@ const DyspraxiaGamePage = ({ onBack }) => {
   };
 
   const handleBackgroundClick = (e) => {
-    // Only count as wrong click if clicking on background, not on stars
-    if (e.target.classList.contains('game-background') && activeStarIndex >= 0) {
+    // Only count as wrong click if clicking on game area background, not on stars
+    if (e.target.classList.contains('game-area') && activeStarIndex >= 0) {
       handleStarClick(-1); // -1 indicates background click
     }
   };
 
   const completeLevel = () => {
     setGameCompleted(true);
+    if (currentLevel === 3) {
+      setAllLevelsCompleted(true);
+    }
   };
 
   const nextLevel = () => {
@@ -275,6 +284,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setCurrentLevel(1);
     setGameStarted(false);
     setGameCompleted(false);
+    setAllLevelsCompleted(false);
     setCurrentStar(0);
     setScore(0);
     setResponses([]);
@@ -282,6 +292,18 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setActiveStarIndex(-1);
     setIsFlashing(false);
     setShowResult(false);
+  };
+
+  const handleExit = () => {
+    setShowExitConfirm(true);
+  };
+
+  const confirmExit = () => {
+    onBack();
+  };
+
+  const cancelExit = () => {
+    setShowExitConfirm(false);
   };
 
   const getLevelDescription = (level) => {
@@ -350,6 +372,72 @@ const DyspraxiaGamePage = ({ onBack }) => {
       recommendations 
     };
   };
+
+  // Exit confirmation modal
+  if (showExitConfirm) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">ක්‍රීඩාවෙන් ඉවත්වන්න?</h3>
+          <p className="text-gray-600 mb-6">ඔබේ ප්‍රගතිය නැති වේ</p>
+          <div className="flex gap-4">
+            <button
+              onClick={cancelExit}
+              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-bold transition-colors"
+            >
+              අවලංගු කරන්න
+            </button>
+            <button
+              onClick={confirmExit}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-bold transition-colors"
+            >
+              ඉවත්වන්න
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Congratulations video for completing all levels
+  if (allLevelsCompleted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black flex items-center justify-center p-4">
+        <div className="text-center text-white max-w-2xl w-full">
+          <div className="mb-8">
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              className="w-full max-w-md mx-auto rounded-2xl shadow-2xl"
+            >
+              <source src="/images/Game_Level_Completion_Animation_Request.mp4" type="video/mp4" />
+              <div className="text-6xl animate-bounce">🎉</div>
+            </video>
+          </div>
+          
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">සියලු මට්ටම් සම්පූර්ණයි!</h1>
+          <p className="text-lg sm:text-xl mb-8">ඔබ විශිෂ්ට ක්‍රීඩකයෙක්! 🌟</p>
+          
+          <div className="flex gap-4 justify-center flex-wrap">
+            <button
+              onClick={restartGame}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105"
+            >
+              🔄 නැවත ආරම්භ කරන්න
+            </button>
+            
+            <button
+              onClick={onBack}
+              className="bg-white text-purple-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105"
+            >
+              ← ආපසු යන්න
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!gameStarted) {
     return (
@@ -428,7 +516,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     );
   }
 
-  if (gameCompleted) {
+  if (gameCompleted && !allLevelsCompleted) {
     const analysis = getDyspraxiaAnalysis();
     
     return (
@@ -450,6 +538,14 @@ const DyspraxiaGamePage = ({ onBack }) => {
             />
           ))}
         </div>
+
+        {/* Exit button */}
+        <button
+          onClick={handleExit}
+          className="absolute top-4 right-4 z-30 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors duration-300"
+        >
+          ✕
+        </button>
 
         <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
           <div className="text-center text-white max-w-3xl w-full">
@@ -496,7 +592,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
               </div>
               
               <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
-                {currentLevel < 3 && analysis.accuracy >= 50 && (
+                {currentLevel < 3 && (
                   <button
                     onClick={nextLevel}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
@@ -504,13 +600,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
                     ඊළඟ මට්ටම →
                   </button>
                 )}
-                
-                <button
-                  onClick={restartGame}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
-                >
-                  🔄 නැවත ආරම්භ කරන්න
-                </button>
                 
                 <button
                   onClick={onBack}
@@ -527,10 +616,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
   }
 
   return (
-    <div 
-      className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black relative overflow-hidden game-background"
-      onClick={handleBackgroundClick}
-    >
+    <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black relative overflow-hidden">
       {/* Background stars */}
       <div className="absolute inset-0 pointer-events-none">
         {[...Array(80)].map((_, i) => (
@@ -555,12 +641,18 @@ const DyspraxiaGamePage = ({ onBack }) => {
           <div className="text-sm sm:text-base md:text-lg font-bold">මට්ටම {currentLevel}</div>
           <div className="text-xs sm:text-sm opacity-80">තරුව {currentStar + 1}/{currentConfig.totalStars}</div>
         </div>
-        <div className="text-right">
+        <div className="text-center">
           <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
           <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 1000 ? 'text-red-300 animate-pulse' : ''}`}>
             ⏰ {(timeLeft / 1000).toFixed(1)}
           </div>
         </div>
+        <button
+          onClick={handleExit}
+          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors duration-300"
+        >
+          ✕
+        </button>
       </div>
 
       {/* Progress Bar */}
@@ -573,40 +665,51 @@ const DyspraxiaGamePage = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Game Stars */}
-      <div className="relative z-10 w-full h-full">
-        {starPositions.map((position, index) => (
-          <button
-            key={position.id}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleStarClick(index);
-            }}
-            className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ${
-              index === activeStarIndex && isFlashing
-                ? 'text-yellow-300 animate-pulse scale-125 drop-shadow-lg'
-                : 'text-white/60 scale-100'
-            } ${
-              index === activeStarIndex 
-                ? 'cursor-pointer hover:scale-150' 
-                : 'cursor-default'
-            }`}
-            style={{
-              left: `${Math.min(Math.max(position.x, 40), window.innerWidth - 40)}px`,
-              top: `${Math.min(Math.max(position.y, 100), window.innerHeight - 100)}px`,
-              fontSize: index === activeStarIndex && isFlashing ? '5rem' : '3.5rem',
-              filter: index === activeStarIndex && isFlashing 
-                ? 'drop-shadow(0 0 20px #fbbf24) drop-shadow(0 0 40px #f59e0b)' 
-                : 'none',
-              textShadow: index === activeStarIndex && isFlashing 
-                ? '0 0 20px #fbbf24, 0 0 40px #f59e0b, 0 0 60px #d97706' 
-                : 'none'
-            }}
-            disabled={index !== activeStarIndex}
-          >
-            ⭐
-          </button>
-        ))}
+      {/* Game Area with Border */}
+      <div className="relative z-10 flex items-center justify-center min-h-[60vh] p-4">
+        <div 
+          ref={gameAreaRef}
+          className="relative border-2 border-white/30 rounded-2xl bg-white/5 backdrop-blur-sm game-area"
+          style={{
+            width: window.innerWidth < 640 ? '300px' : window.innerWidth < 1024 ? '420px' : '620px',
+            height: window.innerWidth < 640 ? '220px' : window.innerWidth < 1024 ? '300px' : '420px'
+          }}
+          onClick={handleBackgroundClick}
+        >
+          {/* Game Stars */}
+          {starPositions.map((position, index) => (
+            <button
+              key={position.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStarClick(index);
+              }}
+              className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ${
+                index === activeStarIndex && isFlashing
+                  ? 'text-yellow-300 animate-pulse scale-125 drop-shadow-lg'
+                  : 'text-white/60 scale-100'
+              } ${
+                index === activeStarIndex 
+                  ? 'cursor-pointer hover:scale-150' 
+                  : 'cursor-default'
+              }`}
+              style={{
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                fontSize: index === activeStarIndex && isFlashing ? '3rem' : '2.5rem',
+                filter: index === activeStarIndex && isFlashing 
+                  ? 'drop-shadow(0 0 20px #fbbf24) drop-shadow(0 0 40px #f59e0b)' 
+                  : 'none',
+                textShadow: index === activeStarIndex && isFlashing 
+                  ? '0 0 20px #fbbf24, 0 0 40px #f59e0b, 0 0 60px #d97706' 
+                  : 'none'
+              }}
+              disabled={index !== activeStarIndex}
+            >
+              ⭐
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Result Display */}
