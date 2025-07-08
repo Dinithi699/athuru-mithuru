@@ -17,7 +17,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [dragCount, setDragCount] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [allLevelsCompleted, setAllLevelsCompleted] = useState(false);
-  const audioRef = useRef(null);
 
   // Game data for each level
   const gameData = {
@@ -148,14 +147,14 @@ const DysgraphiaGamePage = ({ onBack }) => {
     } else if (timeLeft === 0 && !showResult) {
       handleTimeUp();
     }
-  }, [timeLeft, gameStarted, gameCompleted, showResult]);
+  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
 
   // Initialize question
   useEffect(() => {
     if (gameStarted && currentQuestion < totalQuestions) {
       initializeQuestion();
     }
-  }, [currentQuestion, gameStarted]);
+  }, [currentQuestion, gameStarted, initializeQuestion, totalQuestions]);
 
   const initializeQuestion = () => {
     const currentWord = currentQuestions[currentQuestion];
