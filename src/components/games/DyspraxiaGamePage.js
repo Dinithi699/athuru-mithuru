@@ -1,0 +1,742 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+const DyspraxiaGamePage = ({ onBack }) => {
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [currentStar, setCurrentStar] = useState(0);
+  const [score, setScore] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false);
+  const [allLevelsCompleted, setAllLevelsCompleted] = useState(false);
+  const [starPositions, setStarPositions] = useState([]);
+  const [activeStarIndex, setActiveStarIndex] = useState(-1);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const [responses, setResponses] = useState([]);
+  const [starStartTime, setStarStartTime] = useState(null);
+  const [showResult, setShowResult] = useState(false);
+  const [resultType, setResultType] = useState('');
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [missedClicks, setMissedClicks] = useState(0);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const gameAreaRef = useRef(null);
+
+  // Game configuration for each level
+  const gameConfig = {
+    1: { starCount: 3, flashDuration: 3000, totalStars: 5 },
+    2: { starCount: 5, flashDuration: 2000, totalStars: 8 },
+    3: { starCount: 7, flashDuration: 1500, totalStars: 10 }
+  };
+
+  const currentConfig = gameConfig[currentLevel];
+
+  // Audio effects using Web Audio API
+  const playCorrectSound = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Happy ascending melody
+    const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5
+    
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1 + index * 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3 + index * 0.1);
+      
+      oscillator.start(audioContext.currentTime + index * 0.1);
+      oscillator.stop(audioContext.currentTime + 0.3 + index * 0.1);
+    });
+  };
+
+  const playWrongSound = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Descending sad melody
+    const frequencies = [440, 392, 349.23]; // A4, G4, F4
+    
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'triangle';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1 + index * 0.15);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4 + index * 0.15);
+      
+      oscillator.start(audioContext.currentTime + index * 0.15);
+      oscillator.stop(audioContext.currentTime + 0.4 + index * 0.15);
+    });
+  };
+
+  const playTimeoutSound = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Low buzzing sound for timeout
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+    oscillator.type = 'sawtooth';
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.8);
+  };
+
+  // Generate random star positions within the game area
+  const generateStarPositions = (count) => {
+    const positions = [];
+    const minDistance = 60; // Minimum distance between stars
+    const margin = 40; // Margin from game area edges
+    
+    // Game area dimensions (responsive)
+    const gameAreaWidth = window.innerWidth < 640 ? 280 : window.innerWidth < 1024 ? 400 : 600;
+    const gameAreaHeight = window.innerWidth < 640 ? 200 : window.innerWidth < 1024 ? 280 : 400;
+    
+    for (let i = 0; i < count; i++) {
+      let position;
+      let attempts = 0;
+      
+      do {
+        position = {
+          x: margin + Math.random() * (gameAreaWidth - 2 * margin),
+          y: margin + Math.random() * (gameAreaHeight - 2 * margin),
+          id: i
+        };
+        attempts++;
+      } while (
+        attempts < 50 && 
+        positions.some(pos => 
+          Math.sqrt(Math.pow(pos.x - position.x, 2) + Math.pow(pos.y - position.y, 2)) < minDistance
+        )
+      );
+      
+      positions.push(position);
+    }
+    
+    return positions;
+  };
+
+  // Timer effect for star flashing
+  useEffect(() => {
+    if (gameStarted && !gameCompleted && activeStarIndex >= 0 && timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 100);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (timeLeft <= 0 && activeStarIndex >= 0) {
+      handleStarTimeout();
+    }
+  }, [timeLeft, gameStarted, gameCompleted, activeStarIndex]);
+
+  // Flash effect
+  useEffect(() => {
+    if (activeStarIndex >= 0 && gameStarted && !gameCompleted) {
+      const flashInterval = setInterval(() => {
+        setIsFlashing(prev => !prev);
+      }, 300); // Flash every 300ms
+      
+      return () => clearInterval(flashInterval);
+    }
+  }, [activeStarIndex, gameStarted, gameCompleted]);
+
+  const startNextStar = useCallback(() => {
+    if (currentStar >= currentConfig.totalStars) {
+      completeLevel();
+      return;
+    }
+    
+    // Random star position
+    const randomIndex = Math.floor(Math.random() * currentConfig.starCount);
+    setActiveStarIndex(randomIndex);
+    setIsFlashing(true);
+    setTimeLeft(currentConfig.flashDuration);
+    setStarStartTime(Date.now());
+  }, [currentStar, currentConfig.totalStars, currentConfig.starCount, currentConfig.flashDuration]);
+
+  const handleStarTimeout = useCallback(() => {
+    playTimeoutSound();
+    setMissedClicks(prev => prev + 1);
+    setResultType('timeout');
+    
+    // Record timeout response
+    setResponses(prev => [...prev, {
+      starNumber: currentStar + 1,
+      targetStarIndex: activeStarIndex,
+      clickedStarIndex: -1,
+      reactionTime: currentConfig.flashDuration,
+      isCorrect: false,
+      timeRemaining: 0,
+      timeout: true
+    }]);
+    
+    setShowResult(true);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    
+    setTimeout(() => {
+      setShowResult(false);
+      setCurrentStar(prev => prev + 1);
+      startNextStar();
+    }, 1000);
+  }, [activeStarIndex, currentStar, currentConfig.flashDuration, startNextStar]);
+
+  // Timer effect for star timeout
+  useEffect(() => {
+    if (timeLeft <= 0 && activeStarIndex >= 0 && gameStarted && !gameCompleted) {
+      handleStarTimeout();
+    }
+  }, [timeLeft, activeStarIndex, gameStarted, gameCompleted, handleStarTimeout]);
+  const startGame = () => {
+    setGameStarted(true);
+    setCurrentStar(0);
+    setScore(0);
+    setResponses([]);
+    setMissedClicks(0);
+    setShowResult(false);
+    
+    // Generate star positions
+    const positions = generateStarPositions(currentConfig.starCount);
+    setStarPositions(positions);
+    
+    // Start first star
+    startNextStar();
+  };
+
+  const handleStarClick = (starIndex) => {
+    if (!gameStarted || gameCompleted || activeStarIndex < 0) return;
+    
+    const reactionTime = starStartTime ? Date.now() - starStartTime : 0;
+    const isCorrect = starIndex === activeStarIndex;
+    
+    if (isCorrect) {
+      playCorrectSound();
+      setScore(score + 1);
+      setResultType('correct');
+    } else {
+      playWrongSound();
+      setMissedClicks(prev => prev + 1);
+      setResultType('wrong');
+    }
+    
+    // Record response
+    setResponses(prev => [...prev, {
+      starNumber: currentStar + 1,
+      targetStarIndex: activeStarIndex,
+      clickedStarIndex: starIndex,
+      reactionTime: reactionTime,
+      isCorrect: isCorrect,
+      timeRemaining: timeLeft
+    }]);
+    
+    setShowResult(true);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    
+    setTimeout(() => {
+      setShowResult(false);
+      setCurrentStar(prev => prev + 1);
+      startNextStar();
+    }, 1000);
+  };
+
+  const handleBackgroundClick = (e) => {
+    // Only count as wrong click if clicking on game area background, not on stars
+    if (e.target.classList.contains('game-area') && activeStarIndex >= 0) {
+      handleStarClick(-1); // -1 indicates background click
+    }
+  };
+
+  const completeLevel = () => {
+    setGameCompleted(true);
+    if (currentLevel === 3) {
+      setAllLevelsCompleted(true);
+    }
+  };
+
+  const nextLevel = () => {
+    if (currentLevel < 3) {
+      setCurrentLevel(currentLevel + 1);
+      setGameStarted(false);
+      setGameCompleted(false);
+      setCurrentStar(0);
+      setScore(0);
+      setResponses([]);
+      setMissedClicks(0);
+      setActiveStarIndex(-1);
+      setIsFlashing(false);
+      setShowResult(false);
+    }
+  };
+
+  const restartGame = () => {
+    setCurrentLevel(1);
+    setGameStarted(false);
+    setGameCompleted(false);
+    setAllLevelsCompleted(false);
+    setCurrentStar(0);
+    setScore(0);
+    setResponses([]);
+    setMissedClicks(0);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    setShowResult(false);
+  };
+
+  const handleExit = () => {
+    setShowExitConfirm(true);
+  };
+
+  const confirmExit = () => {
+    onBack();
+  };
+
+  const cancelExit = () => {
+    setShowExitConfirm(false);
+  };
+
+  const getLevelDescription = (level) => {
+    const descriptions = {
+      1: 'ආරම්භක මට්ටම - 3 තරු, 3 තත්පර',
+      2: 'මධ්‍යම මට්ටම - 5 තරු, 2 තත්පර',
+      3: 'උසස් මට්ටම - 7 තරු, 1.5 තත්පර'
+    };
+    return descriptions[level];
+  };
+
+  const getDyspraxiaAnalysis = () => {
+    const totalResponses = responses.length;
+    const correctResponses = responses.filter(r => r.isCorrect).length;
+    const timeoutResponses = responses.filter(r => r.timeout).length;
+    const averageReactionTime = responses
+      .filter(r => r.isCorrect)
+      .reduce((sum, r) => sum + r.reactionTime, 0) / Math.max(correctResponses, 1);
+    
+    const accuracy = totalResponses > 0 ? (correctResponses / totalResponses) * 100 : 0;
+    const timeoutRate = totalResponses > 0 ? (timeoutResponses / totalResponses) * 100 : 0;
+    
+    let riskLevel = 'අඩු';
+    let analysis = '';
+    let recommendations = [];
+    
+    // Dyspraxia risk assessment
+    const reactionThreshold = currentLevel === 1 ? 1500 : currentLevel === 2 ? 1200 : 1000;
+    
+    if (accuracy < 60 || averageReactionTime > reactionThreshold * 1.5 || timeoutRate > 40) {
+      riskLevel = 'ඉහළ';
+      analysis = 'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය, ප්‍රතික්‍රියා කාලය සහ අවධානය යොමු කිරීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ප්‍රැක්සියා අවදානමක් යෝජනා කරයි.';
+      recommendations = [
+        'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණ අභ්‍යාස',
+        'සියුම් මෝටර් කුසලතා වර්ධන ක්‍රියාකාරකම්',
+        'අවධානය යොමු කිරීමේ අභ්‍යාස',
+        'වෘත්තීය ප්‍රතිකාර විශේෂඥයෙකු සම්බන්ධ කරගන්න',
+        'නිතිපතා සංවේදී මෝටර් අභ්‍යාස'
+      ];
+    } else if (accuracy < 75 || averageReactionTime > reactionThreshold || timeoutRate > 25) {
+      riskLevel = 'මධ්‍යම';
+      analysis = 'දෘශ්‍ය සැකසීම සහ මෝටර් ප්‍රතිචාරවල සමහර අභියෝග. ඉලක්කගත අභ්‍යාස සමඟ වැඩිදියුණු කළ හැක.';
+      recommendations = [
+        'ඉලක්ක කරන ක්‍රීඩා නිතිපතා කරන්න',
+        'අත්-ඇස් සම්බන්ධීකරණ අභ්‍යාස',
+        'ප්‍රතික්‍රියා කාල වැඩිදියුණු කිරීමේ ක්‍රියාකාරකම්',
+        'දෘශ්‍ය අවධානය වර්ධන අභ්‍යාස',
+        'ප්‍රගතිය නිරීක්ෂණය කරන්න'
+      ];
+    } else {
+      analysis = 'හොඳ දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය සහ ප්‍රතික්‍රියා කාලය. සාමාන්‍ය වර්ධනයක් පෙන්නුම් කරයි.';
+      recommendations = [
+        'වර්තමාන කුසලතා පවත්වාගෙන යන්න',
+        'වඩාත් අභියෝගාත්මක ක්‍රියාකාරකම් උත්සාහ කරන්න',
+        'ක්‍රීඩා සහ ශාරීරික ක්‍රියාකාරකම් දිරිමත් කරන්න',
+        'සියුම් මෝටර් කුසලතා දිගටම වර්ධනය කරන්න'
+      ];
+    }
+    
+    return { 
+      accuracy, 
+      averageReactionTime, 
+      timeoutRate, 
+      riskLevel, 
+      analysis, 
+      recommendations 
+    };
+  };
+
+  // Exit confirmation modal
+  if (showExitConfirm) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">ක්‍රීඩාවෙන් ඉවත්වන්න?</h3>
+          <p className="text-gray-600 mb-6">ඔබේ ප්‍රගතිය නැති වේ</p>
+          <div className="flex gap-4">
+            <button
+              onClick={cancelExit}
+              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-bold transition-colors"
+            >
+              අවලංගු කරන්න
+            </button>
+            <button
+              onClick={confirmExit}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-bold transition-colors"
+            >
+              ඉවත්වන්න
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Congratulations video for completing all levels
+  if (allLevelsCompleted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black flex items-center justify-center p-4">
+        <div className="text-center text-white max-w-2xl w-full">
+          <div className="mb-8">
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              className="w-full max-w-md mx-auto rounded-2xl shadow-2xl"
+            >
+              <source src="/images/Game_Level_Completion_Animation_Request.mp4" type="video/mp4" />
+              <div className="text-6xl animate-bounce">🎉</div>
+            </video>
+          </div>
+          
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">සියලු මට්ටම් සම්පූර්ණයි!</h1>
+          <p className="text-lg sm:text-xl mb-8">ඔබ විශිෂ්ට ක්‍රීඩකයෙක්! 🌟</p>
+          
+          <div className="flex gap-4 justify-center flex-wrap">
+            <button
+              onClick={restartGame}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105"
+            >
+              🔄 නැවත ආරම්භ කරන්න
+            </button>
+            
+            <button
+              onClick={onBack}
+              className="bg-white text-purple-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105"
+            >
+              ← ආපසු යන්න
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!gameStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black relative overflow-hidden">
+        {/* Animated background stars */}
+        <div className="absolute inset-0">
+          {[...Array(100)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute bg-white rounded-full animate-pulse"
+              style={{
+                width: Math.random() * 3 + 1 + 'px',
+                height: Math.random() * 3 + 1 + 'px',
+                top: Math.random() * 100 + '%',
+                left: Math.random() * 100 + '%',
+                animationDelay: Math.random() * 3 + 's',
+                animationDuration: Math.random() * 2 + 2 + 's',
+                opacity: Math.random() * 0.8 + 0.2
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+          <div className="text-center text-white max-w-2xl w-full">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">තරු රටා ක්‍රීඩාව</h1>
+            <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 px-4">දිලිසෙන තරු ක්ලික් කර ඔබේ ප්‍රතික්‍රියා වේගය පරීක්ෂා කරන්න!</p>
+            
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">මට්ටම {currentLevel}</h2>
+              <p className="text-lg sm:text-xl mb-4 sm:mb-6">{getLevelDescription(currentLevel)}</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm opacity-80">තරු ගණන</div>
+                  <div className="text-xl sm:text-2xl font-bold">{currentConfig.starCount}</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm opacity-80">ක්ලික් කිරීමට කාලය</div>
+                  <div className="text-xl sm:text-2xl font-bold">{currentConfig.flashDuration / 1000}තත්</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm opacity-80">මුළු තරු</div>
+                  <div className="text-xl sm:text-2xl font-bold">{currentConfig.totalStars}</div>
+                </div>
+              </div>
+              
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-bold mb-2 sm:mb-3">ක්‍රීඩා කරන ආකාරය</h3>
+                <ul className="text-left space-y-1 sm:space-y-2 max-w-md mx-auto text-sm sm:text-base">
+                  <li>• දිලිසෙන තරුව ක්ලික් කරන්න</li>
+                  <li>• හැකි ඉක්මනින් ප්‍රතිචාර දක්වන්න</li>
+                  <li>• වැරදි තරුවක් ක්ලික් නොකරන්න</li>
+                  <li>• කාලය ඉකුත්වීමට පෙර ක්ලික් කරන්න</li>
+                  <li>• 🎵 නිවැරදි/වැරදි සඳහා ශබ්ද ප්‍රතිපෝෂණ</li>
+                </ul>
+              </div>
+              
+              <button
+                onClick={startGame}
+                className="bg-white text-purple-600 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-lg sm:text-xl hover:bg-gray-100 transition-all duration-300 shadow-lg transform hover:scale-105"
+              >
+                🚀 ක්‍රීඩාව ආරම්භ කරන්න
+              </button>
+            </div>
+            
+            <button
+              onClick={onBack}
+              className="bg-white/20 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-white/30 transition-colors duration-300 text-sm sm:text-base"
+            >
+              ← ආපසු යන්න
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameCompleted && !allLevelsCompleted) {
+    const analysis = getDyspraxiaAnalysis();
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black relative overflow-hidden">
+        {/* Background stars */}
+        <div className="absolute inset-0">
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute bg-white rounded-full animate-pulse"
+              style={{
+                width: Math.random() * 2 + 1 + 'px',
+                height: Math.random() * 2 + 1 + 'px',
+                top: Math.random() * 100 + '%',
+                left: Math.random() * 100 + '%',
+                animationDelay: Math.random() * 3 + 's',
+                opacity: Math.random() * 0.6 + 0.2
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Exit button */}
+        <button
+          onClick={handleExit}
+          className="absolute top-4 right-4 z-30 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors duration-300"
+        >
+          ✕
+        </button>
+
+        <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+          <div className="text-center text-white max-w-3xl w-full">
+            <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8">
+              {analysis.riskLevel === 'අඩු' ? '🎉' : analysis.riskLevel === 'මධ්‍යම' ? '⚠️' : '🔍'}
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
+            
+            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm opacity-80">ලකුණු</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{score}/{currentConfig.totalStars}</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm opacity-80">නිරවද්‍යතාව</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{analysis.accuracy.toFixed(1)}%</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය ප්‍රතික්‍රියා</div>
+                  <div className="text-lg sm:text-xl font-bold">{(analysis.averageReactionTime / 1000).toFixed(1)}තත්</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                  <div className="text-xs sm:text-sm opacity-80">අවදානම් මට්ටම</div>
+                  <div className={`text-lg sm:text-xl font-bold ${
+                    analysis.riskLevel === 'අඩු' ? 'text-green-300' : 
+                    analysis.riskLevel === 'මධ්‍යම' ? 'text-yellow-300' : 'text-red-300'
+                  }`}>
+                    {analysis.riskLevel}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white/10 rounded-lg text-left">
+                <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">ඩිස්ප්‍රැක්සියා තක්සේරු විශ්ලේෂණය</h3>
+                <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4">{analysis.analysis}</p>
+                
+                <h4 className="text-base sm:text-lg font-bold mb-2">නිර්දේශ:</h4>
+                <ul className="space-y-1">
+                  {analysis.recommendations.map((rec, index) => (
+                    <li key={index} className="text-xs sm:text-sm">• {rec}</li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
+                {currentLevel < 3 && (
+                  <button
+                    onClick={nextLevel}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
+                  >
+                    ඊළඟ මට්ටම →
+                  </button>
+                )}
+                
+                <button
+                  onClick={onBack}
+                  className="bg-white text-purple-600 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
+                >
+                  ← ආපසු යන්න
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black relative overflow-hidden">
+      {/* Background stars */}
+      <div className="absolute inset-0 pointer-events-none">
+        {[...Array(80)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute bg-white rounded-full animate-pulse"
+            style={{
+              width: Math.random() * 2 + 1 + 'px',
+              height: Math.random() * 2 + 1 + 'px',
+              top: Math.random() * 100 + '%',
+              left: Math.random() * 100 + '%',
+              animationDelay: Math.random() * 3 + 's',
+              opacity: Math.random() * 0.4 + 0.1
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Header */}
+      <div className="relative z-20 p-3 sm:p-6 flex justify-between items-center text-white">
+        <div className="text-left">
+          <div className="text-sm sm:text-base md:text-lg font-bold">මට්ටම {currentLevel}</div>
+          <div className="text-xs sm:text-sm opacity-80">තරුව {currentStar + 1}/{currentConfig.totalStars}</div>
+        </div>
+        <div className="text-center">
+          <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
+          <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 1000 ? 'text-red-300 animate-pulse' : ''}`}>
+            ⏰ {(timeLeft / 1000).toFixed(1)}
+          </div>
+        </div>
+        <button
+          onClick={handleExit}
+          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors duration-300"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="relative z-20 px-4 sm:px-6">
+        <div className="w-full bg-white/20 rounded-full h-2 sm:h-3">
+          <div 
+            className="bg-white h-2 sm:h-3 rounded-full transition-all duration-300"
+            style={{ width: `${((currentStar + 1) / currentConfig.totalStars) * 100}%` }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Game Area with Border */}
+      <div className="relative z-10 flex items-center justify-center min-h-[60vh] p-4">
+        <div 
+          ref={gameAreaRef}
+          className="relative border-2 border-white/30 rounded-2xl bg-white/5 backdrop-blur-sm game-area"
+          onClick={handleBackgroundClick}
+        >
+          <div className="w-72 h-52 sm:w-96 sm:h-72 md:w-[500px] md:h-80 lg:w-[600px] lg:h-96 relative">
+          {/* Game Stars */}
+          {starPositions.map((position, index) => (
+            <button
+              key={position.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStarClick(index);
+              }}
+              className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ${
+                index === activeStarIndex && isFlashing
+                  ? 'text-yellow-300 animate-pulse scale-125 drop-shadow-lg'
+                  : 'text-white/60 scale-100'
+              } ${
+                index === activeStarIndex 
+                  ? 'cursor-pointer hover:scale-150' 
+                  : 'cursor-default'
+              }`}
+              style={{
+                left: `${position.x}px`,
+                top: `${position.y}px`,
+                fontSize: index === activeStarIndex && isFlashing ? '3rem' : '2.5rem',
+                filter: index === activeStarIndex && isFlashing 
+                  ? 'drop-shadow(0 0 20px #fbbf24) drop-shadow(0 0 40px #f59e0b)' 
+                  : 'none',
+                textShadow: index === activeStarIndex && isFlashing 
+                  ? '0 0 20px #fbbf24, 0 0 40px #f59e0b, 0 0 60px #d97706' 
+                  : 'none'
+              }}
+              disabled={index !== activeStarIndex}
+            >
+              ⭐
+            </button>
+          ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Result Display */}
+      {showResult && (
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <div className={`text-6xl sm:text-7xl md:text-8xl font-bold animate-bounce ${
+            resultType === 'correct' ? 'text-green-400' : 
+            resultType === 'wrong' ? 'text-red-400' : 'text-orange-400'
+          }`}>
+            {resultType === 'correct' ? '✅' : 
+             resultType === 'wrong' ? '❌' : '⏰'}
+          </div>
+        </div>
+      )}
+
+      {/* Instructions */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center z-20">
+        <div className="text-xs sm:text-sm opacity-80 px-6">
+          දිලිසෙන තරුව හැකි ඉක්මනින් ක්ලික් කරන්න!
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DyspraxiaGamePage;
