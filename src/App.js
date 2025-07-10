@@ -10,50 +10,11 @@ import './App.css';
 const App = () => {
   const [currentScreen, setCurrentScreen] = useState('loading');
   const [user, setUser] = useState(null);
-  const [appReady, setAppReady] = useState(false);
-  
-  useEffect(() => {
-    // Preload critical resources
-    const preloadResources = async () => {
-      try {
-        // Preload critical images
-        const criticalImages = [
-          '/images/Login bg.png',
-          '/images/sign-up-test.png'
-        ];
-        
-        const imagePromises = criticalImages.map(src => {
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = resolve;
-            img.onerror = resolve; // Continue even if image fails
-            img.src = src;
-          });
-        });
-        
-        await Promise.allSettled(imagePromises);
-        setAppReady(true);
-      } catch (error) {
-        console.warn('Resource preloading failed:', error);
-        setAppReady(true); // Continue anyway
-      }
-    };
-    
-    preloadResources();
-  }, []);
+  const [loadingComplete, setLoadingComplete] = useState(false);
   
   const handleLoadComplete = () => {
-    if (appReady) {
-      setCurrentScreen('signin');
-    } else {
-      // Wait for app to be ready
-      const checkReady = setInterval(() => {
-        if (appReady) {
-          clearInterval(checkReady);
-          setCurrentScreen('signin');
-        }
-      }, 100);
-    }
+    setLoadingComplete(true);
+    setCurrentScreen('signin');
   };
 
   const handleShowSignup = () => {
@@ -82,14 +43,16 @@ const App = () => {
   return (
     <AuthProvider>
       <div>
-        {currentScreen === 'loading' && <LoadingPage onLoadComplete={handleLoadComplete} />}
+        {currentScreen === 'loading' && !loadingComplete && (
+          <LoadingPage onLoadComplete={handleLoadComplete} />
+        )}
         {currentScreen === 'signup' && (
           <SignUpPage onShowSignin={handleShowSignin} onSignup={handleSignup} />
         )}
-        {currentScreen === 'signin' && (
+        {currentScreen === 'signin' && loadingComplete && (
           <SigninPage onShowSignup={handleShowSignup} onSignin={handleSignin} />
         )}
-        {currentScreen === 'home' && (
+        {currentScreen === 'home' && loadingComplete && (
           <HomePage onLogout={handleLogout} user={user} />
         )}
       </div>
