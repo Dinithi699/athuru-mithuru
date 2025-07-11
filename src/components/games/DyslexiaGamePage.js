@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const DyslexiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -62,7 +62,7 @@ const DyslexiaGamePage = ({ onBack }) => {
     }
   }, [timeLeft, gameStarted, gameCompleted, showResult]);
 
-  const handleTimeUp = useCallback(() => {
+  const handleTimeUp = () => {
     setResponses(prev => [...prev, {
       question: currentQuestion,
       userAnswer: null,
@@ -71,7 +71,7 @@ const DyslexiaGamePage = ({ onBack }) => {
       isCorrect: false
     }]);
     nextQuestion();
-  }, [currentQuestion, currentQuestions]);
+  };
 
   const startGame = () => {
     setGameStarted(true);
@@ -145,6 +145,7 @@ const DyslexiaGamePage = ({ onBack }) => {
     setCurrentLevel(1);
     setGameStarted(false);
     setGameCompleted(false);
+    setAllLevelsCompleted(false);
     setAllLevelsCompleted(false);
     setCurrentQuestion(0);
     setScore(0);

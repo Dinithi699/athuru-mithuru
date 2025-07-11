@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const DyspraxiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -157,53 +157,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }
   }, [activeStarIndex, gameStarted, gameCompleted]);
 
-  const startNextStar = useCallback(() => {
-    if (currentStar >= currentConfig.totalStars) {
-      completeLevel();
-      return;
-    }
-    
-    // Random star position
-    const randomIndex = Math.floor(Math.random() * currentConfig.starCount);
-    setActiveStarIndex(randomIndex);
-    setIsFlashing(true);
-    setTimeLeft(currentConfig.flashDuration);
-    setStarStartTime(Date.now());
-  }, [currentStar, currentConfig.totalStars, currentConfig.starCount, currentConfig.flashDuration]);
-
-  const handleStarTimeout = useCallback(() => {
-    playTimeoutSound();
-    setMissedClicks(prev => prev + 1);
-    setResultType('timeout');
-    
-    // Record timeout response
-    setResponses(prev => [...prev, {
-      starNumber: currentStar + 1,
-      targetStarIndex: activeStarIndex,
-      clickedStarIndex: -1,
-      reactionTime: currentConfig.flashDuration,
-      isCorrect: false,
-      timeRemaining: 0,
-      timeout: true
-    }]);
-    
-    setShowResult(true);
-    setActiveStarIndex(-1);
-    setIsFlashing(false);
-    
-    setTimeout(() => {
-      setShowResult(false);
-      setCurrentStar(prev => prev + 1);
-      startNextStar();
-    }, 1000);
-  }, [activeStarIndex, currentStar, currentConfig.flashDuration, startNextStar]);
-
-  // Timer effect for star timeout
-  useEffect(() => {
-    if (timeLeft <= 0 && activeStarIndex >= 0 && gameStarted && !gameCompleted) {
-      handleStarTimeout();
-    }
-  }, [timeLeft, activeStarIndex, gameStarted, gameCompleted, handleStarTimeout]);
   const startGame = () => {
     setGameStarted(true);
     setCurrentStar(0);
@@ -218,6 +171,20 @@ const DyspraxiaGamePage = ({ onBack }) => {
     
     // Start first star
     startNextStar();
+  };
+
+  const startNextStar = () => {
+    if (currentStar >= currentConfig.totalStars) {
+      completeLevel();
+      return;
+    }
+    
+    // Random star position
+    const randomIndex = Math.floor(Math.random() * currentConfig.starCount);
+    setActiveStarIndex(randomIndex);
+    setIsFlashing(true);
+    setTimeLeft(currentConfig.flashDuration);
+    setStarStartTime(Date.now());
   };
 
   const handleStarClick = (starIndex) => {
@@ -244,6 +211,33 @@ const DyspraxiaGamePage = ({ onBack }) => {
       reactionTime: reactionTime,
       isCorrect: isCorrect,
       timeRemaining: timeLeft
+    }]);
+    
+    setShowResult(true);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    
+    setTimeout(() => {
+      setShowResult(false);
+      setCurrentStar(prev => prev + 1);
+      startNextStar();
+    }, 1000);
+  };
+
+  const handleStarTimeout = () => {
+    playTimeoutSound();
+    setMissedClicks(prev => prev + 1);
+    setResultType('timeout');
+    
+    // Record timeout response
+    setResponses(prev => [...prev, {
+      starNumber: currentStar + 1,
+      targetStarIndex: activeStarIndex,
+      clickedStarIndex: -1,
+      reactionTime: currentConfig.flashDuration,
+      isCorrect: false,
+      timeRemaining: 0,
+      timeout: true
     }]);
     
     setShowResult(true);
@@ -676,9 +670,12 @@ const DyspraxiaGamePage = ({ onBack }) => {
         <div 
           ref={gameAreaRef}
           className="relative border-2 border-white/30 rounded-2xl bg-white/5 backdrop-blur-sm game-area"
+          style={{
+            width: window.innerWidth < 640 ? '300px' : window.innerWidth < 1024 ? '420px' : '620px',
+            height: window.innerWidth < 640 ? '220px' : window.innerWidth < 1024 ? '300px' : '420px'
+          }}
           onClick={handleBackgroundClick}
         >
-          <div className="w-72 h-52 sm:w-96 sm:h-72 md:w-[500px] md:h-80 lg:w-[600px] lg:h-96 relative">
           {/* Game Stars */}
           {starPositions.map((position, index) => (
             <button
@@ -712,7 +709,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
               ⭐
             </button>
           ))}
-          </div>
         </div>
       </div>
 
