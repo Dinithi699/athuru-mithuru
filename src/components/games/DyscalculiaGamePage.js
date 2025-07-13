@@ -12,8 +12,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const [responses, setResponses] = useState([]);
   const [reactionTimes, setReactionTimes] = useState([]);
   const [questionStartTime, setQuestionStartTime] = useState(null);
-  const [showExitConfirm, setShowExitConfirm] = useState(false);
-  const [allLevelsCompleted, setAllLevelsCompleted] = useState(false);
 
   // Game data for each level - 5 questions each
   const gameData = {
@@ -133,9 +131,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
 
   const completeLevel = () => {
     setGameCompleted(true);
-    if (currentLevel === 3) {
-      setAllLevelsCompleted(true);
-    }
   };
 
   const nextLevel = () => {
@@ -157,8 +152,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
     setCurrentLevel(1);
     setGameStarted(false);
     setGameCompleted(false);
-    setAllLevelsCompleted(false);
-    setAllLevelsCompleted(false);
     setCurrentQuestion(0);
     setScore(0);
     setResponses([]);
@@ -166,18 +159,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
     setSelectedAnswer(null);
     setShowResult(false);
     setTimeLeft(15);
-  };
-
-  const handleExit = () => {
-    setShowExitConfirm(true);
-  };
-
-  const confirmExit = () => {
-    onBack();
-  };
-
-  const cancelExit = () => {
-    setShowExitConfirm(false);
   };
 
   const getLevelDescription = (level) => {
@@ -277,72 +258,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
     
     return { accuracy, averageTime, averageReactionTime, riskLevel, analysis, recommendations };
   };
-
-  // Exit confirmation modal
-  if (showExitConfirm) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">ක්‍රීඩාවෙන් ඉවත්වන්න?</h3>
-          <p className="text-gray-600 mb-6">ඔබේ ප්‍රගතිය නැති වේ</p>
-          <div className="flex gap-4">
-            <button
-              onClick={cancelExit}
-              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-bold transition-colors"
-            >
-              අවලංගු කරන්න
-            </button>
-            <button
-              onClick={confirmExit}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-bold transition-colors"
-            >
-              ඉවත්වන්න
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Congratulations video for completing all levels
-  if (allLevelsCompleted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
-        <div className="text-center text-white max-w-2xl w-full">
-          <div className="mb-8">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              className="w-full max-w-md mx-auto rounded-2xl shadow-2xl"
-            >
-              <source src="/images/Game_Level_Completion_Animation_Request.mp4" type="video/mp4" />
-              <div className="text-6xl animate-bounce">🎉</div>
-            </video>
-          </div>
-          
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">සියලු මට්ටම් සම්පූර්ණයි!</h1>
-          <p className="text-lg sm:text-xl mb-8">ඔබ විශිෂ්ට ක්‍රීඩකයෙක්! 🌟</p>
-          
-          <div className="flex gap-4 justify-center flex-wrap">
-            <button
-              onClick={restartGame}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105"
-            >
-              🔄 නැවත ආරම්භ කරන්න
-            </button>
-            
-            <button
-              onClick={onBack}
-              className="bg-white text-blue-600 px-6 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105"
-            >
-              ← ආපසු යන්න
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const getNumberDisplay = (value, isExpression = false) => {
     if (isExpression) {
@@ -460,7 +375,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
             </div>
             
             <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
-              {currentLevel < 3 && (
+              {currentLevel < 3 && analysis.accuracy >= 50 && (
                 <button
                   onClick={nextLevel}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
@@ -468,6 +383,13 @@ const DyscalculiaGamePage = ({ onBack }) => {
                   ඊළඟ මට්ටම →
                 </button>
               )}
+              
+              <button
+                onClick={restartGame}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
+              >
+                🔄 නැවත ආරම්භ කරන්න
+              </button>
               
               <button
                 onClick={onBack}
@@ -493,18 +415,12 @@ const DyscalculiaGamePage = ({ onBack }) => {
             <div className="text-sm sm:text-base md:text-lg font-bold">මට්ටම {currentLevel}</div>
             <div className="text-xs sm:text-sm opacity-80">ප්‍රශ්නය {currentQuestion + 1}/{totalQuestions}</div>
           </div>
-          <div className="text-center">
+          <div className="text-right">
             <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
             <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 5 ? 'text-red-300 animate-pulse' : ''}`}>
               ⏰ {timeLeft}
             </div>
           </div>
-          <button
-            onClick={handleExit}
-            className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-colors duration-300"
-          >
-            ✕
-          </button>
         </div>
 
         {/* Progress Bar */}
