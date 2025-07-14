@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const DyscalculiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -41,26 +41,8 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
-  // Timer effect
-  useEffect(() => {
-    if (gameStarted && !gameCompleted && !showResult && timeLeft > 0) {
-      const timer = setTimeout(() => {
-        setTimeLeft(timeLeft - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !showResult) {
-      handleTimeUp();
-    }
-  }, [timeLeft, gameStarted, gameCompleted, showResult]);
-
-  // Set question start time when new question begins
-  useEffect(() => {
-    if (gameStarted && !showResult) {
-      setQuestionStartTime(Date.now());
-    }
-  }, [currentQuestion, gameStarted, showResult]);
-
-  const handleTimeUp = () => {
+  // Memoized handleTimeUp function
+  const handleTimeUp = useCallback(() => {
     const reactionTime = questionStartTime ? Date.now() - questionStartTime : 15000;
     setReactionTimes(prev => [...prev, reactionTime]);
     
@@ -73,7 +55,26 @@ const DyscalculiaGamePage = ({ onBack }) => {
       isCorrect: false
     }]);
     nextQuestion();
-  };
+  }, [currentQuestion, currentQuestions, questionStartTime]);
+
+  // Timer effect
+  useEffect(() => {
+    if (gameStarted && !gameCompleted && !showResult && timeLeft > 0) {
+      const timer = setTimeout(() => {
+        setTimeLeft(timeLeft - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (timeLeft === 0 && !showResult) {
+      handleTimeUp();
+    }
+  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
+
+  // Set question start time when new question begins
+  useEffect(() => {
+    if (gameStarted && !showResult) {
+      setQuestionStartTime(Date.now());
+    }
+  }, [currentQuestion, gameStarted, showResult]);
 
   const startGame = () => {
     setGameStarted(true);
@@ -146,19 +147,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
       setShowResult(false);
       setTimeLeft(15);
     }
-  };
-
-  const restartGame = () => {
-    setCurrentLevel(1);
-    setGameStarted(false);
-    setGameCompleted(false);
-    setCurrentQuestion(0);
-    setScore(0);
-    setResponses([]);
-    setReactionTimes([]);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setTimeLeft(15);
   };
 
   const getLevelDescription = (level) => {
@@ -375,7 +363,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
             </div>
             
             <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
-              {currentLevel < 3 && analysis.accuracy >= 50 && (
+              {currentLevel < 3 && (
                 <button
                   onClick={nextLevel}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
@@ -383,13 +371,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
                   ඊළඟ මට්ටම →
                 </button>
               )}
-              
-              <button
-                onClick={restartGame}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
-              >
-                🔄 නැවත ආරම්භ කරන්න
-              </button>
               
               <button
                 onClick={onBack}
@@ -414,6 +395,14 @@ const DyscalculiaGamePage = ({ onBack }) => {
           <div className="text-left">
             <div className="text-sm sm:text-base md:text-lg font-bold">මට්ටම {currentLevel}</div>
             <div className="text-xs sm:text-sm opacity-80">ප්‍රශ්නය {currentQuestion + 1}/{totalQuestions}</div>
+          </div>
+          <div className="text-center">
+            <button
+              onClick={onBack}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
+            >
+              🚪 ඉවත්වන්න
+            </button>
           </div>
           <div className="text-right">
             <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>

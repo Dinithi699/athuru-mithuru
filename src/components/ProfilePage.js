@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserGameHistory, updateUserProgress } from '../firebase/firestore';
+import { getUserGameHistory } from '../firebase/firestore';
 import { signOutUser } from '../firebase/auth';
 
 const ProfilePage = ({ onBack, user }) => {

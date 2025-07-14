@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const DysgraphiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -15,7 +15,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [dragStartTime, setDragStartTime] = useState(null);
   const [totalDragTime, setTotalDragTime] = useState(0);
   const [dragCount, setDragCount] = useState(0);
-  const audioRef = useRef(null);
 
   // Game data for each level
   const gameData = {
@@ -71,6 +70,28 @@ const DysgraphiaGamePage = ({ onBack }) => {
 
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
+
+  // Memoized handleTimeUp function
+  const handleTimeUp = useCallback(() => {
+    const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 60;
+    const averageDragTime = dragCount > 0 ? totalDragTime / dragCount : 0;
+    
+    setResponses(prev => [...prev, {
+      question: currentQuestion,
+      userAnswer: draggedLetters.map(item => item?.letter || '').join(''),
+      correct: currentQuestions[currentQuestion].word,
+      timeTaken: timeTaken,
+      averageDragTime: averageDragTime,
+      dragCount: dragCount,
+      isCorrect: false,
+      completed: false
+    }]);
+    
+    // Play lose sound for timeout
+    playLoseSound();
+    
+    nextQuestion();
+  }, [currentQuestion, currentQuestions, questionStartTime, dragCount, totalDragTime, draggedLetters]);
 
   // Audio effects
   const playWinSound = () => {
@@ -146,7 +167,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
     } else if (timeLeft === 0 && !showResult) {
       handleTimeUp();
     }
-  }, [timeLeft, gameStarted, gameCompleted, showResult]);
+  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
 
   // Initialize question
   useEffect(() => {
@@ -178,27 +199,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
     setTimeout(() => {
       speakWord(currentWord.word);
     }, 1000);
-  };
-
-  const handleTimeUp = () => {
-    const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 60;
-    const averageDragTime = dragCount > 0 ? totalDragTime / dragCount : 0;
-    
-    setResponses(prev => [...prev, {
-      question: currentQuestion,
-      userAnswer: draggedLetters.map(item => item?.letter || '').join(''),
-      correct: currentQuestions[currentQuestion].word,
-      timeTaken: timeTaken,
-      averageDragTime: averageDragTime,
-      dragCount: dragCount,
-      isCorrect: false,
-      completed: false
-    }]);
-    
-    // Play lose sound for timeout
-    playLoseSound();
-    
-    nextQuestion();
   };
 
   const startGame = () => {
@@ -571,7 +571,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
             </div>
             
             <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
-              {currentLevel < 3 && analysis.accuracy >= 40 && (
+              {currentLevel < 3 && (
                 <button
                   onClick={nextLevel}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
@@ -579,13 +579,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
                   ඊළඟ මට්ටම →
                 </button>
               )}
-              
-              <button
-                onClick={restartGame}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
-              >
-                🔄 නැවත ආරම්භ කරන්න
-              </button>
               
               <button
                 onClick={onBack}
@@ -610,6 +603,14 @@ const DysgraphiaGamePage = ({ onBack }) => {
           <div className="text-left">
             <div className="text-sm sm:text-base md:text-lg font-bold">මට්ටම {currentLevel}</div>
             <div className="text-xs sm:text-sm opacity-80">වචනය {currentQuestion + 1}/{totalQuestions}</div>
+          </div>
+          <div className="text-center">
+            <button
+              onClick={onBack}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
+            >
+              🚪 ඉවත්වන්න
+            </button>
           </div>
           <div className="text-right">
             <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>

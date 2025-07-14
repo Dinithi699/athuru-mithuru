@@ -289,7 +289,7 @@ const HomePage = ({ onLogout, user }) => {
       {renderCurrentPage()}
       <style jsx>{`
         /* Responsive Horizontal Orbital Animations */
-        @keyframes horizontalOrbit-math {
+        @keyframes horizontalOrbit-Dysgraphia {
           0% { transform: translate(-50%, -50%) rotate(0deg) translateX(80px) rotate(0deg); }
           100% { transform: translate(-50%, -50%) rotate(360deg) translateX(80px) rotate(-360deg); }
         }
@@ -311,7 +311,7 @@ const HomePage = ({ onLogout, user }) => {
 
         /* Tablet breakpoint */
         @media (min-width: 640px) {
-          @keyframes horizontalOrbit-math {
+          @keyframes horizontalOrbit-Dysgraphia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(120px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(120px) rotate(-360deg); }
           }
@@ -334,7 +334,7 @@ const HomePage = ({ onLogout, user }) => {
 
         /* Desktop breakpoint */
         @media (min-width: 1024px) {
-          @keyframes horizontalOrbit-math {
+          @keyframes horizontalOrbit-Dysgraphia {
             0% { transform: translate(-50%, -50%) rotate(0deg) translateX(200px) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg) translateX(200px) rotate(-360deg); }
           }
