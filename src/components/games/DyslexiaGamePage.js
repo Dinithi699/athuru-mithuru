@@ -261,7 +261,7 @@ const DyslexiaGamePage = ({ onBack }) => {
             </div>
             
             <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
-              {currentLevel < 3 && score >= totalQuestions * 0.6 && (
+              {currentLevel < 3 && (
                 <button
                   onClick={nextLevel}
                   className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
@@ -269,13 +269,6 @@ const DyslexiaGamePage = ({ onBack }) => {
                   ඊළඟ මට්ටම →
                 </button>
               )}
-              
-              <button
-                onClick={restartGame}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
-              >
-                නැවත ආරම්භ කරන්න
-              </button>
               
               <button
                 onClick={onBack}
@@ -300,6 +293,14 @@ const DyslexiaGamePage = ({ onBack }) => {
           <div className="text-left">
             <div className="text-sm sm:text-base md:text-lg font-bold">මට්ටම {currentLevel}</div>
             <div className="text-xs sm:text-sm opacity-80">ප්‍රශ්නය {currentQuestion + 1}/{totalQuestions}</div>
+          </div>
+          <div className="text-center">
+            <button
+              onClick={onBack}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
+            >
+              🚪 ඉවත්වන්න
+            </button>
           </div>
           <div className="text-right">
             <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
