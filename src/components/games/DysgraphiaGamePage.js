@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const DysgraphiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -6,17 +6,22 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [score, setScore] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(120); // 2 minutes per word
   const [responses, setResponses] = useState([]);
-  const [draggedLetters, setDraggedLetters] = useState([]);
-  const [availableLetters, setAvailableLetters] = useState([]);
   const [showResult, setShowResult] = useState(false);
   const [questionStartTime, setQuestionStartTime] = useState(null);
-  const [dragStartTime, setDragStartTime] = useState(null);
-  const [totalDragTime, setTotalDragTime] = useState(0);
-  const [dragCount, setDragCount] = useState(0);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [writingPhase, setWritingPhase] = useState('instruction'); // instruction, writing, camera, captured, analyzing
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [writingStartTime, setWritingStartTime] = useState(null);
+  const [cameraStartTime, setCameraStartTime] = useState(null);
 
-  // Game data for each level
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+
+  // Game data for each level - same as before
   const gameData = {
     1: [
       { 
@@ -71,81 +76,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
-  // Memoized handleTimeUp function
-  const handleTimeUp = useCallback(() => {
-    const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 60;
-    const averageDragTime = dragCount > 0 ? totalDragTime / dragCount : 0;
-    
-    setResponses(prev => [...prev, {
-      question: currentQuestion,
-      userAnswer: draggedLetters.map(item => item?.letter || '').join(''),
-      correct: currentQuestions[currentQuestion].word,
-      timeTaken: timeTaken,
-      averageDragTime: averageDragTime,
-      dragCount: dragCount,
-      isCorrect: false,
-      completed: false
-    }]);
-    
-    // Play lose sound for timeout
-    playLoseSound();
-    
-    nextQuestion();
-  }, [currentQuestion, currentQuestions, questionStartTime, dragCount, totalDragTime, draggedLetters]);
-
-  // Audio effects
-  const playWinSound = () => {
-    // Create a simple winning sound using Web Audio API
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Victory melody: C-E-G-C (major chord progression)
-    const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-    
-    frequencies.forEach((freq, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1 + index * 0.15);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4 + index * 0.15);
-      
-      oscillator.start(audioContext.currentTime + index * 0.15);
-      oscillator.stop(audioContext.currentTime + 0.4 + index * 0.15);
-    });
-  };
-
-  const playLoseSound = () => {
-    // Create a simple losing sound using Web Audio API
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Descending sad melody
-    const frequencies = [440, 392, 349.23, 293.66]; // A4, G4, F4, D4
-    
-    frequencies.forEach((freq, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-      oscillator.type = 'triangle';
-      
-      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1 + index * 0.2);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5 + index * 0.2);
-      
-      oscillator.start(audioContext.currentTime + index * 0.2);
-      oscillator.stop(audioContext.currentTime + 0.5 + index * 0.2);
-    });
-  };
-
   // Text-to-speech function
   const speakWord = (word) => {
     if ('speechSynthesis' in window) {
@@ -157,9 +87,210 @@ const DysgraphiaGamePage = ({ onBack }) => {
     }
   };
 
+  // Camera functions
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: 'environment' // Use back camera if available
+        } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+        setCameraActive(true);
+        setCameraStartTime(Date.now());
+        setWritingPhase('camera');
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('කැමරාවට ප්‍රවේශ වීමට නොහැකි විය. කරුණාකර අවසර ලබා දෙන්න.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const context = canvas.getContext('2d');
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      setCapturedImage(imageData);
+      setWritingPhase('captured');
+      stopCamera();
+      
+      // Simulate handwriting analysis
+      setTimeout(() => {
+        analyzeHandwriting(imageData);
+      }, 1000);
+    }
+  };
+
+  const retakePhoto = () => {
+    setCapturedImage(null);
+    setWritingPhase('writing');
+  };
+
+  // Simulated handwriting analysis
+  const analyzeHandwriting = (imageData) => {
+    setWritingPhase('analyzing');
+    
+    // Simulate analysis time
+    setTimeout(() => {
+      const currentQ = currentQuestions[currentQuestion];
+      const writingTime = writingStartTime ? (Date.now() - writingStartTime) / 1000 : 0;
+      const cameraTime = cameraStartTime ? (Date.now() - cameraStartTime) / 1000 : 0;
+      const totalTime = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 0;
+      
+      // Simulate analysis results based on various factors
+      const analysisFactors = {
+        writingTime: writingTime,
+        cameraTime: cameraTime,
+        totalTime: totalTime,
+        wordLength: currentQ.word.length,
+        level: currentLevel
+      };
+      
+      // Simulate different analysis outcomes
+      const outcomes = ['excellent', 'good', 'fair', 'needs_attention', 'concerning'];
+      const randomOutcome = outcomes[Math.floor(Math.random() * outcomes.length)];
+      
+      const analysis = generateAnalysisResult(randomOutcome, analysisFactors, currentQ.word);
+      
+      setAnalysisResult(analysis);
+      
+      // Calculate score based on analysis
+      let questionScore = 0;
+      if (analysis.overallRating === 'excellent') questionScore = 100;
+      else if (analysis.overallRating === 'good') questionScore = 80;
+      else if (analysis.overallRating === 'fair') questionScore = 60;
+      else if (analysis.overallRating === 'needs_attention') questionScore = 40;
+      else questionScore = 20;
+      
+      setScore(prev => prev + questionScore);
+      
+      // Store response data
+      const responseData = {
+        question: currentQuestion,
+        word: currentQ.word,
+        writingTime: writingTime,
+        cameraTime: cameraTime,
+        totalTime: totalTime,
+        analysisResult: analysis,
+        score: questionScore,
+        imageData: imageData // Store for potential future analysis
+      };
+      
+      setResponses(prev => [...prev, responseData]);
+      setShowResult(true);
+      
+      setTimeout(() => {
+        nextQuestion();
+      }, 5000);
+    }, 3000);
+  };
+
+  const generateAnalysisResult = (outcome, factors, word) => {
+    const analyses = {
+      excellent: {
+        overallRating: 'excellent',
+        letterFormation: 'විශිෂ්ට',
+        spacing: 'නිවැරදි',
+        alignment: 'හොඳ',
+        pressure: 'සමබර',
+        fluency: 'ගලන්',
+        feedback: 'ඉතා හොඳ අකුරු ලිවීමේ කුසලතාවක්! අකුරු පැහැදිලි සහ හොඳින් සකස් කර ඇත.',
+        riskLevel: 'අඩු',
+        recommendations: [
+          'වර්තමාන ප්‍රගතිය දිගටම කරගෙන යන්න',
+          'වඩාත් සංකීර්ණ වචන සමඟ අභ්‍යාස කරන්න'
+        ]
+      },
+      good: {
+        overallRating: 'good',
+        letterFormation: 'හොඳ',
+        spacing: 'බොහෝ දුරට නිවැරදි',
+        alignment: 'සාධාරණ',
+        pressure: 'සමබර',
+        fluency: 'හොඳ',
+        feedback: 'හොඳ අකුරු ලිවීමේ කුසලතාවක්. සුළු වැඩිදියුණු කිරීම් සමඟ ඉතා හොඳ මට්ටමකට ළඟා විය හැක.',
+        riskLevel: 'අඩු',
+        recommendations: [
+          'අකුරු අතර ඉඩ ප්‍රමාණය වැඩිදියුණු කරන්න',
+          'නිතිපතා අභ්‍යාස කරන්න'
+        ]
+      },
+      fair: {
+        overallRating: 'fair',
+        letterFormation: 'සාධාරණ',
+        spacing: 'අනියමිත',
+        alignment: 'සුළු ගැටලු',
+        pressure: 'වෙනස්වන',
+        fluency: 'මන්දගාමී',
+        feedback: 'අකුරු ලිවීමේ කුසලතා වර්ධනය වෙමින් පවතී. අමතර අභ්‍යාස සහ මග පෙන්වීම ප්‍රයෝජනවත් වේ.',
+        riskLevel: 'මධ්‍යම',
+        recommendations: [
+          'අකුරු හැඩය වැඩිදියුණු කිරීම කෙරෙහි අවධානය යොමු කරන්න',
+          'මෝටර් කුසලතා අභ්‍යාස වැඩි කරන්න',
+          'ලිඛිත අභ්‍යාස නිතිපතා කරන්න'
+        ]
+      },
+      needs_attention: {
+        overallRating: 'needs_attention',
+        letterFormation: 'දුෂ්කර',
+        spacing: 'අසමාන',
+        alignment: 'ගැටලුකාරී',
+        pressure: 'අධික/අඩු',
+        fluency: 'කඩාකප්පල්',
+        feedback: 'අකුරු ලිවීමේ සැලකිය යුතු අභියෝග. අමතර සහාය සහ ඉලක්කගත අභ්‍යාස අවශ්‍යයි.',
+        riskLevel: 'ඉහළ',
+        recommendations: [
+          'වෘත්තීය ප්‍රතිකාර විශේෂඥයෙකු සම්බන්ධ කරගන්න',
+          'මූලික මෝටර් කුසලතා වර්ධනය කරන්න',
+          'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණ අභ්‍යාස',
+          'ලිඛිත කාර්යයන් සඳහා අමතර කාලය ලබා දෙන්න'
+        ]
+      },
+      concerning: {
+        overallRating: 'concerning',
+        letterFormation: 'ඉතා දුෂ්කර',
+        spacing: 'අක්‍රමවත්',
+        alignment: 'දුර්වල',
+        pressure: 'අස්ථිර',
+        fluency: 'ඉතා මන්දගාමී',
+        feedback: 'අකුරු ලිවීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ග්‍රැෆියා අවදානමක් යෝජනා කරයි. වහාම වෘත්තීය තක්සේරුවක් අවශ්‍යයි.',
+        riskLevel: 'ඉතා ඉහළ',
+        recommendations: [
+          'වහාම වෘත්තීය ප්‍රතිකාර විශේෂඥයෙකු සම්බන්ධ කරගන්න',
+          'සවිස්තරාත්මක ඩිස්ග්‍රැෆියා තක්සේරුවක් කරවන්න',
+          'විකල්ප ලිඛිත ක්‍රම සලකා බලන්න',
+          'අධ්‍යාපන සහාය සැලසුම් සකස් කරන්න'
+        ]
+      }
+    };
+    
+    return analyses[outcome];
+  };
+
   // Timer effect
   useEffect(() => {
-    if (gameStarted && !gameCompleted && !showResult && timeLeft > 0) {
+    if (gameStarted && !gameCompleted && !showResult && timeLeft > 0 && writingPhase !== 'analyzing') {
       const timer = setTimeout(() => {
         setTimeLeft(timeLeft - 1);
       }, 1000);
@@ -167,7 +298,28 @@ const DysgraphiaGamePage = ({ onBack }) => {
     } else if (timeLeft === 0 && !showResult) {
       handleTimeUp();
     }
-  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
+  }, [timeLeft, gameStarted, gameCompleted, showResult, writingPhase]);
+
+  const handleTimeUp = useCallback(() => {
+    const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 120;
+    
+    setResponses(prev => [...prev, {
+      question: currentQuestion,
+      word: currentQuestions[currentQuestion].word,
+      writingTime: 120,
+      cameraTime: 0,
+      totalTime: timeTaken,
+      analysisResult: {
+        overallRating: 'timeout',
+        feedback: 'කාලය අවසන්. ප්‍රශ්නය සම්පූර්ණ කිරීමට නොහැකි විය.',
+        riskLevel: 'අනිශ්චිත'
+      },
+      score: 0,
+      imageData: null
+    }]);
+    
+    nextQuestion();
+  }, [currentQuestion, currentQuestions, questionStartTime]);
 
   // Initialize question
   useEffect(() => {
@@ -178,22 +330,12 @@ const DysgraphiaGamePage = ({ onBack }) => {
 
   const initializeQuestion = () => {
     const currentWord = currentQuestions[currentQuestion];
-    const letters = currentWord.word.split('');
-    
-    // Add exactly enough extra letters to make total 6 letters
-    const extraLetters = ['A', 'E', 'I', 'O', 'U', 'B', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
-    const shuffledExtras = extraLetters.filter(letter => !letters.includes(letter)).sort(() => Math.random() - 0.5);
-    const additionalLettersNeeded = 6 - letters.length;
-    const additionalLetters = shuffledExtras.slice(0, additionalLettersNeeded);
-    
-    const allLetters = [...letters, ...additionalLetters].sort(() => Math.random() - 0.5);
-    
-    setAvailableLetters(allLetters.map((letter, index) => ({ id: index, letter, used: false })));
-    setDraggedLetters(new Array(currentWord.word.length).fill(null));
+    setWritingPhase('instruction');
     setShowResult(false);
     setQuestionStartTime(Date.now());
-    setTotalDragTime(0);
-    setDragCount(0);
+    setCapturedImage(null);
+    setAnalysisResult(null);
+    setTimeLeft(120); // 2 minutes per word
     
     // Auto-play the word pronunciation
     setTimeout(() => {
@@ -201,140 +343,22 @@ const DysgraphiaGamePage = ({ onBack }) => {
     }, 1000);
   };
 
+  const startWriting = () => {
+    setWritingPhase('writing');
+    setWritingStartTime(Date.now());
+  };
+
   const startGame = () => {
     setGameStarted(true);
     setCurrentQuestion(0);
     setScore(0);
     setResponses([]);
-    setTimeLeft(60);
-  };
-
-  const handleDragStart = (e, letterId) => {
-    e.dataTransfer.setData('letterId', letterId);
-    setDragStartTime(Date.now());
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e, slotIndex) => {
-    e.preventDefault();
-    const letterId = parseInt(e.dataTransfer.getData('letterId'));
-    const letter = availableLetters.find(l => l.id === letterId);
-    
-    if (letter && !letter.used) {
-      const dragTime = dragStartTime ? Date.now() - dragStartTime : 0;
-      setTotalDragTime(prev => prev + dragTime);
-      setDragCount(prev => prev + 1);
-      
-      // Update available letters
-      setAvailableLetters(prev => 
-        prev.map(l => l.id === letterId ? { ...l, used: true } : l)
-      );
-      
-      // Update dragged letters
-      const newDraggedLetters = [...draggedLetters];
-      
-      // If slot is occupied, return the old letter to available
-      if (newDraggedLetters[slotIndex]) {
-        setAvailableLetters(prev => 
-          prev.map(l => l.id === newDraggedLetters[slotIndex].id ? { ...l, used: false } : l)
-        );
-      }
-      
-      newDraggedLetters[slotIndex] = letter;
-      setDraggedLetters(newDraggedLetters);
-      
-      // Check if word is complete
-      if (newDraggedLetters.every(item => item !== null)) {
-        checkAnswer(newDraggedLetters);
-      }
-    }
-  };
-
-  const handleLetterClick = (letterId) => {
-    const letter = availableLetters.find(l => l.id === letterId);
-    
-    if (letter && !letter.used) {
-      // Find first empty slot
-      const emptySlotIndex = draggedLetters.findIndex(item => item === null);
-      
-      if (emptySlotIndex !== -1) {
-        const dragTime = 500; // Simulate drag time for click
-        setTotalDragTime(prev => prev + dragTime);
-        setDragCount(prev => prev + 1);
-        
-        // Update available letters
-        setAvailableLetters(prev => 
-          prev.map(l => l.id === letterId ? { ...l, used: true } : l)
-        );
-        
-        // Update dragged letters
-        const newDraggedLetters = [...draggedLetters];
-        newDraggedLetters[emptySlotIndex] = letter;
-        setDraggedLetters(newDraggedLetters);
-        
-        // Check if word is complete
-        if (newDraggedLetters.every(item => item !== null)) {
-          checkAnswer(newDraggedLetters);
-        }
-      }
-    }
-  };
-
-  const removeLetterFromSlot = (slotIndex) => {
-    const letter = draggedLetters[slotIndex];
-    if (letter) {
-      // Return letter to available
-      setAvailableLetters(prev => 
-        prev.map(l => l.id === letter.id ? { ...l, used: false } : l)
-      );
-      
-      // Remove from slot
-      const newDraggedLetters = [...draggedLetters];
-      newDraggedLetters[slotIndex] = null;
-      setDraggedLetters(newDraggedLetters);
-    }
-  };
-
-  const checkAnswer = (letters) => {
-    const userWord = letters.map(item => item?.letter || '').join('');
-    const correctWord = currentQuestions[currentQuestion].word;
-    const isCorrect = userWord === correctWord;
-    
-    const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 0;
-    const averageDragTime = dragCount > 0 ? totalDragTime / dragCount : 0;
-    
-    setResponses(prev => [...prev, {
-      question: currentQuestion,
-      userAnswer: userWord,
-      correct: correctWord,
-      timeTaken: timeTaken,
-      averageDragTime: averageDragTime,
-      dragCount: dragCount,
-      isCorrect: isCorrect,
-      completed: true
-    }]);
-    
-    if (isCorrect) {
-      setScore(score + 1);
-      playWinSound(); // Play winning sound
-    } else {
-      playLoseSound(); // Play losing sound
-    }
-    
-    setShowResult(true);
-    
-    setTimeout(() => {
-      nextQuestion();
-    }, 3000);
+    setTimeLeft(120);
   };
 
   const nextQuestion = () => {
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
-      setTimeLeft(60);
     } else {
       completeLevel();
     }
@@ -342,6 +366,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
 
   const completeLevel = () => {
     setGameCompleted(true);
+    stopCamera(); // Ensure camera is stopped
   };
 
   const nextLevel = () => {
@@ -352,85 +377,65 @@ const DysgraphiaGamePage = ({ onBack }) => {
       setCurrentQuestion(0);
       setScore(0);
       setResponses([]);
-      setTimeLeft(60);
+      setTimeLeft(120);
     }
-  };
-
-  const restartGame = () => {
-    setCurrentLevel(1);
-    setGameStarted(false);
-    setGameCompleted(false);
-    setCurrentQuestion(0);
-    setScore(0);
-    setResponses([]);
-    setTimeLeft(60);
   };
 
   const getLevelDescription = (level) => {
     const descriptions = {
-      1: 'සරල 3-අකුරු වචන',
-      2: 'මධ්‍යම 4-අකුරු වචන',
-      3: 'අභියෝගාත්මක 5-අකුරු වචන'
+      1: 'සරල 3-අකුරු වචන (අකුරු ලිවීම)',
+      2: 'මධ්‍යම 4-අකුරු වචන (අකුරු ලිවීම)',
+      3: 'අභියෝගාත්මක 5-අකුරු වචන (අකුරු ලිවීම)'
     };
     return descriptions[level];
   };
 
   const getDysgraphiaAnalysis = () => {
     const totalResponses = responses.length;
-    const correctResponses = responses.filter(r => r.isCorrect).length;
-    const completedResponses = responses.filter(r => r.completed).length;
-    const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses;
-    const averageDragTime = responses.reduce((sum, r) => sum + r.averageDragTime, 0) / totalResponses;
-    const averageDragCount = responses.reduce((sum, r) => sum + r.dragCount, 0) / totalResponses;
-    const accuracy = totalResponses > 0 ? (correctResponses / totalResponses) * 100 : 0;
-    const completionRate = totalResponses > 0 ? (completedResponses / totalResponses) * 100 : 0;
+    const averageScore = responses.reduce((sum, r) => sum + (r.score || 0), 0) / totalResponses;
+    const averageWritingTime = responses.reduce((sum, r) => sum + r.writingTime, 0) / totalResponses;
+    const averageTotalTime = responses.reduce((sum, r) => sum + r.totalTime, 0) / totalResponses;
     
-    let riskLevel = 'අඩු';
+    const riskLevels = responses.map(r => r.analysisResult?.riskLevel).filter(Boolean);
+    const highRiskCount = riskLevels.filter(level => level === 'ඉහළ' || level === 'ඉතා ඉහළ').length;
+    const mediumRiskCount = riskLevels.filter(level => level === 'මධ්‍යම').length;
+    
+    let overallRiskLevel = 'අඩු';
     let analysis = '';
     let recommendations = [];
     
-    // Dysgraphia risk assessment based on multiple factors
-    const timeThreshold = currentLevel === 1 ? 30 : currentLevel === 2 ? 45 : 50;
-    const dragTimeThreshold = 2000; // 2 seconds per drag
-    const dragCountThreshold = currentLevel === 1 ? 6 : currentLevel === 2 ? 8 : 10;
-    
-    if (accuracy < 50 || averageTime > timeThreshold * 1.5 || averageDragTime > dragTimeThreshold * 1.5 || averageDragCount > dragCountThreshold * 1.5) {
-      riskLevel = 'ඉහළ';
-      analysis = 'අකුරු හඳුනාගැනීම, අකුරු අනුක්‍රමය සහ ලිඛිත ක්‍රියාකාරකම්වල සැලකිය යුතු දුෂ්කරතා ඩිස්ග්‍රැෆියා අවදානමක් යෝජනා කරයි.';
+    if (highRiskCount > totalResponses / 2) {
+      overallRiskLevel = 'ඉහළ';
+      analysis = 'අකුරු ලිවීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ග්‍රැෆියා අවදානමක් යෝජනා කරයි. වෘත්තීය තක්සේරුවක් නිර්දේශ කරනු ලැබේ.';
       recommendations = [
-        'අකුරු හඳුනාගැනීමේ ක්‍රියාකාරකම් අභ්‍යාස කරන්න',
-        'ලිඛිත මෝටර් කුසලතා වර්ධනය කරන්න',
-        'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණ අභ්‍යාස',
         'වෘත්තීය ප්‍රතිකාර විශේෂඥයෙකු සම්බන්ධ කරගන්න',
-        'ලිඛිත කාර්යයන් සඳහා අමතර කාලය ලබා දෙන්න'
+        'සවිස්තරාත්මක ඩිස්ග්‍රැෆියා තක්සේරුවක් කරවන්න',
+        'මෝටර් කුසලතා වර්ධන ක්‍රියාකාරකම්',
+        'ලිඛිත කාර්යයන් සඳහා අමතර කාලය සහ සහාය'
       ];
-    } else if (accuracy < 70 || averageTime > timeThreshold || averageDragTime > dragTimeThreshold || averageDragCount > dragCountThreshold) {
-      riskLevel = 'මධ්‍යම';
-      analysis = 'ලිඛිත කුසලතා සහ අකුරු සැකසීමේ සමහර අභියෝග. ඉලක්කගත සහාය සමඟ ප්‍රගතිය කළ හැක.';
+    } else if (mediumRiskCount > 0 || averageScore < 70) {
+      overallRiskLevel = 'මධ්‍යම';
+      analysis = 'අකුරු ලිවීමේ සමහර අභියෝග. ඉලක්කගත සහාය සහ අභ්‍යාස සමඟ වැඩිදියුණු කළ හැක.';
       recommendations = [
-        'අකුරු හඳුනාගැනීමේ ක්‍රීඩා නිතිපතා කරන්න',
-        'ලිඛිත අභ්‍යාස වැඩි කරන්න',
-        'මල්ටිසෙන්සරි ඉගෙනුම් ක්‍රම භාවිතා කරන්න',
-        'ලිඛිත කාර්යයන්හි ප්‍රගතිය නිරීක්ෂණය කරන්න',
-        'ධනාත්මක ප්‍රතිපෝෂණ ලබා දෙන්න'
+        'නිතිපතා අකුරු ලිවීමේ අභ්‍යාස',
+        'මෝටර් කුසලතා වර්ධන ක්‍රියාකාරකම්',
+        'ප්‍රගතිය නිරීක්ෂණය කරන්න',
+        'අධ්‍යාපන සහාය සලකා බලන්න'
       ];
     } else {
-      analysis = 'හොඳ අකුරු හඳුනාගැනීම සහ ලිඛිත කුසලතා. සාමාන්‍ය වර්ධනයක් පෙන්නුම් කරයි.';
+      analysis = 'හොඳ අකුරු ලිවීමේ කුසලතා. සාමාන්‍ය වර්ධනයක් පෙන්නුම් කරයි.';
       recommendations = [
         'වර්තමාන ප්‍රගතිය දිගටම කරගෙන යන්න',
-        'වඩාත් සංකීර්ණ වචන සමඟ අභ්‍යාස කරන්න',
-        'නිර්මාණාත්මක ලිඛිත ක්‍රියාකාරකම් දිරිමත් කරන්න',
-        'කියවීම සහ ලිවීම ඒකාබද්ධ කරන්න'
+        'වඩාත් සංකීර්ණ ලිඛිත කාර්යයන් උත්සාහ කරන්න',
+        'නිර්මාණාත්මක ලිවීම දිරිමත් කරන්න'
       ];
     }
     
     return { 
-      accuracy, 
-      averageTime, 
-      averageDragTime, 
-      averageDragCount, 
-      completionRate, 
-      riskLevel, 
+      averageScore: averageScore.toFixed(1), 
+      averageWritingTime: averageWritingTime.toFixed(1), 
+      averageTotalTime: averageTotalTime.toFixed(1),
+      overallRiskLevel, 
       analysis, 
       recommendations 
     };
@@ -454,12 +459,19 @@ const DysgraphiaGamePage = ({ onBack }) => {
     }
   };
 
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
   if (!gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-700 to-red-500 flex items-center justify-center p-4">
         <div className="text-center text-white max-w-2xl w-full">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">වචන අකුරු සැකසීම</h1>
-          <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 px-4">පින්තූරය බලා, ශබ්දය අසා, අකුරු ඇදගෙන වචනය සාදන්න!</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">අකුරු ලිවීමේ තක්සේරුව</h1>
+          <p className="text-lg sm:text-xl md:text-2xl mb-6 sm:mb-8 px-4">පින්තූරය බලා, ශබ්දය අසා, කඩදාසියේ වචනය ලියා කැමරාවට පෙන්වන්න!</p>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">මට්ටම {currentLevel}</h2>
@@ -472,11 +484,11 @@ const DysgraphiaGamePage = ({ onBack }) => {
               </div>
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                 <div className="text-xs sm:text-sm opacity-80">වචනයකට කාලය</div>
-                <div className="text-xl sm:text-2xl font-bold">60 තත්පර</div>
+                <div className="text-xl sm:text-2xl font-bold">2 මිනිත්තු</div>
               </div>
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-                <div className="text-xs sm:text-sm opacity-80">අකුරු ගණන</div>
-                <div className="text-xl sm:text-2xl font-bold">6</div>
+                <div className="text-xs sm:text-sm opacity-80">තක්සේරු ක්‍රමය</div>
+                <div className="text-lg sm:text-xl font-bold">කැමරා</div>
               </div>
             </div>
             
@@ -484,11 +496,20 @@ const DysgraphiaGamePage = ({ onBack }) => {
               <h3 className="text-base sm:text-lg font-bold mb-2 sm:mb-3">ක්‍රීඩා කරන ආකාරය</h3>
               <ul className="text-left space-y-1 sm:space-y-2 max-w-md mx-auto text-sm sm:text-base">
                 <li>• පින්තූරය බලන්න සහ ශබ්දය අසන්න</li>
-                <li>• අකුරු වලින් නිවැරදි වචනය සාදන්න</li>
-                <li>• අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න</li>
+                <li>• කඩදාසියක වචනය පැහැදිලිව ලියන්න</li>
+                <li>• කැමරාව ආරම්භ කර ලියූ වචනය පෙන්වන්න</li>
+                <li>• ඡායාරූපයක් ගෙන AI විශ්ලේෂණය බලන්න</li>
                 <li>• 🔊 බොත්තම ක්ලික් කර නැවත අසන්න</li>
-                <li>• වැරදි අකුරු ඉවත් කිරීමට ඒවා ක්ලික් කරන්න</li>
-                <li>• 🎵 නිවැරදි/වැරදි පිළිතුරු සඳහා ශබ්ද ප්‍රතිපෝෂණ</li>
+                <li>• අකුරු ලිවීමේ තත්ත්වය ගැන විස්තරාත්මක ප්‍රතිපෝෂණ ලැබෙයි</li>
+              </ul>
+            </div>
+            
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-500/20 rounded-lg">
+              <h4 className="text-base sm:text-lg font-bold mb-2">⚠️ අවශ්‍ය දේවල්</h4>
+              <ul className="text-left space-y-1 text-sm sm:text-base">
+                <li>• කඩදාසියක් සහ පෑනක්</li>
+                <li>• කැමරා අවසර</li>
+                <li>• හොඳ ආලෝකය</li>
               </ul>
             </div>
             
@@ -518,48 +539,37 @@ const DysgraphiaGamePage = ({ onBack }) => {
       <div className="min-h-screen bg-gradient-to-b from-red-900 via-red-700 to-red-500 flex items-center justify-center p-4">
         <div className="text-center text-white max-w-3xl w-full">
           <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8">
-            {analysis.riskLevel === 'අඩු' ? '🎉' : analysis.riskLevel === 'මධ්‍යම' ? '⚠️' : '🔍'}
+            {analysis.overallRiskLevel === 'අඩු' ? '🎉' : analysis.overallRiskLevel === 'මධ්‍යම' ? '⚠️' : '🔍'}
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-                <div className="text-xs sm:text-sm opacity-80">ලකුණු</div>
-                <div className="text-2xl sm:text-3xl font-bold">{score}/{totalQuestions}</div>
+                <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය ලකුණු</div>
+                <div className="text-2xl sm:text-3xl font-bold">{analysis.averageScore}%</div>
               </div>
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-                <div className="text-xs sm:text-sm opacity-80">නිරවද්‍යතාව</div>
-                <div className="text-2xl sm:text-3xl font-bold">{analysis.accuracy.toFixed(1)}%</div>
+                <div className="text-xs sm:text-sm opacity-80">ලිවීමේ කාලය</div>
+                <div className="text-lg sm:text-xl font-bold">{analysis.averageWritingTime}තත්</div>
               </div>
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-                <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය කාලය</div>
-                <div className="text-lg sm:text-xl font-bold">{analysis.averageTime.toFixed(1)}තත්</div>
+                <div className="text-xs sm:text-sm opacity-80">සම්පූර්ණ කාලය</div>
+                <div className="text-lg sm:text-xl font-bold">{analysis.averageTotalTime}තත්</div>
               </div>
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                 <div className="text-xs sm:text-sm opacity-80">අවදානම් මට්ටම</div>
                 <div className={`text-lg sm:text-xl font-bold ${
-                  analysis.riskLevel === 'අඩු' ? 'text-green-300' : 
-                  analysis.riskLevel === 'මධ්‍යම' ? 'text-yellow-300' : 'text-red-300'
+                  analysis.overallRiskLevel === 'අඩු' ? 'text-green-300' : 
+                  analysis.overallRiskLevel === 'මධ්‍යම' ? 'text-yellow-300' : 'text-red-300'
                 }`}>
-                  {analysis.riskLevel}
+                  {analysis.overallRiskLevel}
                 </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
-              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-                <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය ඇදගැනීමේ කාලය</div>
-                <div className="text-lg sm:text-xl font-bold">{(analysis.averageDragTime / 1000).toFixed(1)}තත්</div>
-              </div>
-              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-                <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය ඇදගැනීම් ගණන</div>
-                <div className="text-lg sm:text-xl font-bold">{analysis.averageDragCount.toFixed(1)}</div>
-              </div>
-            </div>
-            
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-white/10 rounded-lg text-left">
-              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">ඩිස්ග්‍රැෆියා තක්සේරු විශ්ලේෂණය</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">ඩිස්ග්‍රැෆියා AI තක්සේරු විශ්ලේෂණය</h3>
               <p className="text-sm sm:text-base md:text-lg mb-3 sm:mb-4">{analysis.analysis}</p>
               
               <h4 className="text-base sm:text-lg font-bold mb-2">නිර්දේශ:</h4>
@@ -614,8 +624,8 @@ const DysgraphiaGamePage = ({ onBack }) => {
           </div>
           <div className="text-right">
             <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
-            <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 10 ? 'text-red-300 animate-pulse' : ''}`}>
-              ⏰ {timeLeft}
+            <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 30 ? 'text-red-300 animate-pulse' : ''}`}>
+              ⏰ {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
             </div>
           </div>
         </div>
@@ -634,6 +644,9 @@ const DysgraphiaGamePage = ({ onBack }) => {
           <div className="mb-6 sm:mb-8">
             {renderImage(currentQ)}
             <div className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3">{currentQ.description}</div>
+            <div className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-yellow-300">
+              {currentQ.word}
+            </div>
             <button
               onClick={() => speakWord(currentQ.word)}
               className="bg-white/20 hover:bg-white/30 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 flex items-center gap-2 mx-auto text-sm sm:text-base"
@@ -642,59 +655,164 @@ const DysgraphiaGamePage = ({ onBack }) => {
             </button>
           </div>
 
-          {/* Word Slots */}
-          <div className="mb-6 sm:mb-8">
-            <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">වචනය සාදන්න:</h3>
-            <div className="flex justify-center gap-1 sm:gap-2 mb-4 sm:mb-6 flex-wrap">
-              {draggedLetters.map((letter, index) => (
-                <div
-                  key={index}
-                  className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-white/30 border-2 border-white/50 rounded-lg flex items-center justify-center text-lg sm:text-xl md:text-2xl font-bold cursor-pointer hover:bg-white/40 transition-colors duration-300"
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onClick={() => removeLetterFromSlot(index)}
-                >
-                  {letter ? letter.letter : ''}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Available Letters - Always 6 letters */}
-          <div className="mb-4 sm:mb-6">
-            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">අකුරු (6):</h3>
-            <div className="flex justify-center gap-2 sm:gap-3 flex-wrap">
-              {availableLetters.map((letter) => (
-                <div
-                  key={letter.id}
-                  draggable={!letter.used}
-                  onDragStart={(e) => handleDragStart(e, letter.id)}
-                  onClick={() => handleLetterClick(letter.id)}
-                  className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg flex items-center justify-center text-base sm:text-lg md:text-xl font-bold cursor-pointer transition-all duration-300 transform hover:scale-110 ${
-                    letter.used 
-                      ? 'bg-gray-400 text-gray-600 cursor-not-allowed opacity-50' 
-                      : 'bg-white text-red-600 hover:bg-gray-100 shadow-lg'
-                  }`}
-                >
-                  {letter.letter}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Result Display */}
-          {showResult && (
-            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white/10 rounded-lg">
-              <div className={`text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3 ${
-                responses[responses.length - 1]?.isCorrect ? 'text-green-300' : 'text-red-300'
-              }`}>
-                {responses[responses.length - 1]?.isCorrect ? '🎉 නිවැරදියි! 🎵' : '❌ වැරදියි! 🎵'}
+          {/* Phase-based Content */}
+          {writingPhase === 'instruction' && (
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-yellow-500/20 rounded-lg p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">📝 උපදෙස්</h3>
+                <ol className="text-left space-y-2 max-w-md mx-auto text-sm sm:text-base">
+                  <li>1. කඩදාසියක් සහ පෑනක් සූදානම් කරන්න</li>
+                  <li>2. ඉහත වචනය පැහැදිලිව ලියන්න</li>
+                  <li>3. ලිවීම අවසන් වූ පසු "ලිවීම අවසන්" ක්ලික් කරන්න</li>
+                  <li>4. කැමරාව ආරම්භ කර ලියූ වචනය පෙන්වන්න</li>
+                </ol>
               </div>
-              <div className="text-sm sm:text-base md:text-lg">
-                ඔබේ පිළිතුර: <span className="font-bold">{responses[responses.length - 1]?.userAnswer}</span>
+              <button
+                onClick={startWriting}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-lg sm:text-xl transition-all duration-300 transform hover:scale-105"
+              >
+                ✍️ ලිවීම ආරම්භ කරන්න
+              </button>
+            </div>
+          )}
+
+          {writingPhase === 'writing' && (
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-blue-500/20 rounded-lg p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">✍️ ලිවීම</h3>
+                <p className="text-sm sm:text-base mb-4">කඩදාසියේ "<span className="font-bold text-yellow-300">{currentQ.word}</span>" වචනය පැහැදිලිව ලියන්න</p>
+                <div className="text-2xl sm:text-3xl animate-pulse">📝</div>
               </div>
-              <div className="text-sm sm:text-base md:text-lg">
-                නිවැරදි වචනය: <span className="font-bold">{currentQ.word}</span>
+              <button
+                onClick={startCamera}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-lg sm:text-xl transition-all duration-300 transform hover:scale-105"
+              >
+                📷 ලිවීම අවසන් - කැමරාව ආරම්භ කරන්න
+              </button>
+            </div>
+          )}
+
+          {writingPhase === 'camera' && (
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-purple-500/20 rounded-lg p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">📷 කැමරා දර්ශනය</h3>
+                <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    className="w-full h-64 sm:h-80 object-cover"
+                  />
+                  <div className="absolute inset-0 border-4 border-dashed border-yellow-400 m-4 rounded-lg pointer-events-none">
+                    <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs sm:text-sm">
+                      ලියූ වචනය මෙම කොටුව තුළ තබන්න
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm sm:text-base mb-4">ලියූ කඩදාසිය කැමරාවට පෙන්වා ඡායාරූපයක් ගන්න</p>
+              </div>
+              <div className="flex gap-3 sm:gap-4 justify-center">
+                <button
+                  onClick={capturePhoto}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+                >
+                  📸 ඡායාරූපය ගන්න
+                </button>
+                <button
+                  onClick={stopCamera}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+                >
+                  ❌ අවලංගු කරන්න
+                </button>
+              </div>
+            </div>
+          )}
+
+          {writingPhase === 'captured' && (
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-green-500/20 rounded-lg p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">📸 ගත් ඡායාරූපය</h3>
+                <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+                  <img
+                    src={capturedImage}
+                    alt="Captured handwriting"
+                    className="w-full h-64 sm:h-80 object-cover"
+                  />
+                </div>
+                <p className="text-sm sm:text-base mb-4">ඡායාරූපය හොඳද? නැතහොත් නැවත ගන්නද?</p>
+              </div>
+              <div className="flex gap-3 sm:gap-4 justify-center">
+                <button
+                  onClick={() => analyzeHandwriting(capturedImage)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+                >
+                  ✅ විශ්ලේෂණය කරන්න
+                </button>
+                <button
+                  onClick={retakePhoto}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+                >
+                  🔄 නැවත ගන්න
+                </button>
+              </div>
+            </div>
+          )}
+
+          {writingPhase === 'analyzing' && (
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-blue-500/20 rounded-lg p-4 sm:p-6">
+                <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">🤖 AI විශ්ලේෂණය</h3>
+                <div className="flex items-center justify-center space-x-2 mb-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  <span className="text-sm sm:text-base">අකුරු ලිවීම විශ්ලේෂණය කරමින්...</span>
+                </div>
+                <div className="text-xs sm:text-sm opacity-80">
+                  • අකුරු හැඩය පරීක්ෂා කරමින්<br/>
+                  • අකුරු අතර ඉඩ ප්‍රමාණය මැනීම<br/>
+                  • ලිඛිත පීඩනය තක්සේරු කරමින්<br/>
+                  • සමස්ත ගුණාත්මකභාවය ගණනය කරමින්
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Analysis Result Display */}
+          {showResult && analysisResult && (
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white/10 rounded-lg text-left">
+              <h3 className="text-lg sm:text-xl font-bold mb-3 text-center">📊 විශ්ලේෂණ ප්‍රතිඵල</h3>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4">
+                <div className="bg-white/10 rounded p-2">
+                  <div className="text-xs opacity-80">අකුරු හැඩය</div>
+                  <div className="text-sm font-bold">{analysisResult.letterFormation}</div>
+                </div>
+                <div className="bg-white/10 rounded p-2">
+                  <div className="text-xs opacity-80">ඉඩ ප්‍රමාණය</div>
+                  <div className="text-sm font-bold">{analysisResult.spacing}</div>
+                </div>
+                <div className="bg-white/10 rounded p-2">
+                  <div className="text-xs opacity-80">පෙළගැස්ම</div>
+                  <div className="text-sm font-bold">{analysisResult.alignment}</div>
+                </div>
+                <div className="bg-white/10 rounded p-2">
+                  <div className="text-xs opacity-80">ගලන බව</div>
+                  <div className="text-sm font-bold">{analysisResult.fluency}</div>
+                </div>
+              </div>
+              
+              <div className="mb-3">
+                <div className="text-sm sm:text-base font-bold mb-2">ප්‍රතිපෝෂණ:</div>
+                <p className="text-xs sm:text-sm">{analysisResult.feedback}</p>
+              </div>
+              
+              <div className="text-center">
+                <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${
+                  analysisResult.riskLevel === 'අඩු' ? 'bg-green-500' :
+                  analysisResult.riskLevel === 'මධ්‍යම' ? 'bg-yellow-500' :
+                  'bg-red-500'
+                }`}>
+                  අවදානම: {analysisResult.riskLevel}
+                </span>
               </div>
             </div>
           )}
@@ -702,8 +820,11 @@ const DysgraphiaGamePage = ({ onBack }) => {
 
         {/* Instructions */}
         <div className="text-xs sm:text-sm opacity-80 px-4">
-          අකුරු වලින් නිවැරදි වචනය සාදන්න. අකුරු ඇදගෙන හෝ ක්ලික් කර නිවැරදි ස්ථානයට දමන්න.
+          වචනය කඩදාසියේ ලියා කැමරාවට පෙන්වන්න. AI විශ්ලේෂණයෙන් ඔබේ අකුරු ලිවීමේ තත්ත්වය තක්සේරු කරනු ලැබේ.
         </div>
+
+        {/* Hidden canvas for photo capture */}
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
       </div>
     </div>
   );
