@@ -16,6 +16,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [analysisResult, setAnalysisResult] = useState(null);
   const [writingStartTime, setWritingStartTime] = useState(null);
   const [cameraStartTime, setCameraStartTime] = useState(null);
+  const [cameraReady, setCameraReady] = useState(false);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -94,12 +95,15 @@ const DysgraphiaGamePage = ({ onBack }) => {
         video: { 
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: 'environment' // Use back camera if available
+          facingMode: 'user' // Use front camera for better accessibility
         } 
       });
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play();
+        };
         streamRef.current = stream;
         setCameraActive(true);
         setCameraStartTime(Date.now());
@@ -107,7 +111,27 @@ const DysgraphiaGamePage = ({ onBack }) => {
       }
     } catch (error) {
       console.error('Error accessing camera:', error);
-      alert('කැමරාවට ප්‍රවේශ වීමට නොහැකි විය. කරුණාකර අවසර ලබා දෙන්න.');
+      // Try with different constraints if the first attempt fails
+      try {
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
+          video: true 
+        });
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = fallbackStream;
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play();
+          };
+          streamRef.current = fallbackStream;
+          setCameraActive(true);
+          setCameraStartTime(Date.now());
+          setWritingPhase('camera');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback camera access failed:', fallbackError);
+        alert('කැමරාවට ප්‍රවේශ වීමට නොහැකි විය. කරුණාකර:\n1. කැමරා අවසර ලබා දෙන්න\n2. Browser settings පරීක්ෂා කරන්න\n3. HTTPS connection භාවිතා කරන්න');
+        setWritingPhase('writing'); // Go back to writing phase
+      }
     }
   };
 
@@ -117,10 +141,11 @@ const DysgraphiaGamePage = ({ onBack }) => {
       streamRef.current = null;
     }
     setCameraActive(false);
+    setCameraReady(false);
   };
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
+    if (videoRef.current && canvasRef.current && videoRef.current.readyState === 4) {
       const canvas = canvasRef.current;
       const video = videoRef.current;
       const context = canvas.getContext('2d');
@@ -128,24 +153,63 @@ const DysgraphiaGamePage = ({ onBack }) => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
-      setCapturedImage(imageData);
-      setWritingPhase('captured');
-      stopCamera();
-      
-      // Simulate handwriting analysis
-      setTimeout(() => {
-        analyzeHandwriting(imageData);
-      }, 1000);
+      // Ensure we have valid dimensions
+      if (canvas.width > 0 && canvas.height > 0) {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        setCapturedImage(imageData);
+        setWritingPhase('captured');
+        stopCamera();
+        
+        // Simulate handwriting analysis
+        setTimeout(() => {
+          analyzeHandwriting(imageData);
+        }, 1000);
+      } else {
+        alert('කැමරා තවමත් සූදානම් නොවේ. කරුණාකර මොහොතක් රැඳී සිට නැවත උත්සාහ කරන්න.');
+      }
+    } else {
+      alert('කැමරා සූදානම් නොවේ. කරුණාකර මොහොතක් රැඳී සිට නැවත උත්සාහ කරන්න.');
     }
   };
 
   const retakePhoto = () => {
     setCapturedImage(null);
-    setWritingPhase('writing');
+    startCamera(); // Restart camera instead of going back to writing
   };
+
+  // Add a function to check camera readiness
+  const isCameraReady = () => {
+    return videoRef.current && 
+           videoRef.current.readyState === 4 && 
+           videoRef.current.videoWidth > 0 && 
+           videoRef.current.videoHeight > 0;
+  };
+
+  // Add state for camera readiness
+  const [cameraReady, setCameraReady] = useState(false);
+
+  // Monitor camera readiness
+  useEffect(() => {
+    if (cameraActive && videoRef.current) {
+      const checkReady = () => {
+        setCameraReady(isCameraReady());
+      };
+      
+      videoRef.current.addEventListener('loadedmetadata', checkReady);
+      videoRef.current.addEventListener('canplay', checkReady);
+      
+      const interval = setInterval(checkReady, 500);
+      
+      return () => {
+        if (videoRef.current) {
+          videoRef.current.removeEventListener('loadedmetadata', checkReady);
+          videoRef.current.removeEventListener('canplay', checkReady);
+        }
+        clearInterval(interval);
+      };
+    }
 
   // Simulated handwriting analysis
   const analyzeHandwriting = (imageData) => {
@@ -696,30 +760,62 @@ const DysgraphiaGamePage = ({ onBack }) => {
             <div className="space-y-4 sm:space-y-6">
               <div className="bg-purple-500/20 rounded-lg p-4 sm:p-6">
                 <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">📷 කැමරා දර්ශනය</h3>
-                <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+                <div className="relative bg-black rounded-lg overflow-hidden mb-4 min-h-[200px] sm:min-h-[320px]">
+                  {!cameraReady && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white">
+                      <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+                        <div className="text-sm">කැමරා සූදානම් කරමින්...</div>
+                      </div>
+                    </div>
+                  )}
                   <video
                     ref={videoRef}
                     autoPlay
+                    muted
                     playsInline
-                    className="w-full h-64 sm:h-80 object-cover"
+                    className={`w-full h-64 sm:h-80 object-cover ${!cameraReady ? 'opacity-0' : 'opacity-100'} transition-opacity duration-500`}
                   />
-                  <div className="absolute inset-0 border-4 border-dashed border-yellow-400 m-4 rounded-lg pointer-events-none">
-                    <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs sm:text-sm">
-                      ලියූ වචනය මෙම කොටුව තුළ තබන්න
+                  {cameraReady && (
+                    <div className="absolute inset-0 border-4 border-dashed border-yellow-400 m-4 rounded-lg pointer-events-none">
+                      <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs sm:text-sm">
+                        ලියූ වචනය මෙම කොටුව තුළ තබන්න
+                      </div>
+                      <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                        📝 {currentQ.word}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
-                <p className="text-sm sm:text-base mb-4">ලියූ කඩදාසිය කැමරාවට පෙන්වා ඡායාරූපයක් ගන්න</p>
+                
+                {cameraReady ? (
+                  <p className="text-sm sm:text-base mb-4 text-green-300">
+                    ✅ කැමරා සූදානම්! ලියූ කඩදාසිය කැමරාවට පෙන්වා ඡායාරූපයක් ගන්න
+                  </p>
+                ) : (
+                  <p className="text-sm sm:text-base mb-4 text-yellow-300">
+                    ⏳ කැමරා සූදානම් වන තෙක් රැඳී සිටින්න...
+                  </p>
+                )}
               </div>
+              
               <div className="flex gap-3 sm:gap-4 justify-center">
                 <button
                   onClick={capturePhoto}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+                  disabled={!cameraReady}
+                  className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-all duration-300 text-sm sm:text-base ${
+                    cameraReady 
+                      ? 'bg-green-600 hover:bg-green-700 text-white transform hover:scale-105' 
+                      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                  }`}
                 >
                   📸 ඡායාරූපය ගන්න
                 </button>
                 <button
-                  onClick={stopCamera}
+                  onClick={() => {
+                    stopCamera();
+                    setWritingPhase('writing');
+                  }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
                 >
                   ❌ අවලංගු කරන්න
@@ -733,27 +829,38 @@ const DysgraphiaGamePage = ({ onBack }) => {
               <div className="bg-green-500/20 rounded-lg p-4 sm:p-6">
                 <h3 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">📸 ගත් ඡායාරූපය</h3>
                 <div className="relative bg-black rounded-lg overflow-hidden mb-4">
-                  <img
-                    src={capturedImage}
-                    alt="Captured handwriting"
-                    className="w-full h-64 sm:h-80 object-cover"
-                  />
+                  {capturedImage && (
+                    <img
+                      src={capturedImage}
+                      alt="Captured handwriting"
+                      className="w-full h-64 sm:h-80 object-cover"
+                    />
+                  )}
                 </div>
                 <p className="text-sm sm:text-base mb-4">ඡායාරූපය හොඳද? නැතහොත් නැවත ගන්නද?</p>
               </div>
               <div className="flex gap-3 sm:gap-4 justify-center">
                 <button
                   onClick={() => analyzeHandwriting(capturedImage)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base transform hover:scale-105"
                 >
                   ✅ විශ්ලේෂණය කරන්න
                 </button>
                 <button
                   onClick={retakePhoto}
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base transform hover:scale-105"
                 >
                   🔄 නැවත ගන්න
                 </button>
+              </div>
+            </div>
+          )}
+                    <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs sm:text-sm">
+                      ලියූ වචනය මෙම කොටුව තුළ තබන්න
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm sm:text-base mb-4">ලියූ කඩදාසිය කැමරාවට පෙන්වා ඡායාරූපයක් ගන්න</p>
               </div>
             </div>
           )}
