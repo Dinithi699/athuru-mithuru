@@ -191,7 +191,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 type="submit"
                 disabled={loading}
                 className="w-full bg-[#3d266c] hover:bg-[#3d2881] text-white text-lg sm:text-xl font-semibold py-3 sm:py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#3d266c]/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              >
+              > 
                 {loading ? 'ලියාපදිංචි වෙමින්...' : 'ලියාපදිංචිය සම්පූර්ණයි'}
               </button>
             </div>
