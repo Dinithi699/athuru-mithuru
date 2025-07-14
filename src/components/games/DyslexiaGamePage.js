@@ -58,7 +58,7 @@ const DyslexiaGamePage = ({ onBack }) => {
     } else if (timeLeft === 0 && !showResult) {
       handleTimeUp();
     }
-  }, [timeLeft, gameStarted, gameCompleted, showResult]);
+  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
 
   const handleTimeUp = () => {
     setResponses(prev => [...prev, {
@@ -134,18 +134,6 @@ const DyslexiaGamePage = ({ onBack }) => {
       setShowResult(false);
       setTimeLeft(10);
     }
-  };
-
-  const restartGame = () => {
-    setCurrentLevel(1);
-    setGameStarted(false);
-    setGameCompleted(false);
-    setCurrentQuestion(0);
-    setScore(0);
-    setResponses([]);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setTimeLeft(10);
   };
 
   const getLevelDescription = (level) => {

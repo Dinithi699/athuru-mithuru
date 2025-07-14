@@ -946,8 +946,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
       .filter(r => r.isCorrect)
       .reduce((sum, r) => sum + r.reactionTime, 0) / Math.max(correctResponses, 1);
     
-    const accuracy = totalResponses > 0 ? (correctResponses / totalResponses) * 100 : 0;
-    const timeoutRate = totalResponses > 0 ? (timeoutResponses / totalResponses) * 100 : 0;
     
     let riskLevel = 'අඩු';
     let analysis = '';

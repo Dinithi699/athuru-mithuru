@@ -55,7 +55,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
       isCorrect: false
     }]);
     nextQuestion();
-  }, [currentQuestion, currentQuestions, questionStartTime]);
+  }, [currentQuestion, currentQuestions, questionStartTime, nextQuestion]);
 
   // Timer effect
   useEffect(() => {
