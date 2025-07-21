@@ -132,7 +132,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     return positions;
   };
 
-  const handleStarTimeout = () => {
+  const handleStarTimeout = useCallback(() => {
     playTimeoutSound();
     setResultType('timeout');
     
@@ -156,7 +156,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setCurrentStar(prev => prev + 1);
       startNextStar();
     }, 1000);
-  };
+  }, [playTimeoutSound, setResultType, setResponses, currentStar, activeStarIndex, currentConfig.flashDuration, setShowResult, setActiveStarIndex, setIsFlashing, setCurrentStar]);
 
   // Timer effect for star flashing
   useEffect(() => {

@@ -50,6 +50,18 @@ const DyslexiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
+  // Define nextQuestion first with useCallback
+  const nextQuestion = useCallback(() => {
+    if (currentQuestion < totalQuestions - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+      setTimeLeft(10);
+    } else {
+      completeLevel();
+    }
+  }, [currentQuestion, totalQuestions, completeLevel]);
+
   const handleTimeUp = useCallback(() => {
     setResponses(prev => [...prev, {
       question: currentQuestion,
@@ -116,17 +128,6 @@ const DyslexiaGamePage = ({ onBack }) => {
     setTimeout(() => {
       nextQuestion();
     }, 2000);
-  };
-
-  const nextQuestion = () => {
-    if (currentQuestion < totalQuestions - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-      setTimeLeft(10);
-    } else {
-      completeLevel();
-    }
   };
 
   const completeLevel = () => {

@@ -174,7 +174,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
         ...prev,
         {
           question: currentQuestion,
-  }, [currentQuestion, gameStarted, gameCompleted, currentQuestions, totalQuestions]) // 👈 Added missing dependencies
           timeTaken: timeTaken,
           capturedImage: imageDataUrl,
           timestamp: new Date().toISOString(),
@@ -659,7 +658,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-                    }
         <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
