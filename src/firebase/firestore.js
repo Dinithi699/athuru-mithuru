@@ -21,7 +21,8 @@ export const updateUserProgress = async (userId, gameType, points) => {
     await updateDoc(userRef, {
       points: increment(points),
       completedGames: increment(1),
-      [`${gameType}Progress`]: increment(1)
+      [`${gameType}Progress`]: increment(1),
+      lastActivity: new Date().toISOString()
     });
     
     return { success: true };
@@ -78,13 +79,25 @@ export const getUserData = async (userId) => {
 // Save game score
 export const saveGameScore = async (userId, gameType, score, duration, additionalData = {}) => {
   try {
-    await addDoc(collection(db, "gameScores"), {
+    const gameData = {
       userId: userId,
       gameType: gameType,
       score: score,
       duration: duration,
       timestamp: new Date().toISOString(),
+      date: new Date().toDateString(),
       ...additionalData
+    };
+    
+    // Save to gameScores collection
+    await addDoc(collection(db, "gameScores"), gameData);
+    
+    // Also update user's last activity
+    const userRef = doc(db, "users", userId);
+    await updateDoc(userRef, {
+      lastActivity: new Date().toISOString(),
+      [`last${gameType}Score`]: score,
+      [`last${gameType}Date`]: new Date().toISOString()
     });
     
     return { success: true };
@@ -132,7 +145,7 @@ export const getAllUsers = async () => {
   try {
     const q = query(
       collection(db, "users"),
-      orderBy("createdAt", "desc")
+      orderBy("lastActivity", "desc")
     );
     
     const querySnapshot = await getDocs(q);
@@ -161,6 +174,33 @@ export const getAllUsers = async () => {
       data: usersWithHistory
     };
   } catch (error) {
+    console.error('Error fetching users:', error);
+    
+    // Fallback: try without ordering if lastActivity field doesn't exist
+    try {
+      const fallbackQuery = query(collection(db, "users"));
+      const fallbackSnapshot = await getDocs(fallbackQuery);
+      const fallbackUsers = [];
+      
+      fallbackSnapshot.forEach((doc) => {
+        fallbackUsers.push({
+          uid: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      return {
+        success: true,
+        data: fallbackUsers
+      };
+    } catch (fallbackError) {
+      return {
+        success: false,
+        error: fallbackError.message
+      };
+    }
+  }
+};
     return {
       success: false,
       error: error.message
