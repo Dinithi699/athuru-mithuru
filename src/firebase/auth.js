@@ -83,7 +83,7 @@ export const signInAdmin = async (email, password) => {
     try {
       const adminDocPromise = getDoc(doc(db, "admins", user.uid));
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+        setTimeout(() => reject(new Error('Firestore timeout')), 10000)
       );
       
       const adminDoc = await Promise.race([adminDocPromise, timeoutPromise]);
@@ -204,7 +204,7 @@ export const signInUser = async (email, password) => {
     try {
       const userDocPromise = getDoc(doc(db, "users", user.uid));
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+        setTimeout(() => reject(new Error('Firestore timeout')), 10000)
       );
       
       const userDoc = await Promise.race([userDocPromise, timeoutPromise]);
