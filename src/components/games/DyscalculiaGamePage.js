@@ -54,7 +54,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
     } else {
       completeLevel();
     }
-  }, [currentQuestion, totalQuestions]);
+  }, [currentQuestion, totalQuestions, completeLevel]);
 
   const completeLevel = useCallback(() => {
     if (currentLevel === 3) {
