@@ -43,7 +43,27 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
-  // Memoized handleTimeUp function
+  // Memoized functions in correct order
+  const nextQuestion = useCallback(() => {
+    if (currentQuestion < totalQuestions - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+      setTimeLeft(15);
+      setQuestionStartTime(Date.now());
+    } else {
+      completeLevel();
+    }
+  }, [currentQuestion, totalQuestions]);
+
+  const completeLevel = useCallback(() => {
+    if (currentLevel === 3) {
+      setShowEndingVideo(true) // show the ending video only after level 3
+    } else {
+      setGameCompleted(true)
+    }
+  }, [currentLevel]);
+
   const handleTimeUp = useCallback(() => {
     const reactionTime = questionStartTime ? Date.now() - questionStartTime : 15000;
     setReactionTimes(prev => [...prev, reactionTime]);
@@ -128,26 +148,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
       nextQuestion();
     }, 2500);
   };
-
-  const nextQuestion = () => {
-    if (currentQuestion < totalQuestions - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-      setTimeLeft(15);
-      setQuestionStartTime(Date.now());
-    } else {
-      completeLevel();
-    }
-  };
-
-  const completeLevel = () => {
-  if (currentLevel === 3) {
-    setShowEndingVideo(true) // show the ending video only after level 3
-  } else {
-    setGameCompleted(true)
-  }
-}
 
   const nextLevel = () => {
     if (currentLevel < 3) {
