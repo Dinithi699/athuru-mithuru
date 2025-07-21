@@ -132,6 +132,32 @@ const DyspraxiaGamePage = ({ onBack }) => {
     return positions;
   };
 
+  const handleStarTimeout = () => {
+    playTimeoutSound();
+    setResultType('timeout');
+    
+    // Record timeout response
+    setResponses(prev => [...prev, {
+      starNumber: currentStar + 1,
+      targetStarIndex: activeStarIndex,
+      clickedStarIndex: -1,
+      reactionTime: currentConfig.flashDuration,
+      isCorrect: false,
+      timeRemaining: 0,
+      timeout: true
+    }]);
+    
+    setShowResult(true);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    
+    setTimeout(() => {
+      setShowResult(false);
+      setCurrentStar(prev => prev + 1);
+      startNextStar();
+    }, 1000);
+  };
+
   // Timer effect for star flashing
   useEffect(() => {
     if (gameStarted && !gameCompleted && activeStarIndex >= 0 && timeLeft > 0) {
@@ -236,32 +262,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     // Record timeout response
     setResponses(prev => [...prev, {
       starNumber: currentStar + 1,
-      targetStarIndex: activeStarIndex,
-      clickedStarIndex: -1,
-      reactionTime: currentConfig.flashDuration,
-      isCorrect: false,
-      timeRemaining: 0,
-      timeout: true
-    }]);
-    
-    setShowResult(true);
-    setActiveStarIndex(-1);
-    setIsFlashing(false);
-    
-    setTimeout(() => {
-      setShowResult(false);
-      setCurrentStar(prev => prev + 1);
-      startNextStar();
-    }, 1000);
-  };
-
-  const handleBackgroundClick = (e) => {
-    // Only count as wrong click if clicking on background, not on stars
-    if (e.target.classList.contains('game-background') && activeStarIndex >= 0) {
-      handleStarClick(-1); // -1 indicates background click
-    }
-  };
-
   const completeLevel = () => {
   if (currentLevel === 3) {
     setShowEndingVideo(true) // show the ending video only after level 3
