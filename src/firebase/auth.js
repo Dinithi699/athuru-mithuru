@@ -260,7 +260,6 @@ export const signInUser = async (email, password) => {
     return {
       success: false,
       error: error.code || error.message
-        role: 'user',
     };
   }
 };
@@ -278,9 +277,6 @@ export const signOutUser = async () => {
       error: error.code || error.message
     };
   }
-};
-
-        role: userData?.role || 'user',
 // Listen to auth state changes with optimization
 export const onAuthStateChange = (callback) => {
   return onAuthStateChanged(auth, callback);
