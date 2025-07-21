@@ -315,22 +315,22 @@ const DysgraphiaGamePage = ({ onBack }) => {
     return () => clearTimeout(timer)
   }, [timeLeft, gameStarted, gameCompleted, showResult, showSuccessMessage, handleTimeUp])
 
-  // Set question start time when new question begins
   useEffect(() => {
-    if (gameStarted && !showResult) {
-      setQuestionStartTime(Date.now());
-      
-      // Speak the word only when a new question starts
-      if (currentQuestion < totalQuestions && currentQuestions[currentQuestion]) {
-        const currentWord = currentQuestions[currentQuestion].word;
-        speakWord(currentWord);
-      }
-    }
-    
-    return () => {
-      speechSynthesis.cancel();
-    };
-  }, [currentQuestion, gameStarted, showResult]);
+  if (
+    gameStarted &&
+    !gameCompleted &&
+    currentQuestion < totalQuestions &&
+    currentQuestions[currentQuestion]
+  ) {
+    const currentWord = currentQuestions[currentQuestion].word
+    speakWord(currentWord)
+  }
+
+  return () => {
+    speechSynthesis.cancel()
+  }
+}, [currentQuestion, gameStarted, gameCompleted, currentQuestions]) // 👈 Added missing dependencies
+
 
   useEffect(() => {
     return () => {
@@ -369,6 +369,12 @@ const DysgraphiaGamePage = ({ onBack }) => {
   setShowSuccessMessage(false)
   setCapturedImage(null)
   setCameraError(null)
+
+  // 👇 Speak the first word immediately
+  const firstWord = gameData[currentLevel][0]?.word
+  if (firstWord) {
+    speakWord(firstWord)
+  }
 }
 
   const nextLevel = () => {
@@ -381,6 +387,12 @@ const DysgraphiaGamePage = ({ onBack }) => {
     setScore(0)
     setResponses([])
     setTimeLeft(60)
+
+    // 👇 Speak the first word of the next level
+    const firstWord = gameData[newLevel][0]?.word
+    if (firstWord) {
+      speakWord(firstWord)
+    }
   }
 }
 
@@ -647,7 +659,8 @@ const DysgraphiaGamePage = ({ onBack }) => {
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-            <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
+                    }
+        <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
                     autoPlay
