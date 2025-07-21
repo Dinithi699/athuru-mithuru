@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { signInUser } from '../firebase/auth';
 
-const SignInPage = ({ onShowSignup, onSignin }) => {
+const SignInPage = ({ onShowSignup, onSignin, onShowAdminSignin, setCurrentScreen }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -151,7 +151,7 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => window.location.href = '/admin-login'}
+                  onClick={() => setCurrentScreen('admin-signin')}
                   disabled={loading}
                   className="text-blue-300 hover:text-blue-200 font-semibold underline transition-colors duration-300 disabled:opacity-50 text-sm"
                 >

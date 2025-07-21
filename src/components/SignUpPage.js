@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { signUpUser } from '../firebase/auth';
 
-const SignupForm = ({ onShowSignin, onSignup }) => {
+const SignupForm = ({ onShowSignin, onSignup, onShowAdminSignup, setCurrentScreen }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -215,7 +215,7 @@ const SignupForm = ({ onShowSignin, onSignup }) => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => window.location.href = '/admin-signup'}
+                  onClick={() => setCurrentScreen('admin-signup')}
                   disabled={loading}
                   className="text-blue-300 hover:text-blue-200 font-semibold underline transition-colors duration-300 disabled:opacity-50 text-sm"
                 >

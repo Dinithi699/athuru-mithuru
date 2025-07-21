@@ -76,7 +76,6 @@ const App = () => {
 
   const handleShowAdminSignup = () => {
     setCurrentScreen('admin-signup');
-    setUserType('admin');
   };
 
   const handleSignup = (userData) => {
@@ -111,23 +110,33 @@ const App = () => {
       <div>
         {currentScreen === 'loading' && <LoadingPage onLoadComplete={handleLoadComplete} />}
         {currentScreen === 'signup' && (
-          <SignUpPage onShowSignin={handleShowSignin} onSignup={handleSignup} />
+          <SignUpPage 
+            onShowSignin={handleShowSignin} 
+            onSignup={handleSignup}
+            onShowAdminSignup={handleShowAdminSignup}
+            setCurrentScreen={setCurrentScreen}
+          />
         )}
         {currentScreen === 'signin' && (
-          <SigninPage onShowSignup={handleShowSignup} onSignin={handleSignin} />
+          <SigninPage 
+            onShowSignup={handleShowSignup} 
+            onSignin={handleSignin}
+            onShowAdminSignin={handleShowAdminSignin}
+            setCurrentScreen={setCurrentScreen}
+          />
         )}
         {currentScreen === 'admin-signup' && (
           <AdminSignUpPage 
             onShowSignin={handleShowAdminSignin} 
             onSignup={handleSignup}
-            onShowUserSignup={handleShowSignup}
+            onShowUserSignup={() => setCurrentScreen('signup')}
           />
         )}
         {currentScreen === 'admin-signin' && (
           <AdminSignInPage 
             onShowSignup={handleShowAdminSignup} 
             onSignin={handleSignin}
-            onShowUserLogin={handleShowSignin}
+            onShowUserLogin={() => setCurrentScreen('signin')}
           />
         )}
         {currentScreen === 'home' && (

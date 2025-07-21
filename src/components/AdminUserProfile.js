@@ -21,15 +21,87 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
   }, [user]);
 
   const calculateRiskLevel = () => {
-    if (gameHistory.length === 0) return { level: 'unknown', color: 'gray', text: 'නොදන්නා' };
+    if (gameHistory.length === 0) return { level: 'low', color: 'green', text: 'අඩු අවදානම' };
 
-    const averageScore = gameHistory.reduce((sum, game) => sum + (game.score || 0), 0) / gameHistory.length;
-    const averageAccuracy = gameHistory.reduce((sum, game) => sum + (game.accuracy || 0), 0) / gameHistory.length;
+    // Use the same comprehensive risk calculation as in AdminHomePage
+    let riskScore = 0;
+    let totalGames = gameHistory.length;
+    
+    // Factor 1: Game completion rate
+    const completedGames = gameHistory.filter(game => game.score !== undefined && game.score > 0).length;
+    const completionRate = completedGames / totalGames;
+    if (completionRate < 0.5) riskScore += 3;
+    else if (completionRate < 0.7) riskScore += 2;
+    else if (completionRate < 0.9) riskScore += 1;
+    
+    // Factor 2: Average performance across games
+    const gamePerformances = gameHistory.map(game => {
+      if (game.gameType === 'Dysgraphia') {
+        return game.capturedImage ? 1 : 0;
+      } else if (game.gameType === 'Dyspraxia') {
+        const accuracy = game.accuracy || 0;
+        const reactionTime = game.averageReactionTime || 5000;
+        if (accuracy < 60 || reactionTime > 3000) return 0;
+        else if (accuracy < 80 || reactionTime > 2000) return 0.5;
+        else return 1;
+      } else if (game.gameType === 'Dyscalculia') {
+        const accuracy = game.accuracy || 0;
+        if (accuracy < 50) return 0;
+        else if (accuracy < 70) return 0.5;
+        else return 1;
+      } else if (game.gameType === 'Dyslexia') {
+        const accuracy = game.accuracy || 0;
+        if (accuracy < 60) return 0;
+        else if (accuracy < 80) return 0.5;
+        else return 1;
+      }
+      return 0.5;
+    });
+    
+    const averagePerformance = gamePerformances.reduce((sum, perf) => sum + perf, 0) / gamePerformances.length;
+    if (averagePerformance < 0.3) riskScore += 4;
+    else if (averagePerformance < 0.6) riskScore += 2;
+    else if (averagePerformance < 0.8) riskScore += 1;
+    
+    // Factor 3: Consistency across different game types
+    const gameTypes = [...new Set(gameHistory.map(game => game.gameType))];
+    if (gameTypes.length >= 2) {
+      const typePerformances = gameTypes.map(type => {
+        const typeGames = gameHistory.filter(game => game.gameType === type);
+        const typeAvg = typeGames.reduce((sum, game) => {
+          return sum + (game.accuracy || game.score || 50);
+        }, 0) / typeGames.length;
+        return typeAvg;
+      });
+      
+      const variance = typePerformances.reduce((sum, perf) => {
+        const avg = typePerformances.reduce((s, p) => s + p, 0) / typePerformances.length;
+        return sum + Math.pow(perf - avg, 2);
+      }, 0) / typePerformances.length;
+      
+      if (variance > 1000) riskScore += 2;
+      else if (variance > 500) riskScore += 1;
+    }
+    
+    // Factor 4: Recent performance trend
+    if (gameHistory.length >= 3) {
+      const recentGames = gameHistory.slice(-3);
+      const olderGames = gameHistory.slice(0, -3);
+      
+      if (olderGames.length > 0) {
+        const recentAvg = recentGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / recentGames.length;
+        const olderAvg = olderGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / olderGames.length;
+        
+        if (recentAvg < olderAvg - 10) riskScore += 2;
+        else if (recentAvg < olderAvg) riskScore += 1;
+      }
+    }
 
-    if (averageScore < 50 || averageAccuracy < 60) {
+    // Determine final risk level
+    if (riskScore >= 6) {
       return { level: 'high', color: 'red', text: 'ඉහළ අවදානම' };
     }
-    if (averageScore < 70 || averageAccuracy < 75) {
+    if (riskScore >= 3) {
       return { level: 'medium', color: 'orange', text: 'මධ්‍යම අවදානම' };
     }
     return { level: 'low', color: 'green', text: 'අඩු අවදානම' };
@@ -68,12 +140,14 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
           'වර්තමාන ප්‍රගතිය දිගටම කරගෙන යන්න',
           'අභියෝගාත්මක ක්‍රියාකාරකම් ලබාදෙන්න',
           'අනෙක් ළමුන්ට උදව් කිරීමට දිරිමත් කරන්න',
-          'නිර්මාණශීලී ක්‍රියාකාරකම්වලට දිරිමත් කරන්න'
+          'නිර්මාණශීලී ක්‍රියාකාරකම්වලට දිරිමත් කරන්න',
+          'ප්‍රගතිය මාසිකව නිරීක්ෂණය කරන්න'
         ];
       default:
         return [
           'ක්‍රීඩා කිරීමට දිරිමත් කරන්න',
-          'ප්‍රගතිය නිරීක්ෂණය කරන්න'
+          'ප්‍රගතිය නිරීක්ෂණය කරන්න',
+          'වැඩි දත්ත එකතු කිරීම සඳහා නිතිපතා ක්‍රීඩා කරන්න'
         ];
     }
   };

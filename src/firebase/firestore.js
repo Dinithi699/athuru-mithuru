@@ -76,14 +76,15 @@ export const getUserData = async (userId) => {
 };
 
 // Save game score
-export const saveGameScore = async (userId, gameType, score, duration) => {
+export const saveGameScore = async (userId, gameType, score, duration, additionalData = {}) => {
   try {
     await addDoc(collection(db, "gameScores"), {
       userId: userId,
       gameType: gameType,
       score: score,
       duration: duration,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      ...additionalData
     });
     
     return { success: true };
