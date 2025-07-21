@@ -329,7 +329,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
   return () => {
     speechSynthesis.cancel()
   }
-}, [currentQuestion]) // 👈 Only depends on currentQuestion
+}, [currentQuestion, gameStarted, gameCompleted, totalQuestions, currentQuestions]) // Added missing dependencies
 
 
   useEffect(() => {
