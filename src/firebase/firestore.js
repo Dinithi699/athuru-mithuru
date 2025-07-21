@@ -9,48 +9,9 @@ import {
   query,
   where,
   orderBy,
-  getDocs,
-  setDoc
+  getDocs 
 } from "firebase/firestore";
 import { db } from "./config";
-
-// Create user profile (for new users)
-export const createUserProfile = async (userId, userData) => {
-  try {
-    const userRef = doc(db, "users", userId);
-    await setDoc(userRef, {
-      ...userData,
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      lastActivity: new Date().toISOString()
-    });
-    
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-};
-
-// Update user profile
-export const updateUserProfile = async (userId, updates) => {
-  try {
-    const userRef = doc(db, "users", userId);
-    await updateDoc(userRef, {
-      ...updates,
-      lastActivity: new Date().toISOString()
-    });
-    
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-};
 
 // Update user progress
 export const updateUserProgress = async (userId, gameType, points) => {
