@@ -27,20 +27,21 @@ export const signUpAdmin = async (email, password, name, mobile, school) => {
       school: school,
       role: 'admin',
       createdAt: new Date().toISOString(),
-      isActive: true,
-      lastLogin: new Date().toISOString()
+      isActive: true
     };
     
-    // Update profile and save data to Firestore
-    try {
-      await Promise.all([
-        updateProfile(user, { displayName: name }),
-        setDoc(doc(db, "admins", user.uid), adminData)
-      ]);
-      console.log('Admin data saved to Firestore successfully');
-    } catch (firestoreError) {
-      console.warn('Failed to save admin data to Firestore:', firestoreError);
-      // Continue with registration even if Firestore fails
+    // Update profile and save data concurrently for better performance
+    const [profileUpdate, firestoreUpdate] = await Promise.allSettled([
+      updateProfile(user, { displayName: name }),
+      setDoc(doc(db, "admins", user.uid), adminData)
+    ]);
+    
+    if (profileUpdate.status === 'rejected') {
+      console.warn('Admin profile update failed:', profileUpdate.reason);
+    }
+    
+    if (firestoreUpdate.status === 'rejected') {
+      console.warn('Admin firestore update failed:', firestoreUpdate.reason);
     }
     
     console.log('Admin registration completed');
@@ -54,8 +55,7 @@ export const signUpAdmin = async (email, password, name, mobile, school) => {
         mobile: mobile,
         school: school,
         role: 'admin',
-        isActive: true,
-        lastLogin: new Date().toISOString()
+        isActive: true
       }
     };
   } catch (error) {
@@ -78,9 +78,6 @@ export const signInAdmin = async (email, password) => {
     
     console.log('Admin signed in successfully:', user.uid);
     
-    // Update last login time
-    const loginTime = new Date().toISOString();
-    
     // Get admin data with timeout
     let adminData = {};
     try {
@@ -94,12 +91,6 @@ export const signInAdmin = async (email, password) => {
       if (adminDoc.exists()) {
         adminData = adminDoc.data();
         console.log('Admin data retrieved successfully');
-        
-        // Update last login time in background
-        setDoc(doc(db, "admins", user.uid), { 
-          ...adminData, 
-          lastLogin: loginTime 
-        }, { merge: true }).catch(console.warn);
       } else {
         console.log('No admin document found, using basic admin data');
         adminData = {
@@ -109,11 +100,10 @@ export const signInAdmin = async (email, password) => {
           school: "",
           role: 'admin',
           isActive: true,
-          createdAt: new Date().toISOString(),
-          lastLogin: loginTime
+          createdAt: new Date().toISOString()
         };
         
-        // Save default admin data
+        // Save default admin data asynchronously
         setDoc(doc(db, "admins", user.uid), adminData).catch(console.warn);
       }
     } catch (firestoreError) {
@@ -124,8 +114,7 @@ export const signInAdmin = async (email, password) => {
         mobile: "",
         school: "",
         role: 'admin',
-        isActive: true,
-        lastLogin: loginTime
+        isActive: true
       };
     }
     
@@ -138,8 +127,7 @@ export const signInAdmin = async (email, password) => {
         mobile: adminData?.mobile || "",
         school: adminData?.school || "",
         role: 'admin',
-        isActive: adminData?.isActive || true,
-        lastLogin: loginTime
+        isActive: adminData?.isActive || true
       }
     };
   } catch (error) {
@@ -169,28 +157,25 @@ export const signUpUser = async (email, password, name, mobile) => {
       mobile: mobile,
       role: 'user',
       createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
       level: "ආරම්භක",
       points: 0,
       completedGames: 0,
-      achievements: [],
-      gameHistory: [],
-      preferences: {
-        language: 'si',
-        difficulty: 'beginner'
-      }
+      achievements: []
     };
     
-    // Update profile and save data to Firestore
-    try {
-      await Promise.all([
-        updateProfile(user, { displayName: name }),
-        setDoc(doc(db, "users", user.uid), userData)
-      ]);
-      console.log('User data saved to Firestore successfully');
-    } catch (firestoreError) {
-      console.warn('Failed to save user data to Firestore:', firestoreError);
-      // Continue with registration even if Firestore fails
+    // Update profile and save data concurrently for better performance
+    const [profileUpdate, firestoreUpdate] = await Promise.allSettled([
+      updateProfile(user, { displayName: name }),
+      setDoc(doc(db, "users", user.uid), userData)
+    ]);
+    
+    if (profileUpdate.status === 'rejected') {
+      console.warn('Profile update failed:', profileUpdate.reason);
+    }
+    
+    if (firestoreUpdate.status === 'rejected') {
+      console.warn('Firestore update failed:', firestoreUpdate.reason);
+      // Continue anyway, we can retry later
     }
     
     console.log('User registration completed');
@@ -202,12 +187,10 @@ export const signUpUser = async (email, password, name, mobile) => {
         name: name,
         email: email,
         mobile: mobile,
-        role: 'user',
         level: "ආරම්භක",
         points: 0,
         completedGames: 0,
-        achievements: [],
-        lastLogin: new Date().toISOString()
+        achievements: []
       }
     };
   } catch (error) {
@@ -230,9 +213,6 @@ export const signInUser = async (email, password) => {
     
     console.log('User signed in successfully:', user.uid);
     
-    // Update last login time
-    const loginTime = new Date().toISOString();
-    
     // Get user data with timeout
     let userData = {};
     try {
@@ -246,33 +226,20 @@ export const signInUser = async (email, password) => {
       if (userDoc.exists()) {
         userData = userDoc.data();
         console.log('User data retrieved successfully');
-        
-        // Update last login time in background
-        setDoc(doc(db, "users", user.uid), { 
-          ...userData, 
-          lastLogin: loginTime 
-        }, { merge: true }).catch(console.warn);
       } else {
         console.log('No user document found, creating default data');
         userData = {
           name: user.displayName || 'පරිශීලකයා',
           email: user.email,
           mobile: "",
-          role: 'user',
           level: "ආරම්භක",
           points: 0,
           completedGames: 0,
           achievements: [],
-          gameHistory: [],
-          createdAt: new Date().toISOString(),
-          lastLogin: loginTime,
-          preferences: {
-            language: 'si',
-            difficulty: 'beginner'
-          }
+          createdAt: new Date().toISOString()
         };
         
-        // Save default data to Firestore
+        // Save default data asynchronously (don't wait)
         setDoc(doc(db, "users", user.uid), userData).catch(console.warn);
       }
     } catch (firestoreError) {
@@ -281,12 +248,10 @@ export const signInUser = async (email, password) => {
         name: user.displayName || 'පරිශීලකයා',
         email: user.email,
         mobile: "",
-        role: 'user',
         level: "ආරම්භක",
         points: 0,
         completedGames: 0,
-        achievements: [],
-        lastLogin: loginTime
+        achievements: []
       };
     }
     
@@ -301,8 +266,7 @@ export const signInUser = async (email, password) => {
         level: userData?.level || "ආරම්භක",
         points: userData?.points || 0,
         completedGames: userData?.completedGames || 0,
-        achievements: userData?.achievements || [],
-        lastLogin: loginTime
+        achievements: userData?.achievements || []
       }
     };
   } catch (error) {
