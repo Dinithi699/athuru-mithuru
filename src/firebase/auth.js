@@ -8,6 +8,123 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { auth, db } from "./config";
 
+// Sign up new admin with optimizations
+export const signUpAdmin = async (email, password, name, mobile, school) => {
+  try {
+    console.log('Starting admin signup process...');
+    
+    // Create admin account
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    console.log('Admin created successfully:', user.uid);
+    
+    // Prepare admin data
+    const adminData = {
+      name: name,
+      email: email,
+      mobile: mobile,
+      school: school,
+      role: 'admin',
+      createdAt: new Date().toISOString(),
+      isActive: true
+    };
+    
+    // Update profile and save data concurrently for better performance
+    const [profileUpdate, firestoreUpdate] = await Promise.allSettled([
+      updateProfile(user, { displayName: name }),
+      setDoc(doc(db, "admins", user.uid), adminData)
+    ]);
+    
+    if (profileUpdate.status === 'rejected') {
+      console.warn('Admin profile update failed:', profileUpdate.reason);
+    }
+    
+    if (firestoreUpdate.status === 'rejected') {
+      console.warn('Admin firestore update failed:', firestoreUpdate.reason);
+    }
+    
+    console.log('Admin registration completed');
+    
+    return {
+      success: true,
+      user: {
+        uid: user.uid,
+        name: name,
+        email: email,
+        mobile: mobile,
+        school: school,
+        role: 'admin',
+        isActive: true
+      }
+    };
+  } catch (error) {
+    console.error('Admin signup error:', error);
+    return {
+      success: false,
+      error: error.code || error.message
+    };
+  }
+};
+
+// Sign in admin with optimizations
+export const signInAdmin = async (email, password) => {
+  try {
+    console.log('Starting admin signin process...');
+    
+    // Sign in admin
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    console.log('Admin signed in successfully:', user.uid);
+    
+    // Get admin data with timeout
+    let adminData = {};
+    try {
+      const adminDocPromise = getDoc(doc(db, "admins", user.uid));
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Firestore timeout')), 5000)
+      );
+      
+      const adminDoc = await Promise.race([adminDocPromise, timeoutPromise]);
+      
+      if (adminDoc.exists()) {
+        adminData = adminDoc.data();
+        console.log('Admin data retrieved successfully');
+        
+        // Check if user is actually an admin
+        if (adminData.role !== 'admin') {
+          throw new Error('Access denied: Not an admin account');
+        }
+      } else {
+        throw new Error('Admin account not found');
+      }
+    } catch (firestoreError) {
+      console.error('Admin firestore access failed:', firestoreError);
+      throw firestoreError;
+    }
+    
+    return {
+      success: true,
+      user: {
+        uid: user.uid,
+        name: adminData?.name || user.displayName || 'ගුරුතුමා',
+        email: user.email,
+        mobile: adminData?.mobile || "",
+        school: adminData?.school || "",
+        role: 'admin',
+        isActive: adminData?.isActive || true
+      }
+    };
+  } catch (error) {
+    console.error('Admin signin error:', error);
+    return {
+      success: false,
+      error: error.code || error.message
+    };
+  }
+};
+
 // Sign up new user with optimizations
 export const signUpUser = async (email, password, name, mobile) => {
   try {
@@ -24,6 +141,7 @@ export const signUpUser = async (email, password, name, mobile) => {
       name: name,
       email: email,
       mobile: mobile,
+      role: 'user',
       createdAt: new Date().toISOString(),
       level: "ආරම්භක",
       points: 0,
@@ -130,6 +248,7 @@ export const signInUser = async (email, password) => {
         name: userData?.name || user.displayName || 'පරිශීලකයා',
         email: user.email,
         mobile: userData?.mobile || "",
+        role: 'user',
         level: userData?.level || "ආරම්භක",
         points: userData?.points || 0,
         completedGames: userData?.completedGames || 0,
@@ -141,6 +260,7 @@ export const signInUser = async (email, password) => {
     return {
       success: false,
       error: error.code || error.message
+        role: 'user',
     };
   }
 };
@@ -160,6 +280,7 @@ export const signOutUser = async () => {
   }
 };
 
+        role: userData?.role || 'user',
 // Listen to auth state changes with optimization
 export const onAuthStateChange = (callback) => {
   return onAuthStateChanged(auth, callback);

@@ -3,7 +3,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import LoadingPage from './components/LoadingPage';
 import SigninPage from './components/SignInPage';
 import SignUpPage from './components/SignUpPage';
+import AdminSignInPage from './components/AdminSignInPage';
+import AdminSignUpPage from './components/AdminSignUpPage';
 import HomePage from './components/HomePage';
+import AdminHomePage from './components/AdminHomePage';
 
 import './App.css';
 
@@ -11,6 +14,7 @@ const App = () => {
   const [currentScreen, setCurrentScreen] = useState('loading');
   const [user, setUser] = useState(null);
   const [appReady, setAppReady] = useState(false);
+  const [userType, setUserType] = useState('user'); // 'user' or 'admin'
   
   useEffect(() => {
     // Preload critical resources
@@ -62,21 +66,44 @@ const App = () => {
 
   const handleShowSignin = () => {
     setCurrentScreen('signin');
+    setUserType('user');
+  };
+
+  const handleShowAdminSignin = () => {
+    setCurrentScreen('admin-signin');
+    setUserType('admin');
+  };
+
+  const handleShowAdminSignup = () => {
+    setCurrentScreen('admin-signup');
+    setUserType('admin');
   };
 
   const handleSignup = (userData) => {
     setUser(userData);
-    setCurrentScreen('home');
+    if (userData.role === 'admin') {
+      setCurrentScreen('admin-home');
+    } else {
+      setCurrentScreen('home');
+    }
   };
 
   const handleSignin = (userData) => {
     setUser(userData);
-    setCurrentScreen('home');
+    if (userData.role === 'admin') {
+      setCurrentScreen('admin-home');
+    } else {
+      setCurrentScreen('home');
+    }
   };
 
   const handleLogout = () => {
     setUser(null);
-    setCurrentScreen('signin');
+    if (userType === 'admin') {
+      setCurrentScreen('admin-signin');
+    } else {
+      setCurrentScreen('signin');
+    }
   };
 
   return (
@@ -89,8 +116,25 @@ const App = () => {
         {currentScreen === 'signin' && (
           <SigninPage onShowSignup={handleShowSignup} onSignin={handleSignin} />
         )}
+        {currentScreen === 'admin-signup' && (
+          <AdminSignUpPage 
+            onShowSignin={handleShowAdminSignin} 
+            onSignup={handleSignup}
+            onShowUserSignup={handleShowSignup}
+          />
+        )}
+        {currentScreen === 'admin-signin' && (
+          <AdminSignInPage 
+            onShowSignup={handleShowAdminSignup} 
+            onSignin={handleSignin}
+            onShowUserLogin={handleShowSignin}
+          />
+        )}
         {currentScreen === 'home' && (
           <HomePage onLogout={handleLogout} user={user} />
+        )}
+        {currentScreen === 'admin-home' && (
+          <AdminHomePage onLogout={handleLogout} admin={user} />
         )}
       </div>
     </AuthProvider>

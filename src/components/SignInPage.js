@@ -144,6 +144,20 @@ const SignInPage = ({ onShowSignup, onSignin }) => {
               >
                 ලියාපදිංචි වන්න
               </button>
+              
+              <div className="mt-4 pt-4 border-t border-white/20">
+                <p className="text-white text-sm font-semibold mb-2">
+                  ගුරුවරයෙක්ද?
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/admin-login'}
+                  disabled={loading}
+                  className="text-blue-300 hover:text-blue-200 font-semibold underline transition-colors duration-300 disabled:opacity-50 text-sm"
+                >
+                  👨‍🏫 ගුරු ඇතුල්වීම
+                </button>
+              </div>
             </div>
           </div>
         </form>

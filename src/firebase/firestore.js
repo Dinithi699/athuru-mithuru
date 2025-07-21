@@ -126,6 +126,71 @@ export const getUserGameHistory = async (userId) => {
   }
 };
 
+// Get all users (for admin dashboard)
+export const getAllUsers = async () => {
+  try {
+    const q = query(
+      collection(db, "users"),
+      orderBy("createdAt", "desc")
+    );
+    
+    const querySnapshot = await getDocs(q);
+    const users = [];
+    
+    querySnapshot.forEach((doc) => {
+      users.push({
+        uid: doc.id,
+        ...doc.data()
+      });
+    });
+    
+    // Get game history for each user
+    const usersWithHistory = await Promise.all(
+      users.map(async (user) => {
+        const gameHistoryResult = await getUserGameHistory(user.uid);
+        return {
+          ...user,
+          gameHistory: gameHistoryResult.success ? gameHistoryResult.data : []
+        };
+      })
+    );
+    
+    return {
+      success: true,
+      data: usersWithHistory
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
+// Get admin data
+export const getAdminData = async (adminId) => {
+  try {
+    const adminDoc = await getDoc(doc(db, "admins", adminId));
+    
+    if (adminDoc.exists()) {
+      return {
+        success: true,
+        data: adminDoc.data()
+      };
+    } else {
+      return {
+        success: false,
+        error: "Admin not found"
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
 // Get leaderboard
 export const getLeaderboard = async (gameType = null) => {
   try {
