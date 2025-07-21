@@ -315,8 +315,22 @@ const DysgraphiaGamePage = ({ onBack }) => {
     return () => clearTimeout(timer)
   }, [timeLeft, gameStarted, gameCompleted, showResult, showSuccessMessage, handleTimeUp])
 
+  // Set question start time when new question begins
   useEffect(() => {
-
+    if (gameStarted && !showResult) {
+      setQuestionStartTime(Date.now());
+      
+      // Speak the word only when a new question starts
+      if (currentQuestion < totalQuestions && currentQuestions[currentQuestion]) {
+        const currentWord = currentQuestions[currentQuestion].word;
+        speakWord(currentWord);
+      }
+    }
+    
+    return () => {
+      speechSynthesis.cancel();
+    };
+  }, [currentQuestion, gameStarted, showResult]);
 
   useEffect(() => {
     return () => {
