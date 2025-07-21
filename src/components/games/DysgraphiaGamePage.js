@@ -301,7 +301,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
     playLoseSound()
     stopCamera()
     nextQuestion() // nextQuestion is now defined
-  }, [currentQuestion, currentQuestions, questionStartTime, nextQuestion, stopCamera, completeLevel])
+  }, [currentQuestion, currentQuestions, questionStartTime, nextQuestion])
 
   useEffect(() => {
     let timer
@@ -659,7 +659,8 @@ const DysgraphiaGamePage = ({ onBack }) => {
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-                <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
+                    }
+            <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
                     autoPlay
