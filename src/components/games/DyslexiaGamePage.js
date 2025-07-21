@@ -50,29 +50,6 @@ const DyslexiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
-  // Define nextQuestion first with useCallback
-  const nextQuestion = useCallback(() => {
-    if (currentQuestion < totalQuestions - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-      setTimeLeft(10);
-    } else {
-      completeLevel();
-    }
-  }, [currentQuestion, totalQuestions, completeLevel]);
-
-  const handleTimeUp = useCallback(() => {
-    setResponses(prev => [...prev, {
-      question: currentQuestion,
-      userAnswer: null,
-      correct: currentQuestions[currentQuestion].correct,
-      timeTaken: 10,
-      isCorrect: false
-    }]);
-    nextQuestion();
-  }, [currentQuestion, currentQuestions, nextQuestion]);
-
   // Timer effect
   useEffect(() => {
     if (gameStarted && !gameCompleted && !showResult && timeLeft > 0) {
@@ -83,7 +60,18 @@ const DyslexiaGamePage = ({ onBack }) => {
     } else if (timeLeft === 0 && !showResult) {
       handleTimeUp();
     }
-  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
+  }, [timeLeft, gameStarted, gameCompleted, showResult]);
+
+  const handleTimeUp = () => {
+    setResponses(prev => [...prev, {
+      question: currentQuestion,
+      userAnswer: null,
+      correct: currentQuestions[currentQuestion].correct,
+      timeTaken: 10,
+      isCorrect: false
+    }]);
+    nextQuestion();
+  };
 
   useEffect(() => {
   if (showEndingVideo && videoRef.current) {
@@ -130,6 +118,17 @@ const DyslexiaGamePage = ({ onBack }) => {
     }, 2000);
   };
 
+  const nextQuestion = () => {
+    if (currentQuestion < totalQuestions - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+      setTimeLeft(10);
+    } else {
+      completeLevel();
+    }
+  };
+
   const completeLevel = () => {
   if (currentLevel < 3) {
     setCurrentLevel(currentLevel + 1);
@@ -158,6 +157,18 @@ const DyslexiaGamePage = ({ onBack }) => {
       setShowResult(false);
       setTimeLeft(10);
     }
+  };
+
+  const restartGame = () => {
+    setCurrentLevel(1);
+    setGameStarted(false);
+    setGameCompleted(false);
+    setCurrentQuestion(0);
+    setScore(0);
+    setResponses([]);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setTimeLeft(10);
   };
 
   const getLevelDescription = (level) => {

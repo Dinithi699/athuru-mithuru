@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useRef } from 'react';
 import { onAuthStateChange } from '../firebase/auth';
 import { getUserData } from '../firebase/firestore';
 
@@ -16,12 +15,6 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const loadingRef = useRef(loading);
-
-  // Keep loadingRef updated
-  useEffect(() => {
-    loadingRef.current = loading;
-  }, [loading]);
 
   useEffect(() => {
     let mounted = true;
@@ -87,7 +80,7 @@ export const AuthProvider = ({ children }) => {
 
     // Set a maximum loading time
     const loadingTimeout = setTimeout(() => {
-      if (mounted && loadingRef.current) {
+      if (mounted && loading) {
         console.warn('Auth loading timeout, proceeding without user');
         setLoading(false);
       }

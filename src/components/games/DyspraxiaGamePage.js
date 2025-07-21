@@ -14,6 +14,8 @@ const DyspraxiaGamePage = ({ onBack }) => {
   const [showResult, setShowResult] = useState(false);
   const [resultType, setResultType] = useState('');
   const [timeLeft, setTimeLeft] = useState(0);
+  const [missedClicks, setMissedClicks] = useState(0);
+  const audioRef = useRef(null);
   const [showEndingVideo, setShowEndingVideo] = useState(false);
   const videoRef = useRef(null);
 
@@ -99,12 +101,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
   };
 
   // Generate random star positions
-  const isTooClose = (newPosition, existingPositions, minDistance) => {
-    return existingPositions.some(pos => 
-      Math.sqrt(Math.pow(pos.x - newPosition.x, 2) + Math.pow(pos.y - newPosition.y, 2)) < minDistance
-    );
-  };
-
   const generateStarPositions = (count) => {
     const positions = [];
     const minDistance = 80; // Minimum distance between stars
@@ -123,7 +119,9 @@ const DyspraxiaGamePage = ({ onBack }) => {
         attempts++;
       } while (
         attempts < 50 && 
-        isTooClose(position, positions, minDistance)
+        positions.some(pos => 
+          Math.sqrt(Math.pow(pos.x - position.x, 2) + Math.pow(pos.y - position.y, 2)) < minDistance
+        )
       );
       
       positions.push(position);
@@ -131,32 +129,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     
     return positions;
   };
-
-  const handleStarTimeout = useCallback(() => {
-    playTimeoutSound();
-    setResultType('timeout');
-    
-    // Record timeout response
-    setResponses(prev => [...prev, {
-      starNumber: currentStar + 1,
-      targetStarIndex: activeStarIndex,
-      clickedStarIndex: -1,
-      reactionTime: currentConfig.flashDuration,
-      isCorrect: false,
-      timeRemaining: 0,
-      timeout: true
-    }]);
-    
-    setShowResult(true);
-    setActiveStarIndex(-1);
-    setIsFlashing(false);
-    
-    setTimeout(() => {
-      setShowResult(false);
-      setCurrentStar(prev => prev + 1);
-      startNextStar();
-    }, 1000);
-  }, [playTimeoutSound, setResultType, setResponses, currentStar, activeStarIndex, currentConfig.flashDuration, setShowResult, setActiveStarIndex, setIsFlashing, setCurrentStar]);
 
   // Timer effect for star flashing
   useEffect(() => {
@@ -168,7 +140,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     } else if (timeLeft <= 0 && activeStarIndex >= 0) {
       handleStarTimeout();
     }
-  }, [timeLeft, gameStarted, gameCompleted, activeStarIndex, handleStarTimeout]);
+  }, [timeLeft, gameStarted, gameCompleted, activeStarIndex]);
 
   // Flash effect
   useEffect(() => {
@@ -195,6 +167,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setCurrentStar(0);
     setScore(0);
     setResponses([]);
+    setMissedClicks(0);
     setShowResult(false);
     
     // Generate star positions
@@ -231,6 +204,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setResultType('correct');
     } else {
       playWrongSound();
+      setMissedClicks(prev => prev + 1);
       setResultType('wrong');
     }
     
@@ -255,14 +229,47 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }, 1000);
   };
 
-  const completeLevel = () => {
-    if (currentLevel === 3) {
-      setShowEndingVideo(true); // show the ending video only after level 3
-    } else {
-      setGameCompleted(true);
+  const handleStarTimeout = () => {
+    playTimeoutSound();
+    setMissedClicks(prev => prev + 1);
+    setResultType('timeout');
+    
+    // Record timeout response
+    setResponses(prev => [...prev, {
+      starNumber: currentStar + 1,
+      targetStarIndex: activeStarIndex,
+      clickedStarIndex: -1,
+      reactionTime: currentConfig.flashDuration,
+      isCorrect: false,
+      timeRemaining: 0,
+      timeout: true
+    }]);
+    
+    setShowResult(true);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    
+    setTimeout(() => {
+      setShowResult(false);
+      setCurrentStar(prev => prev + 1);
+      startNextStar();
+    }, 1000);
+  };
+
+  const handleBackgroundClick = (e) => {
+    // Only count as wrong click if clicking on background, not on stars
+    if (e.target.classList.contains('game-background') && activeStarIndex >= 0) {
+      handleStarClick(-1); // -1 indicates background click
     }
   };
 
+  const completeLevel = () => {
+  if (currentLevel === 3) {
+    setShowEndingVideo(true) // show the ending video only after level 3
+  } else {
+    setGameCompleted(true)
+  }
+}
   const nextLevel = () => {
     if (currentLevel < 3) {
       setCurrentLevel(currentLevel + 1);
@@ -271,6 +278,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setCurrentStar(0);
       setScore(0);
       setResponses([]);
+      setMissedClicks(0);
       setActiveStarIndex(-1);
       setIsFlashing(false);
       setShowResult(false);
@@ -284,6 +292,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setCurrentStar(0);
     setScore(0);
     setResponses([]);
+    setMissedClicks(0);
     setActiveStarIndex(-1);
     setIsFlashing(false);
     setShowResult(false);
@@ -354,10 +363,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
       analysis, 
       recommendations 
     };
-  };
-
-  const handleBackgroundClick = (e) => {
-    // Handle background click if needed
   };
 
   if (!gameStarted) {
@@ -438,18 +443,18 @@ const DyspraxiaGamePage = ({ onBack }) => {
   }
 
   if (showEndingVideo) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <video
-          src="/images/GameComplete.mp4" 
-          autoPlay
-          playsInline
-          onEnded={onBack}
-          className="w-screen h-screen object-cover"
-        />
-      </div>
-    );
-  }
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <video
+        src="/images/GameComplete.mp4" 
+        autoPlay
+        playsInline
+        onEnded={onBack}
+        className="w-screen h-screen object-cover"
+      />
+    </div>
+  )
+}
 
   if (gameCompleted) {
     const analysis = getDyspraxiaAnalysis();
@@ -531,9 +536,9 @@ const DyspraxiaGamePage = ({ onBack }) => {
                 <button
                   onClick={restartGame}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
-                >
-                  🔄 නැවත ආරම්භ කරන්න
-                </button>
+                  >
+                    🔄 නැවත ආරම්භ කරන්න
+                  </button>
                 
                 <button
                   onClick={onBack}
@@ -579,13 +584,13 @@ const DyspraxiaGamePage = ({ onBack }) => {
           <div className="text-xs sm:text-sm opacity-80">තරුව {currentStar + 1}/{currentConfig.totalStars}</div>
         </div>
         <div className="text-center">
-          <button
-            onClick={onBack}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
-          >
-            🚪 ඉවත්වන්න
-          </button>
-        </div> 
+            <button
+              onClick={onBack}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
+            >
+              🚪 ඉවත්වන්න
+            </button>
+          </div> 
         <div className="text-right">
           <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
           <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 1000 ? 'text-red-300 animate-pulse' : ''}`}>
