@@ -255,20 +255,14 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }, 1000);
   };
 
-  const handleStarTimeout = () => {
-    playTimeoutSound();
-    setResultType('timeout');
-    
-    // Record timeout response
-    setResponses(prev => [...prev, {
-      starNumber: currentStar + 1,
   const completeLevel = () => {
-  if (currentLevel === 3) {
-    setShowEndingVideo(true) // show the ending video only after level 3
-  } else {
-    setGameCompleted(true)
-  }
-}
+    if (currentLevel === 3) {
+      setShowEndingVideo(true); // show the ending video only after level 3
+    } else {
+      setGameCompleted(true);
+    }
+  };
+
   const nextLevel = () => {
     if (currentLevel < 3) {
       setCurrentLevel(currentLevel + 1);
@@ -362,6 +356,10 @@ const DyspraxiaGamePage = ({ onBack }) => {
     };
   };
 
+  const handleBackgroundClick = (e) => {
+    // Handle background click if needed
+  };
+
   if (!gameStarted) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-indigo-900 via-purple-900 to-black relative overflow-hidden">
@@ -440,18 +438,18 @@ const DyspraxiaGamePage = ({ onBack }) => {
   }
 
   if (showEndingVideo) {
-  return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <video
-        src="/images/GameComplete.mp4" 
-        autoPlay
-        playsInline
-        onEnded={onBack}
-        className="w-screen h-screen object-cover"
-      />
-    </div>
-  )
-}
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <video
+          src="/images/GameComplete.mp4" 
+          autoPlay
+          playsInline
+          onEnded={onBack}
+          className="w-screen h-screen object-cover"
+        />
+      </div>
+    );
+  }
 
   if (gameCompleted) {
     const analysis = getDyspraxiaAnalysis();
@@ -533,9 +531,9 @@ const DyspraxiaGamePage = ({ onBack }) => {
                 <button
                   onClick={restartGame}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
-                  >
-                    🔄 නැවත ආරම්භ කරන්න
-                  </button>
+                >
+                  🔄 නැවත ආරම්භ කරන්න
+                </button>
                 
                 <button
                   onClick={onBack}
@@ -581,13 +579,13 @@ const DyspraxiaGamePage = ({ onBack }) => {
           <div className="text-xs sm:text-sm opacity-80">තරුව {currentStar + 1}/{currentConfig.totalStars}</div>
         </div>
         <div className="text-center">
-            <button
-              onClick={onBack}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
-            >
-              🚪 ඉවත්වන්න
-            </button>
-          </div> 
+          <button
+            onClick={onBack}
+            className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
+          >
+            🚪 ඉවත්වන්න
+          </button>
+        </div> 
         <div className="text-right">
           <div className="text-sm sm:text-base md:text-lg font-bold">ලකුණු: {score}</div>
           <div className={`text-lg sm:text-xl md:text-2xl font-bold ${timeLeft <= 1000 ? 'text-red-300 animate-pulse' : ''}`}>
