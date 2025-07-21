@@ -316,20 +316,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
   }, [timeLeft, gameStarted, gameCompleted, showResult, showSuccessMessage, handleTimeUp])
 
   useEffect(() => {
-  if (
-    gameStarted &&
-    !gameCompleted &&
-    currentQuestion < totalQuestions &&
-    currentQuestions[currentQuestion]
-  ) {
-    const currentWord = currentQuestions[currentQuestion].word
-    speakWord(currentWord)
-  }
-
-  return () => {
-    speechSynthesis.cancel()
-  }
-}, [currentQuestion, gameStarted, gameCompleted, currentQuestions]) // 👈 Added missing dependencies
 
 
   useEffect(() => {
@@ -369,12 +355,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
   setShowSuccessMessage(false)
   setCapturedImage(null)
   setCameraError(null)
-
-  // 👇 Speak the first word immediately
-  const firstWord = gameData[currentLevel][0]?.word
-  if (firstWord) {
-    speakWord(firstWord)
-  }
 }
 
   const nextLevel = () => {
@@ -387,12 +367,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
     setScore(0)
     setResponses([])
     setTimeLeft(60)
-
-    // 👇 Speak the first word of the next level
-    const firstWord = gameData[newLevel][0]?.word
-    if (firstWord) {
-      speakWord(firstWord)
-    }
   }
 }
 
@@ -659,8 +633,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-                    }
-                }
             <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
