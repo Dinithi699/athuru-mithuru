@@ -185,7 +185,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       setShowSuccessMessage(true) // Show success message after processing
-      playWinSound() // Play success sound
 
       // Move to next question after a short delay to show success message
       setTimeout(() => {
