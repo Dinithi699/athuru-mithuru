@@ -329,7 +329,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
   return () => {
     speechSynthesis.cancel()
   }
-}, [currentQuestion, gameStarted, gameCompleted, totalQuestions, currentQuestions]) // Added missing dependencies
+}, [currentQuestion]) // 👈 Only depends on currentQuestion
 
 
   useEffect(() => {
@@ -660,6 +660,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
             {showCamera && (
               <div className="mb-6">
                     }
+                }
             <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
