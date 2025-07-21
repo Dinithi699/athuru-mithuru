@@ -43,7 +43,16 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
-  // Memoized functions in correct order
+  // Define completeLevel first since nextQuestion depends on it
+  const completeLevel = useCallback(() => {
+    if (currentLevel === 3) {
+      setShowEndingVideo(true) // show the ending video only after level 3
+    } else {
+      setGameCompleted(true)
+    }
+  }, [currentLevel]);
+
+  // Now define nextQuestion which uses completeLevel
   const nextQuestion = useCallback(() => {
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
@@ -56,14 +65,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
     }
   }, [currentQuestion, totalQuestions, completeLevel]);
 
-  const completeLevel = useCallback(() => {
-    if (currentLevel === 3) {
-      setShowEndingVideo(true) // show the ending video only after level 3
-    } else {
-      setGameCompleted(true)
-    }
-  }, [currentLevel]);
-
+  // Define handleTimeUp which uses nextQuestion
   const handleTimeUp = useCallback(() => {
     const reactionTime = questionStartTime ? Date.now() - questionStartTime : 15000;
     setReactionTimes(prev => [...prev, reactionTime]);
