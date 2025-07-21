@@ -82,7 +82,16 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel]
   const totalQuestions = currentQuestions.length
 
-  // Camera functions
+  // Camera functions - memoized to prevent unnecessary re-renders
+  const stopCamera = useCallback(() => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop())
+      setCameraStream(null)
+    }
+    setShowCamera(false)
+    // Do not clear capturedImage here, it's handled by confirm/retake
+  }, [cameraStream])
+
   const startCamera = async () => {
     try {
       setCameraError(null)
@@ -107,15 +116,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
       console.error("Error accessing camera:", error)
       setCameraError(`කැමරාවට ප්‍රවේශ වීමට නොහැකි විය: ${error.message}`)
     }
-  }
-
-  const stopCamera = () => {
-    if (cameraStream) {
-      cameraStream.getTracks().forEach((track) => track.stop())
-      setCameraStream(null)
-    }
-    setShowCamera(false)
-    // Do not clear capturedImage here, it's handled by confirm/retake
   }
 
   const capturePhoto = () => {
@@ -174,7 +174,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
         ...prev,
         {
           question: currentQuestion,
-          expectedWord: currentWord,
+  }, [currentQuestion, gameStarted, gameCompleted, currentQuestions, totalQuestions]) // 👈 Added missing dependencies
           timeTaken: timeTaken,
           capturedImage: imageDataUrl,
           timestamp: new Date().toISOString(),
@@ -336,7 +336,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
     return () => {
       stopCamera()
     }
-  }, [])
+  }, [stopCamera])
 
   useEffect(() => {
     if (showCamera && cameraStream && videoRef.current) {
