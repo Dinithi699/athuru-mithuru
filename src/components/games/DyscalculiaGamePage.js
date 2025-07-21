@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const DyscalculiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -12,6 +12,8 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const [responses, setResponses] = useState([]);
   const [reactionTimes, setReactionTimes] = useState([]);
   const [questionStartTime, setQuestionStartTime] = useState(null);
+  const [showEndingVideo, setShowEndingVideo] = useState(false);
+  const videoRef = useRef(null);
 
   // Game data for each level - 5 questions each
   const gameData = {
@@ -55,7 +57,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
       isCorrect: false
     }]);
     nextQuestion();
-  }, [currentQuestion, currentQuestions, questionStartTime, nextQuestion]);
+  }, [currentQuestion, currentQuestions, questionStartTime]);
 
   // Timer effect
   useEffect(() => {
@@ -75,6 +77,15 @@ const DyscalculiaGamePage = ({ onBack }) => {
       setQuestionStartTime(Date.now());
     }
   }, [currentQuestion, gameStarted, showResult]);
+
+  useEffect(() => {
+      if (showEndingVideo && videoRef.current) {
+        const videoEl = videoRef.current;
+        if (videoEl.requestFullscreen) {
+          videoEl.requestFullscreen().catch((e) => console.warn("Fullscreen failed", e));
+        }
+      }
+    }, [showEndingVideo]);
 
   const startGame = () => {
     setGameStarted(true);
@@ -131,8 +142,12 @@ const DyscalculiaGamePage = ({ onBack }) => {
   };
 
   const completeLevel = () => {
-    setGameCompleted(true);
-  };
+  if (currentLevel === 3) {
+    setShowEndingVideo(true) // show the ending video only after level 3
+  } else {
+    setGameCompleted(true)
+  }
+}
 
   const nextLevel = () => {
     if (currentLevel < 3) {
@@ -313,6 +328,21 @@ const DyscalculiaGamePage = ({ onBack }) => {
       </div>
     );
   }
+
+  if (showEndingVideo) {
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <video
+        src="/images/GameComplete.mp4" 
+        autoPlay
+        playsInline
+        onEnded={onBack}
+        className="w-screen h-screen object-cover"
+      />
+    </div>
+  )
+}
+
 
   if (gameCompleted) {
     const analysis = getDyscalculiaAnalysis();

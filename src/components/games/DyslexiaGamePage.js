@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const DyslexiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1);
@@ -10,6 +10,8 @@ const DyslexiaGamePage = ({ onBack }) => {
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState(10);
   const [responses, setResponses] = useState([]);
+  const [showEndingVideo, setShowEndingVideo] = useState(false);
+  const videoRef = useRef(null);
 
   // Game data for each level
   const gameData = {
@@ -58,7 +60,7 @@ const DyslexiaGamePage = ({ onBack }) => {
     } else if (timeLeft === 0 && !showResult) {
       handleTimeUp();
     }
-  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
+  }, [timeLeft, gameStarted, gameCompleted, showResult]);
 
   const handleTimeUp = () => {
     setResponses(prev => [...prev, {
@@ -70,6 +72,15 @@ const DyslexiaGamePage = ({ onBack }) => {
     }]);
     nextQuestion();
   };
+
+  useEffect(() => {
+  if (showEndingVideo && videoRef.current) {
+    const videoEl = videoRef.current;
+    if (videoEl.requestFullscreen) {
+      videoEl.requestFullscreen().catch((e) => console.warn("Fullscreen failed", e));
+    }
+  }
+}, [showEndingVideo]);
 
   const startGame = () => {
     setGameStarted(true);
@@ -119,8 +130,20 @@ const DyslexiaGamePage = ({ onBack }) => {
   };
 
   const completeLevel = () => {
-    setGameCompleted(true);
-  };
+  if (currentLevel < 3) {
+    setCurrentLevel(currentLevel + 1);
+    setGameStarted(false);
+    setGameCompleted(false);
+    setCurrentQuestion(0);
+    setScore(0);
+    setResponses([]);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setTimeLeft(10);
+  } else {
+    setShowEndingVideo(true); // <-- Show video only when all levels are done
+  }
+};
 
   const nextLevel = () => {
     if (currentLevel < 3) {
@@ -134,6 +157,18 @@ const DyslexiaGamePage = ({ onBack }) => {
       setShowResult(false);
       setTimeLeft(10);
     }
+  };
+
+  const restartGame = () => {
+    setCurrentLevel(1);
+    setGameStarted(false);
+    setGameCompleted(false);
+    setCurrentQuestion(0);
+    setScore(0);
+    setResponses([]);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setTimeLeft(10);
   };
 
   const getLevelDescription = (level) => {
@@ -217,6 +252,20 @@ const DyslexiaGamePage = ({ onBack }) => {
       </div>
     );
   }
+
+  if (showEndingVideo) {
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <video
+        src="/images/GameComplete.mp4" 
+        autoPlay
+        playsInline
+        onEnded={onBack}
+        className="w-screen h-screen object-cover"
+      />
+    </div>
+  )
+}
 
   if (gameCompleted) {
     const analysis = getPerformanceAnalysis();
