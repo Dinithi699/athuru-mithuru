@@ -30,9 +30,19 @@ export const signUpAdmin = async (email, password, name, mobile, school) => {
       isActive: true
     };
     
-    // Update profile and save data asynchronously (don't wait)
-    updateProfile(user, { displayName: name }).catch(console.warn);
-    setDoc(doc(db, "admins", user.uid), adminData).catch(console.warn);
+    // Update profile and save data concurrently for better performance
+    const [profileUpdate, firestoreUpdate] = await Promise.allSettled([
+      updateProfile(user, { displayName: name }),
+      setDoc(doc(db, "admins", user.uid), adminData)
+    ]);
+    
+    if (profileUpdate.status === 'rejected') {
+      console.warn('Admin profile update failed:', profileUpdate.reason);
+    }
+    
+    if (firestoreUpdate.status === 'rejected') {
+      console.warn('Admin firestore update failed:', firestoreUpdate.reason);
+    }
     
     console.log('Admin registration completed');
     
@@ -153,9 +163,20 @@ export const signUpUser = async (email, password, name, mobile) => {
       achievements: []
     };
     
-    // Update profile and save data asynchronously (don't wait)
-    updateProfile(user, { displayName: name }).catch(console.warn);
-    setDoc(doc(db, "users", user.uid), userData).catch(console.warn);
+    // Update profile and save data concurrently for better performance
+    const [profileUpdate, firestoreUpdate] = await Promise.allSettled([
+      updateProfile(user, { displayName: name }),
+      setDoc(doc(db, "users", user.uid), userData)
+    ]);
+    
+    if (profileUpdate.status === 'rejected') {
+      console.warn('Profile update failed:', profileUpdate.reason);
+    }
+    
+    if (firestoreUpdate.status === 'rejected') {
+      console.warn('Firestore update failed:', firestoreUpdate.reason);
+      // Continue anyway, we can retry later
+    }
     
     console.log('User registration completed');
     
