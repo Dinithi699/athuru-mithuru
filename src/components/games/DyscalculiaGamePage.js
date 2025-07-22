@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { saveGameScore } from '../../firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DyscalculiaGamePage = ({ onBack }) => {
+  const { user } = useAuth();
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -62,6 +65,36 @@ const DyscalculiaGamePage = ({ onBack }) => {
     } else {
       setGameCompleted(true)
     }
+    
+    // Save game results to Firestore
+    const saveResults = async () => {
+      if (user?.uid) {
+        const analysis = getDyscalculiaAnalysis();
+        const gameData = {
+          gameType: 'Dyscalculia',
+          level: currentLevel,
+          score: score,
+          accuracy: analysis.accuracy,
+          averageTime: analysis.averageTime,
+          averageReactionTime: analysis.averageReactionTime,
+          riskLevel: analysis.riskLevel,
+          totalQuestions: totalQuestions,
+          correctAnswers: score,
+          responses: responses,
+          reactionTimes: reactionTimes,
+          completedAt: new Date().toISOString()
+        };
+        
+        try {
+          await saveGameScore(user.uid, 'Dyscalculia', score, Date.now(), gameData);
+          console.log('Dyscalculia game results saved successfully');
+        } catch (error) {
+          console.error('Failed to save Dyscalculia game results:', error);
+        }
+      }
+    };
+    
+    saveResults();
   }, [currentLevel]);
 
   const handleTimeUp = useCallback(() => {
@@ -180,22 +213,25 @@ const DyscalculiaGamePage = ({ onBack }) => {
     const averageReactionTime = reactionTimes.reduce((sum, time) => sum + time, 0) / reactionTimes.length;
     const accuracy = (correctResponses / totalResponses) * 100;
     
-    let riskLevel = 'අඩු';
+    let riskLevel = 'Not Danger';
+    let riskLevelSinhala = 'අවදානමක් නැත';
     let analysis = '';
     let recommendations = [];
     
     // Dyscalculia risk assessment
     if (currentLevel === 1) {
-      if (accuracy < 70 || averageReactionTime > 8000) {
-        riskLevel = 'ඉහළ';
+      if (accuracy < 50 || averageReactionTime > 8000) {
+        riskLevel = 'Danger';
+        riskLevelSinhala = 'අවදානම';
         analysis = 'මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දනයේ දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් පෙන්නුම් කරයි.';
         recommendations = [
           'සංඛ්‍යා හඳුනාගැනීමේ ක්‍රියාකාරකම් අභ්‍යාස කරන්න',
           'සංඛ්‍යා සංසන්දනය සඳහා දෘශ්‍ය උපකරණ භාවිතා කරන්න',
           'වෘත්තීය තක්සේරුවක් සලකා බලන්න'
         ];
-      } else if (accuracy < 85 || averageReactionTime > 5000) {
-        riskLevel = 'මධ්‍යම';
+      } else if (accuracy < 70 || averageReactionTime > 5000) {
+        riskLevel = 'Less Danger';
+        riskLevelSinhala = 'අඩු අවදානම';
         analysis = 'සංඛ්‍යා සැකසීමේ සමහර අභියෝග. අමතර අභ්‍යාස සමඟ ප්‍රගතිය නිරීක්ෂණය කරන්න.';
         recommendations = [
           'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස',
@@ -203,6 +239,8 @@ const DyscalculiaGamePage = ({ onBack }) => {
           'සංඛ්‍යා රේඛා සමඟ අභ්‍යාස කරන්න'
         ];
       } else {
+        riskLevel = 'Not Danger';
+        riskLevelSinhala = 'අවදානමක් නැත';
         analysis = 'හොඳ මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දන කුසලතා.';
         recommendations = [
           'වඩාත් අභියෝගාත්මක සංඛ්‍යා ක්‍රියාකාරකම් සමඟ ඉදිරියට යන්න',
@@ -210,16 +248,18 @@ const DyscalculiaGamePage = ({ onBack }) => {
         ];
       }
     } else if (currentLevel === 2) {
-      if (accuracy < 60 || averageReactionTime > 10000) {
-        riskLevel = 'ඉහළ';
+      if (accuracy < 50 || averageReactionTime > 10000) {
+        riskLevel = 'Danger';
+        riskLevelSinhala = 'අවදානම';
         analysis = 'ස්ථාන අගය අවබෝධයේ සැලකිය යුතු දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
         recommendations = [
           'ස්ථාන අගය අවබෝධය කෙරෙහි අවධානය යොමු කරන්න',
           'දෘශ්‍යකරණය සඳහා base-10 කුට්ටි භාවිතා කරන්න',
           'අධ්‍යාපන සහාය විශේෂඥයෙකු සොයන්න'
         ];
-      } else if (accuracy < 75 || averageReactionTime > 7000) {
-        riskLevel = 'මධ්‍යම';
+      } else if (accuracy < 70 || averageReactionTime > 7000) {
+        riskLevel = 'Less Danger';
+        riskLevelSinhala = 'අඩු අවදානම';
         analysis = 'ස්ථාන අගය සංකල්ප ශක්තිමත් කිරීම අවශ්‍යයි. ඉලක්කගත අභ්‍යාස දිගටම කරන්න.';
         recommendations = [
           'දහයන් සහ ඒකයන් සමඟ අභ්‍යාස කරන්න',
@@ -227,6 +267,8 @@ const DyscalculiaGamePage = ({ onBack }) => {
           'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස'
         ];
       } else {
+        riskLevel = 'Not Danger';
+        riskLevelSinhala = 'අවදානමක් නැත';
         analysis = 'ස්ථාන අගය සහ සංඛ්‍යා සංසන්දනය පිළිබඳ හොඳ අවබෝධයක්.';
         recommendations = [
           'වඩාත් සංකීර්ණ සංඛ්‍යා සංකල්ප හඳුන්වා දෙන්න',
@@ -235,7 +277,8 @@ const DyscalculiaGamePage = ({ onBack }) => {
       }
     } else if (currentLevel === 3) {
       if (accuracy < 50 || averageReactionTime > 12000) {
-        riskLevel = 'ඉහළ';
+        riskLevel = 'Danger';
+        riskLevelSinhala = 'අවදානම';
         analysis = 'මූලික ගණිතයේ දුෂ්කරතා සැලකිය යුතු ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
         recommendations = [
           'ස්පර්ශනීය එකතු කිරීමේ උපාය මාර්ග කෙරෙහි අවධානය යොමු කරන්න',
@@ -243,7 +286,8 @@ const DyscalculiaGamePage = ({ onBack }) => {
           'සවිස්තරාත්මක තක්සේරුවක් සලකා බලන්න'
         ];
       } else if (accuracy < 70 || averageReactionTime > 8000) {
-        riskLevel = 'මධ්‍යම';
+        riskLevel = 'Less Danger';
+        riskLevelSinhala = 'අඩු අවදානම';
         analysis = 'ගණිත සැකසීමට සහාය අවශ්‍යයි. මූලික ක්‍රියාකාරකම් අභ්‍යාස කරන්න.';
         recommendations = [
           'එකතු කිරීමේ කරුණු අභ්‍යාස කරන්න',
@@ -251,6 +295,8 @@ const DyscalculiaGamePage = ({ onBack }) => {
           'නිතිපතා ගණිත අභ්‍යාස'
         ];
       } else {
+        riskLevel = 'Not Danger';
+        riskLevelSinhala = 'අවදානමක් නැත';
         analysis = 'හොඳ මූලික ගණිත සහ සංසන්දන කුසලතා.';
         recommendations = [
           'වඩාත් සංකීර්ණ ප්‍රකාශන සමඟ ඉදිරියට යන්න',
@@ -259,7 +305,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
       }
     }
     
-    return { accuracy, averageTime, averageReactionTime, riskLevel, analysis, recommendations };
+    return { accuracy, averageTime, averageReactionTime, riskLevel, riskLevelSinhala, analysis, recommendations };
   };
 
   const getNumberDisplay = (value, isExpression = false) => {
@@ -351,7 +397,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
       <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500 flex items-center justify-center p-4">
         <div className="text-center text-white max-w-3xl w-full">
           <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8">
-            {analysis.riskLevel === 'අඩු' ? '🎉' : analysis.riskLevel === 'මධ්‍යම' ? '⚠️' : '🔍'}
+            {analysis.riskLevel === 'Not Danger' ? '🎉' : analysis.riskLevel === 'Less Danger' ? '⚠️' : '🔍'}
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
           
@@ -372,10 +418,10 @@ const DyscalculiaGamePage = ({ onBack }) => {
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                 <div className="text-xs sm:text-sm opacity-80">අවදානම් මට්ටම</div>
                 <div className={`text-lg sm:text-xl font-bold ${
-                  analysis.riskLevel === 'අඩු' ? 'text-green-300' : 
-                  analysis.riskLevel === 'මධ්‍යම' ? 'text-yellow-300' : 'text-red-300'
+                  analysis.riskLevel === 'Not Danger' ? 'text-green-300' : 
+                  analysis.riskLevel === 'Less Danger' ? 'text-yellow-300' : 'text-red-300'
                 }`}>
-                  {analysis.riskLevel}
+                  {analysis.riskLevelSinhala}
                 </div>
               </div>
             </div>

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { saveGameScore } from '../../firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DyslexiaGamePage = ({ onBack }) => {
+  const { user } = useAuth();
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
@@ -129,21 +132,68 @@ const DyslexiaGamePage = ({ onBack }) => {
     }
   };
 
-  const completeLevel = () => {
-  if (currentLevel < 3) {
-    setCurrentLevel(currentLevel + 1);
-    setGameStarted(false);
-    setGameCompleted(false);
-    setCurrentQuestion(0);
-    setScore(0);
-    setResponses([]);
-    setSelectedAnswer(null);
-    setShowResult(false);
-    setTimeLeft(10);
+  const getPerformanceAnalysis = () => {
+    const totalResponses = responses.length;
+    const correctResponses = responses.filter(r => r.isCorrect).length;
+    const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses;
+    const accuracy = (correctResponses / totalResponses) * 100;
+    
+    let riskLevel = 'Not Danger';
+    let riskLevelSinhala = 'අවදානමක් නැත';
+    let analysis = '';
+    
+    if (accuracy < 50) {
+      riskLevel = 'Danger';
+      riskLevelSinhala = 'අවදානම';
+      analysis = 'අවධානය අවශ්‍යයි. දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ලෙක්සියා අවදානමක් යෝජනා කරයි.';
+    } else if (accuracy < 70) {
+      riskLevel = 'Less Danger';
+      riskLevelSinhala = 'අඩු අවදානම';
+      analysis = 'හොඳයි! තව ටිකක් අභ්‍යාස කිරීමෙන් වැඩිදියුණු කළ හැක.';
+    } else {
+      riskLevel = 'Not Danger';
+      riskLevelSinhala = 'අවදානමක් නැත';
+      analysis = 'විශිෂ්ට! දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ හැකියාව ඉතා හොඳයි.';
+    }
+    
+    return { accuracy, averageTime, riskLevel, riskLevelSinhala, analysis };
+  };
+
+  const completeLevel = useCallback(() => {
+  if (currentLevel === 3) {
+    setShowEndingVideo(true) // show the ending video only after level 3
   } else {
-    setShowEndingVideo(true); // <-- Show video only when all levels are done
+    setGameCompleted(true)
   }
-};
+  
+  // Save game results to Firestore
+  const saveResults = async () => {
+    if (user?.uid) {
+      const analysis = getPerformanceAnalysis();
+      const gameData = {
+        gameType: 'Dyslexia',
+        level: currentLevel,
+        score: score,
+        accuracy: analysis.accuracy,
+        averageTime: analysis.averageTime,
+        riskLevel: analysis.riskLevel,
+        totalQuestions: totalQuestions,
+        correctAnswers: score,
+        responses: responses,
+        completedAt: new Date().toISOString()
+      };
+      
+      try {
+        await saveGameScore(user.uid, 'Dyslexia', score, Date.now(), gameData);
+        console.log('Dyslexia game results saved successfully');
+      } catch (error) {
+        console.error('Failed to save Dyslexia game results:', error);
+      }
+    }
+  };
+  
+  saveResults();
+}, [currentLevel]);
 
   const nextLevel = () => {
     if (currentLevel < 3) {
@@ -178,24 +228,6 @@ const DyslexiaGamePage = ({ onBack }) => {
       3: 'උසස් දෘශ්‍ය වෙනස්කම් හඳුනාගැනීම'
     };
     return descriptions[level];
-  };
-
-  const getPerformanceAnalysis = () => {
-    const totalResponses = responses.length;
-    const correctResponses = responses.filter(r => r.isCorrect).length;
-    const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses;
-    const accuracy = (correctResponses / totalResponses) * 100;
-    
-    let analysis = '';
-    if (accuracy >= 80) {
-      analysis = 'විශිෂ්ට! දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ හැකියාව ඉතා හොඳයි.';
-    } else if (accuracy >= 60) {
-      analysis = 'හොඳයි! තව ටිකක් අභ්‍යාස කිරීමෙන් වැඩිදියුණු කළ හැක.';
-    } else {
-      analysis = 'අවධානය අවශ්‍යයි. දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ අභ්‍යාස අවශ්‍ය විය හැක.';
-    }
-    
-    return { accuracy, averageTime, analysis };
   };
 
   if (!gameStarted) {
@@ -277,7 +309,7 @@ const DyslexiaGamePage = ({ onBack }) => {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
           
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                 <div className="text-xs sm:text-sm opacity-80">ලකුණු</div>
                 <div className="text-2xl sm:text-3xl font-bold">{score}/{totalQuestions}</div>
@@ -285,6 +317,15 @@ const DyslexiaGamePage = ({ onBack }) => {
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                 <div className="text-xs sm:text-sm opacity-80">නිරවද්‍යතාව</div>
                 <div className="text-2xl sm:text-3xl font-bold">{analysis.accuracy.toFixed(1)}%</div>
+              </div>
+              <div className="bg-white/10 rounded-lg p-3 sm:p-4">
+                <div className="text-xs sm:text-sm opacity-80">අවදානම් මට්ටම</div>
+                <div className={`text-2xl sm:text-3xl font-bold ${
+                  analysis.riskLevel === 'Not Danger' ? 'text-green-300' : 
+                  analysis.riskLevel === 'Less Danger' ? 'text-yellow-300' : 'text-red-300'
+                }`}>
+                  {analysis.riskLevelSinhala}
+                </div>
               </div>
               <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                 <div className="text-xs sm:text-sm opacity-80">සාමාන්‍ය කාලය</div>
