@@ -257,13 +257,13 @@ const DysgraphiaGamePage = ({ onBack }) => {
     }
   }
 
-  const completeLevel = useCallback(() => {
-    if (currentLevel === 3) {
-      setShowEndingVideo(true) // show the ending video only after level 3
-    } else {
-      setGameCompleted(true)
-    }
-  }, [currentLevel])
+  const completeLevel = () => {
+  if (currentLevel === 3) {
+    setShowEndingVideo(true) // show the ending video only after level 3
+  } else {
+    setGameCompleted(true)
+  }
+}
 
   // Moved nextQuestion definition before handleTimeUp
   const nextQuestion = useCallback(() => {
@@ -659,7 +659,11 @@ const DysgraphiaGamePage = ({ onBack }) => {
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-                <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
+                    }
+                }
+                
+                
+            <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
                     autoPlay
