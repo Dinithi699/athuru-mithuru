@@ -210,8 +210,8 @@ const DyslexiaGamePage = ({ onBack }) => {
           // Save to localStorage temporarily
           localStorage.setItem(`Dyslexia_${user.uid}`, JSON.stringify(existingData));
           
-          // Save to Firestore (this will update the same record)
-          await saveGameScore(user.uid, 'Dyslexia', totalScore, Date.now(), existingData);
+          // Save to Firestore (this will update the same document)
+          await saveGameScore(user.uid, 'Dyslexia', totalScore, 0, existingData);
           console.log('Dyslexia game results saved successfully');
         } catch (error) {
           console.error('Failed to save Dyslexia game results:', error);

@@ -6,6 +6,7 @@ import {
   getDoc,
   collection,
   addDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -76,16 +77,19 @@ export const getUserData = async (userId) => {
 };
 
 // Save game score
-export const saveGameScore = async (userId, gameType, score, duration, additionalData = {}) => {
+export const saveGameScore = async (userId, gameType, score, duration, gameData = {}) => {
   try {
-    await addDoc(collection(db, "gameScores"), {
-      userId: userId,
-      gameType: gameType,
-      score: score,
-      duration: duration,
-      timestamp: new Date().toISOString(),
-      ...additionalData
-    });
+    // Use a consistent document ID based on userId and gameType
+    const docId = `${userId}_${gameType}`;
+    const gameDocRef = doc(db, "gameScores", docId);
+    
+    // Use setDoc with merge to update existing document or create new one
+    await setDoc(gameDocRef, {
+      userId,
+      gameType,
+      lastUpdated: new Date().toISOString(),
+      ...gameData
+    }, { merge: true });
     
     return { success: true };
   } catch (error) {
