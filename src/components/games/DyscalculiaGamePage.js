@@ -112,9 +112,9 @@ const DyscalculiaGamePage = ({ onBack }) => {
   // Memoized complete level function
   const completeLevel = useCallback(() => {
     if (currentLevel === 3) {
-      setShowEndingVideo(true) // show the ending video only after level 3
+      setShowEndingVideo(true); // show the ending video only after level 3
     } else {
-      setGameCompleted(true)
+      setGameCompleted(true);
     }
     
     // Save game results to Firestore
@@ -310,6 +310,9 @@ const DyscalculiaGamePage = ({ onBack }) => {
     let analysis = '';
     let recommendations = [];
     
+    return { accuracy, averageTime, averageReactionTime, riskLevel, riskLevelSinhala, analysis, recommendations };
+  };
+
   const getNumberDisplay = (value, isExpression = false) => {
     if (isExpression) {
       return (
@@ -388,7 +391,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
         className="w-screen h-screen object-cover"
       />
     </div>
-  )
+  );
 }
 
 
