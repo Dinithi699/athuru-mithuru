@@ -298,7 +298,20 @@ const DyscalculiaGamePage = ({ onBack }) => {
     return descriptions[level];
   };
 
-//
+  // const getDyscalculiaAnalysis = () => {
+  //   const totalResponses = responses.length;
+  //   const correctResponses = responses.filter(r => r.isCorrect).length;
+  //   const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses;
+  //   const averageReactionTime = reactionTimes.reduce((sum, time) => sum + time, 0) / reactionTimes.length;
+  //   const accuracy = (correctResponses / totalResponses) * 100;
+    
+  //   let riskLevel = 'Not Danger';
+  //   let riskLevelSinhala = 'අවදානමක් නැත';
+  //   let analysis = '';
+  //   let recommendations = [];
+    
+  //   return { accuracy, averageTime, averageReactionTime, riskLevel, riskLevelSinhala, analysis, recommendations };
+  // };
 
   const getNumberDisplay = (value, isExpression = false) => {
     if (isExpression) {
