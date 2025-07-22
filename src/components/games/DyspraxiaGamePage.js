@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { saveGameScore } from '../../firebase/firestore';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DyspraxiaGamePage = ({ onBack }) => {
+  const { user } = useAuth();
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentStar, setCurrentStar] = useState(0);
   const [score, setScore] = useState(0);
@@ -269,6 +272,35 @@ const DyspraxiaGamePage = ({ onBack }) => {
   } else {
     setGameCompleted(true)
   }
+  
+  // Save game results to Firestore
+  const saveResults = async () => {
+    if (user?.uid) {
+      const analysis = getDyspraxiaAnalysis();
+      const gameData = {
+        gameType: 'Dyspraxia',
+        level: currentLevel,
+        score: score,
+        accuracy: analysis.accuracy,
+        averageReactionTime: analysis.averageReactionTime,
+        timeoutRate: analysis.timeoutRate,
+        riskLevel: analysis.riskLevel,
+        totalQuestions: currentConfig.totalStars,
+        correctAnswers: score,
+        responses: responses,
+        completedAt: new Date().toISOString()
+      };
+      
+      try {
+        await saveGameScore(user.uid, 'Dyspraxia', score, Date.now(), gameData);
+        console.log('Dyspraxia game results saved successfully');
+      } catch (error) {
+        console.error('Failed to save Dyspraxia game results:', error);
+      }
+    }
+  };
+  
+  saveResults();
 }
   const nextLevel = () => {
     if (currentLevel < 3) {
@@ -318,15 +350,17 @@ const DyspraxiaGamePage = ({ onBack }) => {
     const accuracy = totalResponses > 0 ? (correctResponses / totalResponses) * 100 : 0;
     const timeoutRate = totalResponses > 0 ? (timeoutResponses / totalResponses) * 100 : 0;
     
-    let riskLevel = 'අඩු';
+    let riskLevel = 'Not Danger';
+    let riskLevelSinhala = 'අවදානමක් නැත';
     let analysis = '';
     let recommendations = [];
     
     // Dyspraxia risk assessment
     const reactionThreshold = currentLevel === 1 ? 1500 : currentLevel === 2 ? 1200 : 1000;
     
-    if (accuracy < 60 || averageReactionTime > reactionThreshold * 1.5 || timeoutRate > 40) {
-      riskLevel = 'ඉහළ';
+    if (accuracy < 50 || averageReactionTime > reactionThreshold * 1.5 || timeoutRate > 40) {
+      riskLevel = 'Danger';
+      riskLevelSinhala = 'අවදානම';
       analysis = 'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය, ප්‍රතික්‍රියා කාලය සහ අවධානය යොමු කිරීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ප්‍රැක්සියා අවදානමක් යෝජනා කරයි.';
       recommendations = [
         'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණ අභ්‍යාස',
@@ -335,8 +369,9 @@ const DyspraxiaGamePage = ({ onBack }) => {
         'වෘත්තීය ප්‍රතිකාර විශේෂඥයෙකු සම්බන්ධ කරගන්න',
         'නිතිපතා සංවේදී මෝටර් අභ්‍යාස'
       ];
-    } else if (accuracy < 75 || averageReactionTime > reactionThreshold || timeoutRate > 25) {
-      riskLevel = 'මධ්‍යම';
+    } else if (accuracy < 70 || averageReactionTime > reactionThreshold || timeoutRate > 25) {
+      riskLevel = 'Less Danger';
+      riskLevelSinhala = 'අඩු අවදානම';
       analysis = 'දෘශ්‍ය සැකසීම සහ මෝටර් ප්‍රතිචාරවල සමහර අභියෝග. ඉලක්කගත අභ්‍යාස සමඟ වැඩිදියුණු කළ හැක.';
       recommendations = [
         'ඉලක්ක කරන ක්‍රීඩා නිතිපතා කරන්න',
@@ -346,6 +381,8 @@ const DyspraxiaGamePage = ({ onBack }) => {
         'ප්‍රගතිය නිරීක්ෂණය කරන්න'
       ];
     } else {
+      riskLevel = 'Not Danger';
+      riskLevelSinhala = 'අවදානමක් නැත';
       analysis = 'හොඳ දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය සහ ප්‍රතික්‍රියා කාලය. සාමාන්‍ය වර්ධනයක් පෙන්නුම් කරයි.';
       recommendations = [
         'වර්තමාන කුසලතා පවත්වාගෙන යන්න',
@@ -360,6 +397,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
       averageReactionTime, 
       timeoutRate, 
       riskLevel, 
+      riskLevelSinhala,
       analysis, 
       recommendations 
     };
@@ -482,7 +520,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
         <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
           <div className="text-center text-white max-w-3xl w-full">
             <div className="text-6xl sm:text-7xl md:text-8xl mb-6 sm:mb-8">
-              {analysis.riskLevel === 'අඩු' ? '🎉' : analysis.riskLevel === 'මධ්‍යම' ? '⚠️' : '🔍'}
+              {analysis.riskLevel === 'Not Danger' ? '🎉' : analysis.riskLevel === 'Less Danger' ? '⚠️' : '🔍'}
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
             
@@ -543,10 +581,10 @@ const DyspraxiaGamePage = ({ onBack }) => {
                 <button
                   onClick={onBack}
                   className="bg-white text-purple-600 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
-                >
-                  ← ආපසු යන්න
+              analysis.riskLevel === 'Not Danger' ? 'text-green-300' : 
+              analysis.riskLevel === 'Less Danger' ? 'text-yellow-300' : 'text-red-300'
                 </button>
-              </div>
+              {analysis.riskLevelSinhala}
             </div>
           </div>
         </div>
