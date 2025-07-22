@@ -174,8 +174,9 @@ export const signUpUser = async (email, password, name, mobile) => {
     }
     
     if (firestoreUpdate.status === 'rejected') {
-      console.warn('Firestore update failed:', firestoreUpdate.reason);
-      // Continue anyway, we can retry later
+      console.error('Firestore update failed:', firestoreUpdate.reason);
+      // This is critical - we need the user data in Firestore
+      throw new Error('Failed to save user data to database');
     }
     
     console.log('User registration completed');
@@ -187,6 +188,7 @@ export const signUpUser = async (email, password, name, mobile) => {
         name: name,
         email: email,
         mobile: mobile,
+        role: 'user',
         level: "ආරම්භක",
         points: 0,
         completedGames: 0,
@@ -218,7 +220,7 @@ export const signInUser = async (email, password) => {
     try {
       const userDocPromise = getDoc(doc(db, "users", user.uid));
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Firestore timeout')), 10000)
+        setTimeout(() => reject(new Error('Firestore timeout')), 15000)
       );
       
       const userDoc = await Promise.race([userDocPromise, timeoutPromise]);
@@ -232,6 +234,7 @@ export const signInUser = async (email, password) => {
           name: user.displayName || 'පරිශීලකයා',
           email: user.email,
           mobile: "",
+          role: 'user',
           level: "ආරම්භක",
           points: 0,
           completedGames: 0,
@@ -248,6 +251,7 @@ export const signInUser = async (email, password) => {
         name: user.displayName || 'පරිශීලකයා',
         email: user.email,
         mobile: "",
+        role: 'user',
         level: "ආරම්භක",
         points: 0,
         completedGames: 0,
