@@ -105,21 +105,11 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
 
     let riskScore = 0;
     
-    // Factor 1: Recent performance (last 5 games or all if less than 5)
+    // Factor 1: Recent performance (last 5 games)
     const recentGames = gameHistory.slice(-5);
-    const lowPerformanceCount = recentGames.filter(game => {
-      const performance = game.accuracy || game.score || 50;
-      return performance < 60;
-    }).length;
-    
-    if (lowPerformanceCount >= 4) riskScore += 3;
-    else if (lowPerformanceCount >= 2) riskScore += 2;
-    else if (lowPerformanceCount >= 1) riskScore += 1;
-    
-    // Factor 2: Overall average performance
-    const gamePerformances = gameHistory.map(game => {
-      const performance = game.accuracy || game.score || 50;
-      return performance / 100;
+    const recentPerformances = recentGames.map(game => {
+      const accuracy = game.accuracy || game.score || 50;
+      return accuracy / 100;
     });
     
     const averagePerformance = gamePerformances.reduce((sum, perf) => sum + perf, 0) / gamePerformances.length;
@@ -342,11 +332,11 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
 
         {activeTab === 'games' && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-white mb-4">ක්‍රීඩා ඉතිහාසය</h2>
+            <h2 className="text-xl font-bold text-white mb-4">ක්‍රීඩා ප්‍රතිඵල</h2>
             {loading ? (
               <div className="text-center py-8">
                 <div className="spinner mx-auto mb-4"></div>
-                <p className="text-white">ක්‍රීඩා දත්ත පූරණය වෙමින්...</p>
+                <p className="text-white">ක්‍රීඩා ප්‍රතිඵල පූරණය වෙමින්...</p>
               </div>
             ) : gameResults.length === 0 ? (
               <div className="text-center py-8">
@@ -354,26 +344,70 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                 <p className="text-white">තවම ක්‍රීඩා කර නැත</p>
               </div>
             ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="space-y-6">
                 {gameResults.map((game, index) => (
-                  <div key={index} className="bg-white/10 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
+                  <div key={index} className="bg-white/10 rounded-lg p-6">
+                    <div className="flex justify-between items-center mb-4">
                       <div>
                         <h3 className="font-bold text-white">{getGameTypeInSinhala(game.gameType)}</h3>
                         <p className="text-white/60 text-sm">
-                          {new Date(game.timestamp).toLocaleDateString('si-LK')} - {new Date(game.timestamp).toLocaleTimeString('si-LK')}
+                          අවසන් වරට යාවත්කාලීන: {new Date(game.lastUpdated).toLocaleDateString('si-LK')}
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-yellow-300 font-bold">{game.overallStats?.totalScore || 0} ලකුණු</div>
-                        {game.overallStats?.overallAccuracy && (
-                          <div className="text-white/60 text-sm">{game.overallStats.overallAccuracy.toFixed(1)}% නිරවද්‍යතාව</div>
-                        )}
+                        <div className={`font-bold ${getRiskColorFromLevel(game.overallStats?.overallRiskLevel)}`}>
+                          {getRiskTextFromLevel(game.overallStats?.overallRiskLevel)}
+                        </div>
+                        <div className="text-white/60 text-sm">
+                          {game.overallStats?.overallAccuracy?.toFixed(1)}% නිරවද්‍යතාව
+                        </div>
                       </div>
                     </div>
-                    {game.duration && (
-                      <div className="text-white/60 text-sm">
-                        කාලය: {Math.round(game.duration / 1000)} තත්පර
+                    
+                    {/* Overall Stats */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      <div className="bg-white/5 rounded p-2 text-center">
+                        <div className="text-lg font-bold text-white">{game.overallStats?.totalScore || 0}</div>
+                        <div className="text-xs text-white/60">මුළු ලකුණු</div>
+                      </div>
+                      <div className="bg-white/5 rounded p-2 text-center">
+                        <div className="text-lg font-bold text-white">{game.overallStats?.levelsCompleted || 0}</div>
+                        <div className="text-xs text-white/60">සම්පූර්ණ මට්ටම්</div>
+                      </div>
+                      <div className="bg-white/5 rounded p-2 text-center">
+                        <div className="text-lg font-bold text-white">{game.overallStats?.totalQuestions || 0}</div>
+                        <div className="text-xs text-white/60">මුළු ප්‍රශ්න</div>
+                      </div>
+                      <div className="bg-white/5 rounded p-2 text-center">
+                        <div className="text-lg font-bold text-white">{game.overallStats?.highestLevel || 0}</div>
+                        <div className="text-xs text-white/60">ඉහළම මට්ටම</div>
+                      </div>
+                    </div>
+
+                    {/* Level Details */}
+                    {game.levels && (
+                      <div className="mt-4">
+                        <h4 className="text-sm font-bold text-white mb-2">මට්ටම් විස්තර:</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          {Object.entries(game.levels).map(([levelKey, levelData]) => (
+                            <div key={levelKey} className="bg-white/5 rounded p-3">
+                              <div className="flex justify-between items-center">
+                                <span className="text-white font-medium">
+                                  {levelKey.replace('level', 'මට්ටම ')}
+                                </span>
+                                <span className="text-white/80">
+                                  {levelData.score}/{levelData.totalQuestions}
+                                </span>
+                              </div>
+                              <div className="text-xs text-white/60 mt-1">
+                                {levelData.accuracy?.toFixed(1)}% නිරවද්‍යතාව
+                              </div>
+                              <div className={`text-xs mt-1 ${getRiskColorFromLevel(levelData.riskLevel)}`}>
+                                {getRiskTextFromLevel(levelData.riskLevel)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
