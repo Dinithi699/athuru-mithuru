@@ -18,6 +18,136 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const [showEndingVideo, setShowEndingVideo] = useState(false);
   const videoRef = useRef(null);
 
+  // Memoized analysis function
+  const getDyscalculiaAnalysis = useCallback(() => {
+    const totalResponses = responses.length;
+    const correctResponses = responses.filter(r => r.isCorrect).length;
+    const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses;
+    const averageReactionTime = reactionTimes.reduce((sum, time) => sum + time, 0) / reactionTimes.length;
+    const accuracy = (correctResponses / totalResponses) * 100;
+    
+    let riskLevel = 'Not Danger';
+    let riskLevelSinhala = 'අවදානමක් නැත';
+    let analysis = '';
+    let recommendations = [];
+    
+    // Updated scoring system: <50 = Danger, 50-70 = Less Danger, >70 = Not Danger
+    if (accuracy < 50) {
+      riskLevel = 'Danger';
+      riskLevelSinhala = 'අවදානම';
+      if (currentLevel === 1) {
+        analysis = 'මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දනයේ දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් පෙන්නුම් කරයි.';
+        recommendations = [
+          'සංඛ්‍යා හඳුනාගැනීමේ ක්‍රියාකාරකම් අභ්‍යාස කරන්න',
+          'සංඛ්‍යා සංසන්දනය සඳහා දෘශ්‍ය උපකරණ භාවිතා කරන්න',
+          'වෘත්තීය තක්සේරුවක් සලකා බලන්න'
+        ];
+      } else if (currentLevel === 2) {
+        analysis = 'ස්ථාන අගය අවබෝධයේ සැලකිය යුතු දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
+        recommendations = [
+          'ස්ථාන අගය අවබෝධය කෙරෙහි අවධානය යොමු කරන්න',
+          'දෘශ්‍යකරණය සඳහා base-10 කුට්ටි භාවිතා කරන්න',
+          'අධ්‍යාපන සහාය විශේෂඥයෙකු සොයන්න'
+        ];
+      } else {
+        analysis = 'මූලික ගණිතයේ දුෂ්කරතා සැලකිය යුතු ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
+        recommendations = [
+          'ස්පර්ශනීය එකතු කිරීමේ උපාය මාර්ග කෙරෙහි අවධානය යොමු කරන්න',
+          'ගණිතය සඳහා හස්ත ද්‍රව්‍ය භාවිතා කරන්න',
+          'සවිස්තරාත්මක තක්සේරුවක් සලකා බලන්න'
+        ];
+      }
+    } else if (accuracy < 70) {
+      riskLevel = 'Less Danger';
+      riskLevelSinhala = 'අඩු අවදානම';
+      if (currentLevel === 1) {
+        analysis = 'සංඛ්‍යා සැකසීමේ සමහර අභියෝග. අමතර අභ්‍යාස සමඟ ප්‍රගතිය නිරීක්ෂණය කරන්න.';
+        recommendations = [
+          'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස',
+          'ගණන් කිරීම සඳහා හස්ත ද්‍රව්‍ය භාවිතා කරන්න',
+          'සංඛ්‍යා රේඛා සමඟ අභ්‍යාස කරන්න'
+        ];
+      } else if (currentLevel === 2) {
+        analysis = 'ස්ථාන අගය සංකල්ප ශක්තිමත් කිරීම අවශ්‍යයි. ඉලක්කගත අභ්‍යාස දිගටම කරන්න.';
+        recommendations = [
+          'දහයන් සහ ඒකයන් සමඟ අභ්‍යාස කරන්න',
+          'දෘශ්‍ය ස්ථාන අගය ප්‍රස්ථාර භාවිතා කරන්න',
+          'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස'
+        ];
+      } else {
+        analysis = 'ගණිත සැකසීමට සහාය අවශ්‍යයි. මූලික ක්‍රියාකාරකම් අභ්‍යාස කරන්න.';
+        recommendations = [
+          'එකතු කිරීමේ කරුණු අභ්‍යාස කරන්න',
+          'දෘශ්‍ය එකතු කිරීමේ උපාය මාර්ග භාවිතා කරන්න',
+          'නිතිපතා ගණිත අභ්‍යාස'
+        ];
+      }
+    } else {
+      riskLevel = 'Not Danger';
+      riskLevelSinhala = 'අවදානමක් නැත';
+      if (currentLevel === 1) {
+        analysis = 'හොඳ මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දන කුසලතා.';
+        recommendations = [
+          'වඩාත් අභියෝගාත්මක සංඛ්‍යා ක්‍රියාකාරකම් සමඟ ඉදිරියට යන්න',
+          'ස්ථාන අගය සංකල්ප හඳුන්වා දෙන්න'
+        ];
+      } else if (currentLevel === 2) {
+        analysis = 'ස්ථාන අගය සහ සංඛ්‍යා සංසන්දනය පිළිබඳ හොඳ අවබෝධයක්.';
+        recommendations = [
+          'වඩාත් සංකීර්ණ සංඛ්‍යා සංකල්ප හඳුන්වා දෙන්න',
+          'විශාල සංඛ්‍යා සමඟ අභ්‍යාස කරන්න'
+        ];
+      } else {
+        analysis = 'හොඳ මූලික ගණිත සහ සංසන්දන කුසලතා.';
+        recommendations = [
+          'වඩාත් සංකීර්ණ ප්‍රකාශන සමඟ ඉදිරියට යන්න',
+          'අඩු කිරීමේ සංසන්දන හඳුන්වා දෙන්න'
+        ];
+      }
+    }
+    
+    return { accuracy, averageTime, averageReactionTime, riskLevel, riskLevelSinhala, analysis, recommendations };
+  }, [responses, reactionTimes, currentLevel]);
+
+  // Memoized complete level function
+  const completeLevel = useCallback(() => {
+    if (currentLevel === 3) {
+      setShowEndingVideo(true) // show the ending video only after level 3
+    } else {
+      setGameCompleted(true)
+    }
+    
+    // Save game results to Firestore
+    const saveResults = async () => {
+      if (user?.uid) {
+        const analysis = getDyscalculiaAnalysis();
+        const gameData = {
+          gameType: 'Dyscalculia',
+          level: currentLevel,
+          score: score,
+          accuracy: analysis.accuracy,
+          averageTime: analysis.averageTime,
+          averageReactionTime: analysis.averageReactionTime,
+          riskLevel: analysis.riskLevel,
+          totalQuestions: totalQuestions,
+          correctAnswers: score,
+          responses: responses,
+          reactionTimes: reactionTimes,
+          completedAt: new Date().toISOString()
+        };
+        
+        try {
+          await saveGameScore(user.uid, 'Dyscalculia', score, Date.now(), gameData);
+          console.log('Dyscalculia game results saved successfully');
+        } catch (error) {
+          console.error('Failed to save Dyscalculia game results:', error);
+        }
+      }
+    };
+    
+    saveResults();
+  }, [currentLevel, user?.uid, getDyscalculiaAnalysis, score, totalQuestions, responses, reactionTimes]);
+
   // Game data for each level - 5 questions each
   const gameData = {
     1: [
@@ -58,44 +188,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
       completeLevel();
     }
   }, [currentQuestion, totalQuestions, completeLevel]);
-
-  const completeLevel = useCallback(() => {
-    if (currentLevel === 3) {
-      setShowEndingVideo(true) // show the ending video only after level 3
-    } else {
-      setGameCompleted(true)
-    }
-    
-    // Save game results to Firestore
-    const saveResults = async () => {
-      if (user?.uid) {
-        const analysis = getDyscalculiaAnalysis();
-        const gameData = {
-          gameType: 'Dyscalculia',
-          level: currentLevel,
-          score: score,
-          accuracy: analysis.accuracy,
-          averageTime: analysis.averageTime,
-          averageReactionTime: analysis.averageReactionTime,
-          riskLevel: analysis.riskLevel,
-          totalQuestions: totalQuestions,
-          correctAnswers: score,
-          responses: responses,
-          reactionTimes: reactionTimes,
-          completedAt: new Date().toISOString()
-        };
-        
-        try {
-          await saveGameScore(user.uid, 'Dyscalculia', score, Date.now(), gameData);
-          console.log('Dyscalculia game results saved successfully');
-        } catch (error) {
-          console.error('Failed to save Dyscalculia game results:', error);
-        }
-      }
-    };
-    
-    saveResults();
-  }, [currentLevel, user?.uid, getDyscalculiaAnalysis, score, totalQuestions, responses, reactionTimes]);
 
   const handleTimeUp = useCallback(() => {
     const reactionTime = questionStartTime ? Date.now() - questionStartTime : 15000;
@@ -218,96 +310,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
     let analysis = '';
     let recommendations = [];
     
-    // Dyscalculia risk assessment
-    if (currentLevel === 1) {
-      if (accuracy < 50 || averageReactionTime > 8000) {
-        riskLevel = 'Danger';
-        riskLevelSinhala = 'අවදානම';
-        analysis = 'මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දනයේ දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් පෙන්නුම් කරයි.';
-        recommendations = [
-          'සංඛ්‍යා හඳුනාගැනීමේ ක්‍රියාකාරකම් අභ්‍යාස කරන්න',
-          'සංඛ්‍යා සංසන්දනය සඳහා දෘශ්‍ය උපකරණ භාවිතා කරන්න',
-          'වෘත්තීය තක්සේරුවක් සලකා බලන්න'
-        ];
-      } else if (accuracy < 70 || averageReactionTime > 5000) {
-        riskLevel = 'Less Danger';
-        riskLevelSinhala = 'අඩු අවදානම';
-        analysis = 'සංඛ්‍යා සැකසීමේ සමහර අභියෝග. අමතර අභ්‍යාස සමඟ ප්‍රගතිය නිරීක්ෂණය කරන්න.';
-        recommendations = [
-          'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස',
-          'ගණන් කිරීම සඳහා හස්ත ද්‍රව්‍ය භාවිතා කරන්න',
-          'සංඛ්‍යා රේඛා සමඟ අභ්‍යාස කරන්න'
-        ];
-      } else {
-        riskLevel = 'Not Danger';
-        riskLevelSinhala = 'අවදානමක් නැත';
-        analysis = 'හොඳ මූලික සංඛ්‍යා හඳුනාගැනීම සහ සංසන්දන කුසලතා.';
-        recommendations = [
-          'වඩාත් අභියෝගාත්මක සංඛ්‍යා ක්‍රියාකාරකම් සමඟ ඉදිරියට යන්න',
-          'ස්ථාන අගය සංකල්ප හඳුන්වා දෙන්න'
-        ];
-      }
-    } else if (currentLevel === 2) {
-      if (accuracy < 50 || averageReactionTime > 10000) {
-        riskLevel = 'Danger';
-        riskLevelSinhala = 'අවදානම';
-        analysis = 'ස්ථාන අගය අවබෝධයේ සැලකිය යුතු දුෂ්කරතා ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
-        recommendations = [
-          'ස්ථාන අගය අවබෝධය කෙරෙහි අවධානය යොමු කරන්න',
-          'දෘශ්‍යකරණය සඳහා base-10 කුට්ටි භාවිතා කරන්න',
-          'අධ්‍යාපන සහාය විශේෂඥයෙකු සොයන්න'
-        ];
-      } else if (accuracy < 70 || averageReactionTime > 7000) {
-        riskLevel = 'Less Danger';
-        riskLevelSinhala = 'අඩු අවදානම';
-        analysis = 'ස්ථාන අගය සංකල්ප ශක්තිමත් කිරීම අවශ්‍යයි. ඉලක්කගත අභ්‍යාස දිගටම කරන්න.';
-        recommendations = [
-          'දහයන් සහ ඒකයන් සමඟ අභ්‍යාස කරන්න',
-          'දෘශ්‍ය ස්ථාන අගය ප්‍රස්ථාර භාවිතා කරන්න',
-          'නිතිපතා සංඛ්‍යා සංසන්දන අභ්‍යාස'
-        ];
-      } else {
-        riskLevel = 'Not Danger';
-        riskLevelSinhala = 'අවදානමක් නැත';
-        analysis = 'ස්ථාන අගය සහ සංඛ්‍යා සංසන්දනය පිළිබඳ හොඳ අවබෝධයක්.';
-        recommendations = [
-          'වඩාත් සංකීර්ණ සංඛ්‍යා සංකල්ප හඳුන්වා දෙන්න',
-          'විශාල සංඛ්‍යා සමඟ අභ්‍යාස කරන්න'
-        ];
-      }
-    } else if (currentLevel === 3) {
-      if (accuracy < 50 || averageReactionTime > 12000) {
-        riskLevel = 'Danger';
-        riskLevelSinhala = 'අවදානම';
-        analysis = 'මූලික ගණිතයේ දුෂ්කරතා සැලකිය යුතු ඩිස්කැල්කියුලියා අවදානමක් යෝජනා කරයි.';
-        recommendations = [
-          'ස්පර්ශනීය එකතු කිරීමේ උපාය මාර්ග කෙරෙහි අවධානය යොමු කරන්න',
-          'ගණිතය සඳහා හස්ත ද්‍රව්‍ය භාවිතා කරන්න',
-          'සවිස්තරාත්මක තක්සේරුවක් සලකා බලන්න'
-        ];
-      } else if (accuracy < 70 || averageReactionTime > 8000) {
-        riskLevel = 'Less Danger';
-        riskLevelSinhala = 'අඩු අවදානම';
-        analysis = 'ගණිත සැකසීමට සහාය අවශ්‍යයි. මූලික ක්‍රියාකාරකම් අභ්‍යාස කරන්න.';
-        recommendations = [
-          'එකතු කිරීමේ කරුණු අභ්‍යාස කරන්න',
-          'දෘශ්‍ය එකතු කිරීමේ උපාය මාර්ග භාවිතා කරන්න',
-          'නිතිපතා ගණිත අභ්‍යාස'
-        ];
-      } else {
-        riskLevel = 'Not Danger';
-        riskLevelSinhala = 'අවදානමක් නැත';
-        analysis = 'හොඳ මූලික ගණිත සහ සංසන්දන කුසලතා.';
-        recommendations = [
-          'වඩාත් සංකීර්ණ ප්‍රකාශන සමඟ ඉදිරියට යන්න',
-          'අඩු කිරීමේ සංසන්දන හඳුන්වා දෙන්න'
-        ];
-      }
-    }
-    
-    return { accuracy, averageTime, averageReactionTime, riskLevel, riskLevelSinhala, analysis, recommendations };
-  };
-
   const getNumberDisplay = (value, isExpression = false) => {
     if (isExpression) {
       return (
