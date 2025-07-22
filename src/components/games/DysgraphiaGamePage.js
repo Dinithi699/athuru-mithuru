@@ -278,7 +278,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
     } else {
       completeLevel()
     }
-  }, [currentQuestion, totalQuestions]) // Dependencies for useCallback
+  }, [currentQuestion, totalQuestions, completeLevel]) // Dependencies for useCallback
 
   // Timer effect
   const handleTimeUp = useCallback(() => {

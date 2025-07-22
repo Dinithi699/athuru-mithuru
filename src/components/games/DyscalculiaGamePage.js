@@ -57,7 +57,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
     } else {
       completeLevel();
     }
-  }, [currentQuestion, totalQuestions]);
+  }, [currentQuestion, totalQuestions, completeLevel]);
 
   const completeLevel = useCallback(() => {
     if (currentLevel === 3) {
@@ -95,7 +95,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
     };
     
     saveResults();
-  }, [currentLevel]);
+  }, [currentLevel, user?.uid, getDyscalculiaAnalysis, score, totalQuestions, responses, reactionTimes]);
 
   const handleTimeUp = useCallback(() => {
     const reactionTime = questionStartTime ? Date.now() - questionStartTime : 15000;
