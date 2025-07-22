@@ -541,10 +541,10 @@ const DyspraxiaGamePage = ({ onBack }) => {
                 <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                   <div className="text-xs sm:text-sm opacity-80">අවදානම් මට්ටම</div>
                   <div className={`text-lg sm:text-xl font-bold ${
-                    analysis.riskLevel === 'අඩු' ? 'text-green-300' : 
-                    analysis.riskLevel === 'මධ්‍යම' ? 'text-yellow-300' : 'text-red-300'
+                    analysis.riskLevel === 'Not Danger' ? 'text-green-300' : 
+                    analysis.riskLevel === 'Less Danger' ? 'text-yellow-300' : 'text-red-300'
                   }`}>
-                    {analysis.riskLevel}
+                    {analysis.riskLevelSinhala}
                   </div>
                 </div>
               </div>
@@ -581,10 +581,10 @@ const DyspraxiaGamePage = ({ onBack }) => {
                 <button
                   onClick={onBack}
                   className="bg-white text-purple-600 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
-              analysis.riskLevel === 'Not Danger' ? 'text-green-300' : 
-              analysis.riskLevel === 'Less Danger' ? 'text-yellow-300' : 'text-red-300'
+                >
+                  ← ආපසු යන්න
                 </button>
-              {analysis.riskLevelSinhala}
+              </div>
             </div>
           </div>
         </div>
