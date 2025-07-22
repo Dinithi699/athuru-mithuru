@@ -1,115 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { getUserGameResults } from '../firebase/firestore';
+import { getUserGameHistory } from '../firebase/firestore';
 
 const AdminUserProfile = ({ user, onBack, admin }) => {
-  const [gameResults, setGameResults] = useState([]);
+  const [gameHistory, setGameHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    const fetchGameResults = async () => {
+    const fetchGameHistory = async () => {
       if (user?.uid) {
-        const result = await getUserGameResults(user.uid);
+        const result = await getUserGameHistory(user.uid);
         if (result.success) {
-          setGameResults(result.data);
+          setGameHistory(result.data);
         }
       }
       setLoading(false);
     };
 
-    fetchGameResults();
+    fetchGameHistory();
   }, [user]);
 
   const calculateRiskLevel = () => {
-    if (gameResults.length === 0) return { level: 'low', color: 'green', text: 'අඩු අවදානම' };
+    if (gameHistory.length === 0) return { level: 'low', color: 'green', text: 'අඩු අවදානම' };
 
-    // Calculate risk based on consolidated game results
+    // Use the same comprehensive risk calculation as in AdminHomePage
     let riskScore = 0;
-    let dangerCount = 0;
-    let lessDangerCount = 0;
+    let totalGames = gameHistory.length;
     
-    // Analyze each game's overall risk level
-    gameResults.forEach(game => {
-      const overallRisk = game.overallStats?.overallRiskLevel || 'Not Danger';
-      if (overallRisk === 'Danger') {
-        dangerCount++;
-        riskScore += 3;
-      } else if (overallRisk === 'Less Danger') {
-        lessDangerCount++;
-        riskScore += 2;
+    // Factor 1: Game completion rate
+    const completedGames = gameHistory.filter(game => game.score !== undefined && game.score > 0).length;
+    const completionRate = completedGames / totalGames;
+    if (completionRate < 0.5) riskScore += 3;
+    else if (completionRate < 0.7) riskScore += 2;
+    else if (completionRate < 0.9) riskScore += 1;
+    
+    // Factor 2: Average performance across games
+    const gamePerformances = gameHistory.map(game => {
+      if (game.gameType === 'Dysgraphia') {
+        return game.capturedImage ? 1 : 0;
+      } else if (game.gameType === 'Dyspraxia') {
+        const accuracy = game.accuracy || 0;
+        const reactionTime = game.averageReactionTime || 5000;
+        if (accuracy < 60 || reactionTime > 3000) return 0;
+        else if (accuracy < 80 || reactionTime > 2000) return 0.5;
+        else return 1;
+      } else if (game.gameType === 'Dyscalculia') {
+        const accuracy = game.accuracy || 0;
+        if (accuracy < 50) return 0;
+        else if (accuracy < 70) return 0.5;
+        else return 1;
+      } else if (game.gameType === 'Dyslexia') {
+        const accuracy = game.accuracy || 0;
+        if (accuracy < 60) return 0;
+        else if (accuracy < 80) return 0.5;
+        else return 1;
       }
-    });
-    
-    // Factor in average accuracy across all games
-    const avgAccuracy = gameResults.reduce((sum, game) => {
-      return sum + (game.overallStats?.overallAccuracy || 0);
-    }, 0) / Math.max(gameResults.length, 1);
-    
-    if (avgAccuracy < 50) riskScore += 2;
-    else if (avgAccuracy < 70) riskScore += 1;
-    
-    // Determine final risk level
-    if (dangerCount >= 2 || riskScore >= 6) {
-      return { level: 'high', color: 'red', text: 'ඉහළ අවදානම' };
-    }
-    if (dangerCount >= 1 || lessDangerCount >= 2 || riskScore >= 3) {
-      return { level: 'medium', color: 'orange', text: 'මධ්‍යම අවදානම' };
-    }
-    return { level: 'low', color: 'green', text: 'අඩු අවදානම' };
-  };
-
-  const getGameTypeInSinhala = (gameType) => {
-    const gameTypes = {
-      'Dysgraphia': 'අකුරු ලිවීම',
-      'Dyspraxia': 'තරු රටා',
-      'Dyscalculia': 'සංඛ්‍යා සංසන්දනය',
-      'Dyslexia': 'දෘශ්‍ය වෙනස්කම්'
-    };
-    return gameTypes[gameType] || gameType;
-  };
-
-  const getRiskColorFromLevel = (riskLevel) => {
-    switch (riskLevel) {
-      case 'Danger': return 'text-red-400';
-      case 'Less Danger': return 'text-orange-400';
-      case 'Not Danger': return 'text-green-400';
-      default: return 'text-gray-400';
-    }
-  };
-
-  const getRiskTextFromLevel = (riskLevel) => {
-    switch (riskLevel) {
-      case 'Danger': return 'ඉහළ අවදානම';
-      case 'Less Danger': return 'අඩු අවදානම';
-      case 'Not Danger': return 'අවදානමක් නැත';
-      default: return 'තක්සේරු නොකළ';
-    }
-  };
-
-  const getOverallGameStats = () => {
-    const totalGames = gameResults.length;
-    const totalScore = gameResults.reduce((sum, game) => sum + (game.overallStats?.totalScore || 0), 0);
-    const totalQuestions = gameResults.reduce((sum, game) => sum + (game.overallStats?.totalQuestions || 0), 0);
-    const avgAccuracy = gameResults.reduce((sum, game) => sum + (game.overallStats?.overallAccuracy || 0), 0) / Math.max(totalGames, 1);
-    
-    return {
-      totalGames,
-      totalScore,
-      totalQuestions,
-      avgAccuracy: avgAccuracy.toFixed(1)
-    };
-  };
-
-  const calculateRiskLevelOld = () => {
-    if (gameHistory.length === 0) return { level: 'unknown', color: 'gray', text: 'තක්සේරු නොකළ' };
-
-    let riskScore = 0;
-    
-    // Factor 1: Recent performance (last 5 games)
-    const recentGames = gameHistory.slice(-5);
-    const recentPerformances = recentGames.map(game => {
-      const accuracy = game.accuracy || game.score || 50;
-      return accuracy / 100;
+      return 0.5;
     });
     
     const averagePerformance = gamePerformances.reduce((sum, perf) => sum + perf, 0) / gamePerformances.length;
@@ -159,6 +105,16 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
       return { level: 'medium', color: 'orange', text: 'මධ්‍යම අවදානම' };
     }
     return { level: 'low', color: 'green', text: 'අඩු අවදානම' };
+  };
+
+  const getGameTypeInSinhala = (gameType) => {
+    const gameTypes = {
+      'Dysgraphia': 'අකුරු ලිවීම',
+      'Dyspraxia': 'තරු රටා',
+      'Dyscalculia': 'සංඛ්‍යා සංසන්දනය',
+      'Dyslexia': 'දෘශ්‍ය වෙනස්කම්'
+    };
+    return gameTypes[gameType] || gameType;
   };
 
   const getRecommendations = (riskLevel) => {
@@ -305,7 +261,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                   <div className="text-white/60 text-sm">මට්ටම</div>
                 </div>
                 <div className="bg-white/10 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">{gameResults.length}</div>
+                  <div className="text-2xl font-bold text-white">{gameHistory.length}</div>
                   <div className="text-white/60 text-sm">ක්‍රීඩා සැසි</div>
                 </div>
               </div>
@@ -332,82 +288,38 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
 
         {activeTab === 'games' && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-white mb-4">ක්‍රීඩා ප්‍රතිඵල</h2>
+            <h2 className="text-xl font-bold text-white mb-4">ක්‍රීඩා ඉතිහාසය</h2>
             {loading ? (
               <div className="text-center py-8">
                 <div className="spinner mx-auto mb-4"></div>
-                <p className="text-white">ක්‍රීඩා ප්‍රතිඵල පූරණය වෙමින්...</p>
+                <p className="text-white">ක්‍රීඩා දත්ත පූරණය වෙමින්...</p>
               </div>
-            ) : gameResults.length === 0 ? (
+            ) : gameHistory.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-4xl mb-4">🎮</div>
                 <p className="text-white">තවම ක්‍රීඩා කර නැත</p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {gameResults.map((game, index) => (
-                  <div key={index} className="bg-white/10 rounded-lg p-6">
-                    <div className="flex justify-between items-center mb-4">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {gameHistory.map((game, index) => (
+                  <div key={index} className="bg-white/10 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-bold text-white">{getGameTypeInSinhala(game.gameType)}</h3>
                         <p className="text-white/60 text-sm">
-                          අවසන් වරට යාවත්කාලීන: {new Date(game.lastUpdated).toLocaleDateString('si-LK')}
+                          {new Date(game.timestamp).toLocaleDateString('si-LK')} - {new Date(game.timestamp).toLocaleTimeString('si-LK')}
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className={`font-bold ${getRiskColorFromLevel(game.overallStats?.overallRiskLevel)}`}>
-                          {getRiskTextFromLevel(game.overallStats?.overallRiskLevel)}
-                        </div>
-                        <div className="text-white/60 text-sm">
-                          {game.overallStats?.overallAccuracy?.toFixed(1)}% නිරවද්‍යතාව
-                        </div>
+                        <div className="text-yellow-300 font-bold">{game.score} ලකුණු</div>
+                        {game.accuracy && (
+                          <div className="text-white/60 text-sm">{game.accuracy.toFixed(1)}% නිරවද්‍යතාව</div>
+                        )}
                       </div>
                     </div>
-                    
-                    {/* Overall Stats */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                      <div className="bg-white/5 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-white">{game.overallStats?.totalScore || 0}</div>
-                        <div className="text-xs text-white/60">මුළු ලකුණු</div>
-                      </div>
-                      <div className="bg-white/5 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-white">{game.overallStats?.levelsCompleted || 0}</div>
-                        <div className="text-xs text-white/60">සම්පූර්ණ මට්ටම්</div>
-                      </div>
-                      <div className="bg-white/5 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-white">{game.overallStats?.totalQuestions || 0}</div>
-                        <div className="text-xs text-white/60">මුළු ප්‍රශ්න</div>
-                      </div>
-                      <div className="bg-white/5 rounded p-2 text-center">
-                        <div className="text-lg font-bold text-white">{game.overallStats?.highestLevel || 0}</div>
-                        <div className="text-xs text-white/60">ඉහළම මට්ටම</div>
-                      </div>
-                    </div>
-
-                    {/* Level Details */}
-                    {game.levels && (
-                      <div className="mt-4">
-                        <h4 className="text-sm font-bold text-white mb-2">මට්ටම් විස්තර:</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          {Object.entries(game.levels).map(([levelKey, levelData]) => (
-                            <div key={levelKey} className="bg-white/5 rounded p-3">
-                              <div className="flex justify-between items-center">
-                                <span className="text-white font-medium">
-                                  {levelKey.replace('level', 'මට්ටම ')}
-                                </span>
-                                <span className="text-white/80">
-                                  {levelData.score}/{levelData.totalQuestions}
-                                </span>
-                              </div>
-                              <div className="text-xs text-white/60 mt-1">
-                                {levelData.accuracy?.toFixed(1)}% නිරවද්‍යතාව
-                              </div>
-                              <div className={`text-xs mt-1 ${getRiskColorFromLevel(levelData.riskLevel)}`}>
-                                {getRiskTextFromLevel(levelData.riskLevel)}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                    {game.duration && (
+                      <div className="text-white/60 text-sm">
+                        කාලය: {Math.round(game.duration / 1000)} තත්පර
                       </div>
                     )}
                   </div>

@@ -258,20 +258,12 @@ const DysgraphiaGamePage = ({ onBack }) => {
   }
 
   const completeLevel = () => {
-    if (currentLevel === 3) {
-      setShowEndingVideo(true) // show the ending video only after level 3
-    } else {
-      setGameCompleted(true)
-    }
+  if (currentLevel === 3) {
+    setShowEndingVideo(true) // show the ending video only after level 3
+  } else {
+    setGameCompleted(true)
   }
-
-  const completeLevel = useCallback(() => {
-    if (currentLevel === 3) {
-      setShowEndingVideo(true) // show the ending video only after level 3
-    } else {
-      setGameCompleted(true)
-    }
-  }, [currentLevel])
+}
 
   // Moved nextQuestion definition before handleTimeUp
   const nextQuestion = useCallback(() => {
@@ -286,7 +278,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
     } else {
       completeLevel()
     }
-  }, [currentQuestion, totalQuestions]) // Dependencies for useCallback
+  }, [currentQuestion, totalQuestions, completeLevel]) // Dependencies for useCallback
 
   // Timer effect
   const handleTimeUp = useCallback(() => {
@@ -337,14 +329,14 @@ const DysgraphiaGamePage = ({ onBack }) => {
   return () => {
     speechSynthesis.cancel()
   }
-}, [currentQuestion, gameStarted, gameCompleted, totalQuestions, currentQuestions]) // 👈 Include all dependencies
+}, [currentQuestion]) // 👈 Only depends on currentQuestion
 
 
   useEffect(() => {
     return () => {
       stopCamera()
     }
-  }, [stopCamera])
+  }, [])
 
   useEffect(() => {
     if (showCamera && cameraStream && videoRef.current) {

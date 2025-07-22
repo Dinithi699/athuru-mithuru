@@ -28,93 +28,48 @@ const AdminHomePage = ({ onLogout, admin }) => {
   }, []);
 
   const calculateRiskLevel = (user) => {
-    // Calculate risk based on consolidated game results
-    const gameResults = user.gameResults || [];
-    if (gameResults.length === 0) return 'low'; // Default to low risk if no data
-
-    // Calculate comprehensive risk based on game performance
-    let riskScore = 0;
-    let totalGames = gameResults.length;
-    let dangerCount = 0;
-    let lessDangerCount = 0;
-    let notDangerCount = 0;
-    
-    // Analyze each game's overall risk level
-    gameResults.forEach(game => {
-      const overallRisk = game.overallStats?.overallRiskLevel || 'Not Danger';
-      if (overallRisk === 'Danger') {
-        dangerCount++;
-        riskScore += 3;
-      } else if (overallRisk === 'Less Danger') {
-        lessDangerCount++;
-        riskScore += 2;
-      } else {
-        notDangerCount++;
-        riskScore += 0;
-      }
-    });
-    
-    // Factor in average accuracy across all games
-    const avgAccuracy = gameResults.reduce((sum, game) => {
-      return sum + (game.overallStats?.overallAccuracy || 0);
-    }, 0) / Math.max(gameResults.length, 1);
-    
-    if (avgAccuracy < 50) riskScore += 2;
-    else if (avgAccuracy < 70) riskScore += 1;
-    
-    // Factor in number of games completed
-    if (gameResults.length < 2) riskScore += 1; // Incomplete assessment
-    
-    // Determine final risk level
-    if (dangerCount >= 2 || riskScore >= 6) return 'high';
-    if (dangerCount >= 1 || lessDangerCount >= 2 || riskScore >= 3) return 'medium';
-    return 'low';
-  };
-
-  const getGameTypeInSinhala = (gameType) => {
-    const gameTypes = {
-      'Dysgraphia': 'අකුරු ලිවීම',
-      'Dyspraxia': 'තරු රටා', 
-      'Dyscalculia': 'සංඛ්‍යා සංසන්දනය',
-      'Dyslexia': 'දෘශ්‍ය වෙනස්කම්'
-    };
-    return gameTypes[gameType] || gameType;
-  };
-
-  const getRiskColorFromLevel = (riskLevel) => {
-    switch (riskLevel) {
-      case 'Danger': return 'text-red-400';
-      case 'Less Danger': return 'text-orange-400';
-      case 'Not Danger': return 'text-green-400';
-      default: return 'text-gray-400';
-    }
-  };
-
-  const getRiskTextFromLevel = (riskLevel) => {
-    switch (riskLevel) {
-      case 'Danger': return 'ඉහළ අවදානම';
-      case 'Less Danger': return 'අඩු අවදානම';
-      case 'Not Danger': return 'අවදානමක් නැත';
-      default: return 'තක්සේරු නොකළ';
-    }
-  };
-
-  const calculateRiskLevelOld = (user) => {
+    // Simple risk calculation based on game performance
+    // This would be more sophisticated in a real application
     const gameHistory = user.gameHistory || [];
     if (gameHistory.length === 0) return 'low'; // Default to low risk if no data
 
+    // Calculate comprehensive risk based on multiple factors
     let riskScore = 0;
-
-    // Factor 1: Number of games completed
-    if (gameHistory.length < 3) riskScore += 2; // Insufficient data
-    else if (gameHistory.length < 5) riskScore += 1; // Limited data
-
-    // Factor 2: Average performance across all games
+    let totalGames = gameHistory.length;
+    
+    // Factor 1: Game completion rate
+    const completedGames = gameHistory.filter(game => game.score !== undefined && game.score > 0).length;
+    const completionRate = completedGames / totalGames;
+    if (completionRate < 0.5) riskScore += 3;
+    else if (completionRate < 0.7) riskScore += 2;
+    else if (completionRate < 0.9) riskScore += 1;
+    
+    // Factor 2: Average performance across games
     const gamePerformances = gameHistory.map(game => {
-      // Normalize different scoring systems to 0-1 scale
-      if (game.accuracy !== undefined) return game.accuracy / 100;
-      if (game.score !== undefined) return Math.min(game.score / 100, 1);
-      return 0.5; // Default middle performance if no clear metric
+      if (game.gameType === 'Dysgraphia') {
+        // For handwriting, check if images were captured successfully
+        return game.capturedImage ? 1 : 0;
+      } else if (game.gameType === 'Dyspraxia') {
+        // For motor skills, check accuracy and reaction time
+        const accuracy = game.accuracy || 0;
+        const reactionTime = game.averageReactionTime || 5000;
+        if (accuracy < 60 || reactionTime > 3000) return 0;
+        else if (accuracy < 80 || reactionTime > 2000) return 0.5;
+        else return 1;
+      } else if (game.gameType === 'Dyscalculia') {
+        // For math, check accuracy
+        const accuracy = game.accuracy || 0;
+        if (accuracy < 50) return 0;
+        else if (accuracy < 70) return 0.5;
+        else return 1;
+      } else if (game.gameType === 'Dyslexia') {
+        // For visual processing, check accuracy
+        const accuracy = game.accuracy || 0;
+        if (accuracy < 60) return 0;
+        else if (accuracy < 80) return 0.5;
+        else return 1;
+      }
+      return 0.5; // Default moderate performance
     });
     
     const averagePerformance = gamePerformances.reduce((sum, perf) => sum + perf, 0) / gamePerformances.length;
