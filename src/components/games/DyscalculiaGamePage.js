@@ -18,6 +18,34 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const [showEndingVideo, setShowEndingVideo] = useState(false);
   const videoRef = useRef(null);
 
+  // Game data for each level - 5 questions each
+  const gameData = {
+    1: [
+      { left: 3, right: 7, correct: 'right', type: 'numbers' },
+      { left: 9, right: 2, correct: 'left', type: 'numbers' },
+      { left: 8, right: 8, correct: 'same', type: 'numbers' },
+      { left: 5, right: 4, correct: 'left', type: 'numbers' },
+      { left: 6, right: 10, correct: 'right', type: 'numbers' }
+    ],
+    2: [
+      { left: 21, right: 12, correct: 'left', type: 'numbers' },
+      { left: 88, right: 99, correct: 'right', type: 'numbers' },
+      { left: 36, right: 36, correct: 'same', type: 'numbers' },
+      { left: 45, right: 54, correct: 'right', type: 'numbers' },
+      { left: 67, right: 76, correct: 'right', type: 'numbers' }
+    ],
+    3: [
+      { left: '1+2', right: '7+2', leftValue: 3, rightValue: 9, correct: 'right', type: 'expressions' },
+      { left: '9+1', right: '5+5', leftValue: 10, rightValue: 10, correct: 'same', type: 'expressions' },
+      { left: '6+3', right: '4+4', leftValue: 9, rightValue: 8, correct: 'left', type: 'expressions' },
+      { left: '3+5', right: '2+4', leftValue: 8, rightValue: 6, correct: 'left', type: 'expressions' },
+      { left: '4+2', right: '3+3', leftValue: 6, rightValue: 6, correct: 'same', type: 'expressions' }
+    ]
+  };
+
+  const currentQuestions = gameData[currentLevel];
+  const totalQuestions = currentQuestions.length;
+
   // Memoized analysis function
   const getDyscalculiaAnalysis = useCallback(() => {
     const totalResponses = responses.length;
@@ -147,34 +175,6 @@ const DyscalculiaGamePage = ({ onBack }) => {
     
     saveResults();
   }, [currentLevel, user?.uid, getDyscalculiaAnalysis, score, totalQuestions, responses, reactionTimes]);
-
-  // Game data for each level - 5 questions each
-  const gameData = {
-    1: [
-      { left: 3, right: 7, correct: 'right', type: 'numbers' },
-      { left: 9, right: 2, correct: 'left', type: 'numbers' },
-      { left: 8, right: 8, correct: 'same', type: 'numbers' },
-      { left: 5, right: 4, correct: 'left', type: 'numbers' },
-      { left: 6, right: 10, correct: 'right', type: 'numbers' }
-    ],
-    2: [
-      { left: 21, right: 12, correct: 'left', type: 'numbers' },
-      { left: 88, right: 99, correct: 'right', type: 'numbers' },
-      { left: 36, right: 36, correct: 'same', type: 'numbers' },
-      { left: 45, right: 54, correct: 'right', type: 'numbers' },
-      { left: 67, right: 76, correct: 'right', type: 'numbers' }
-    ],
-    3: [
-      { left: '1+2', right: '7+2', leftValue: 3, rightValue: 9, correct: 'right', type: 'expressions' },
-      { left: '9+1', right: '5+5', leftValue: 10, rightValue: 10, correct: 'same', type: 'expressions' },
-      { left: '6+3', right: '4+4', leftValue: 9, rightValue: 8, correct: 'left', type: 'expressions' },
-      { left: '3+5', right: '2+4', leftValue: 8, rightValue: 6, correct: 'left', type: 'expressions' },
-      { left: '4+2', right: '3+3', leftValue: 6, rightValue: 6, correct: 'same', type: 'expressions' }
-    ]
-  };
-
-  const currentQuestions = gameData[currentLevel];
-  const totalQuestions = currentQuestions.length;
 
   // Memoized functions in correct order
   const nextQuestion = useCallback(() => {
