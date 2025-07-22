@@ -267,41 +267,73 @@ const DyspraxiaGamePage = ({ onBack }) => {
   };
 
   const completeLevel = () => {
-  if (currentLevel === 3) {
-    setShowEndingVideo(true) // show the ending video only after level 3
-  } else {
-    setGameCompleted(true)
-  }
-  
-  // Save game results to Firestore
-  const saveResults = async () => {
-    if (user?.uid) {
-      const analysis = getDyspraxiaAnalysis();
-      const gameData = {
-        gameType: 'Dyspraxia',
-        level: currentLevel,
-        score: score,
-        accuracy: analysis.accuracy,
-        averageReactionTime: analysis.averageReactionTime,
-        timeoutRate: analysis.timeoutRate,
-        riskLevel: analysis.riskLevel,
-        totalQuestions: currentConfig.totalStars,
-        correctAnswers: score,
-        responses: responses,
-        completedAt: new Date().toISOString()
-      };
-      
-      try {
-        await saveGameScore(user.uid, 'Dyspraxia', score, Date.now(), gameData);
-        console.log('Dyspraxia game results saved successfully');
-      } catch (error) {
-        console.error('Failed to save Dyspraxia game results:', error);
+    // Save current level results
+    const saveCurrentLevelResults = async () => {
+      if (user?.uid) {
+        const analysis = getDyspraxiaAnalysis();
+        const levelData = {
+          level: currentLevel,
+          score: score,
+          accuracy: analysis.accuracy,
+          averageReactionTime: analysis.averageReactionTime,
+          timeoutRate: analysis.timeoutRate,
+          riskLevel: analysis.riskLevel,
+          totalQuestions: currentConfig.totalStars,
+          correctAnswers: score,
+          responses: responses,
+          completedAt: new Date().toISOString()
+        };
+        
+        // Get existing game record or create new one
+        try {
+          const existingData = JSON.parse(localStorage.getItem(`Dyspraxia_${user.uid}`) || '{}');
+          existingData.gameType = 'Dyspraxia';
+          existingData.userId = user.uid;
+          existingData.lastUpdated = new Date().toISOString();
+          existingData.levels = existingData.levels || {};
+          existingData.levels[`level${currentLevel}`] = levelData;
+          
+          // Calculate overall game statistics
+          const allLevels = Object.values(existingData.levels);
+          const totalScore = allLevels.reduce((sum, level) => sum + level.score, 0);
+          const totalQuestions = allLevels.reduce((sum, level) => sum + level.totalQuestions, 0);
+          const overallAccuracy = allLevels.reduce((sum, level) => sum + level.accuracy, 0) / allLevels.length;
+          const overallAvgReactionTime = allLevels.reduce((sum, level) => sum + level.averageReactionTime, 0) / allLevels.length;
+          
+          // Determine overall risk level
+          let overallRiskLevel = 'Not Danger';
+          if (overallAccuracy < 50) overallRiskLevel = 'Danger';
+          else if (overallAccuracy < 70) overallRiskLevel = 'Less Danger';
+          
+          existingData.overallStats = {
+            totalScore,
+            totalQuestions,
+            overallAccuracy,
+            overallAvgReactionTime,
+            overallRiskLevel,
+            levelsCompleted: allLevels.length,
+            highestLevel: Math.max(...Object.keys(existingData.levels).map(k => parseInt(k.replace('level', ''))))
+          };
+          
+          // Save to localStorage temporarily
+          localStorage.setItem(`Dyspraxia_${user.uid}`, JSON.stringify(existingData));
+          
+          // Save to Firestore (this will update the same record)
+          await saveGameScore(user.uid, 'Dyspraxia', totalScore, Date.now(), existingData);
+          console.log('Dyspraxia game results saved successfully');
+        } catch (error) {
+          console.error('Failed to save Dyspraxia game results:', error);
+        }
       }
+    };
+    
+    saveCurrentLevelResults();
+    
+    if (currentLevel === 3) {
+      setShowEndingVideo(true); // show the ending video only after level 3
+    } else {
+      setGameCompleted(true);
     }
-  };
-  
-  saveResults();
-}
   const nextLevel = () => {
     if (currentLevel < 3) {
       setCurrentLevel(currentLevel + 1);
