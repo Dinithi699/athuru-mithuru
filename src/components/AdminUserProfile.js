@@ -5,6 +5,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
   const [gameHistory, setGameHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedGame, setSelectedGame] = useState(null);
 
   useEffect(() => {
     const fetchGameHistory = async () => {
@@ -204,6 +205,16 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               ක්‍රීඩා ඉතිහාසය
             </button>
             <button
+              onClick={() => setActiveTab('detailed-history')}
+              className={`flex-1 px-4 py-2 rounded-xl font-bold transition-colors duration-300 ${
+                activeTab === 'detailed-history' 
+                  ? 'bg-white text-blue-600' 
+                  : 'text-white hover:bg-white/20'
+              }`}
+            >
+              විස්තරාත්මක ඉතිහාසය
+            </button>
+            <button
               onClick={() => setActiveTab('recommendations')}
               className={`flex-1 px-4 py-2 rounded-xl font-bold transition-colors duration-300 ${
                 activeTab === 'recommendations' 
@@ -324,6 +335,207 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'detailed-history' && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">විස්තරාත්මක ක්‍රීඩා ඉතිහාසය</h2>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="spinner mx-auto mb-4"></div>
+                <p className="text-white">ක්‍රීඩා දත්ත පූරණය වෙමින්...</p>
+              </div>
+            ) : gameHistory.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">🎮</div>
+                <p className="text-white">තවම ක්‍රීඩා කර නැත</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Game Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  {['Dysgraphia', 'Dyspraxia', 'Dyscalculia', 'Dyslexia'].map(gameType => {
+                    const gameData = gameHistory.find(g => g.gameType === gameType);
+                    return (
+                      <div 
+                        key={gameType}
+                        onClick={() => setSelectedGame(gameData)}
+                        className={`bg-white/10 rounded-lg p-4 cursor-pointer transition-all duration-300 hover:bg-white/20 ${
+                          selectedGame?.gameType === gameType ? 'ring-2 ring-white' : ''
+                        }`}
+                      >
+                        <h3 className="font-bold text-white mb-2">{getGameTypeInSinhala(gameType)}</h3>
+                        {gameData ? (
+                          <div className="space-y-1 text-sm">
+                            <div className="text-white/80">
+                              මට්ටම්: {gameData.overallStats?.levelsCompleted || 0}/3
+                            </div>
+                            <div className="text-white/80">
+                              නිරවද්‍යතාව: {gameData.overallStats?.overallAccuracy?.toFixed(1) || 0}%
+                            </div>
+                            <div className={`text-sm font-bold ${
+                              gameData.overallStats?.overallRiskLevel === 'Not Danger' ? 'text-green-300' :
+                              gameData.overallStats?.overallRiskLevel === 'Less Danger' ? 'text-yellow-300' : 'text-red-300'
+                            }`}>
+                              {gameData.overallStats?.overallRiskLevel === 'Not Danger' ? 'අවදානමක් නැත' :
+                               gameData.overallStats?.overallRiskLevel === 'Less Danger' ? 'අඩු අවදානම' : 'අවදානම'}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-white/60 text-sm">තවම ක්‍රීඩා කර නැත</div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Detailed Game Data Table */}
+                {selectedGame ? (
+                  <div className="bg-white/5 rounded-lg p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-bold text-white">
+                        {getGameTypeInSinhala(selectedGame.gameType)} - විස්තරාත්මක දත්ත
+                      </h3>
+                      <button
+                        onClick={() => setSelectedGame(null)}
+                        className="text-white/60 hover:text-white text-sm"
+                      >
+                        ✕ වසන්න
+                      </button>
+                    </div>
+
+                    {/* Overall Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="bg-white/10 rounded-lg p-3 text-center">
+                        <div className="text-white/60 text-xs">මුළු ලකුණු</div>
+                        <div className="text-white font-bold">{selectedGame.overallStats?.totalScore || 0}</div>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-3 text-center">
+                        <div className="text-white/60 text-xs">මුළු ප්‍රශ්න</div>
+                        <div className="text-white font-bold">{selectedGame.overallStats?.totalQuestions || 0}</div>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-3 text-center">
+                        <div className="text-white/60 text-xs">සාමාන්‍ය නිරවද්‍යතාව</div>
+                        <div className="text-white font-bold">{selectedGame.overallStats?.overallAccuracy?.toFixed(1) || 0}%</div>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-3 text-center">
+                        <div className="text-white/60 text-xs">අවදානම් මට්ටම</div>
+                        <div className={`font-bold text-sm ${
+                          selectedGame.overallStats?.overallRiskLevel === 'Not Danger' ? 'text-green-300' :
+                          selectedGame.overallStats?.overallRiskLevel === 'Less Danger' ? 'text-yellow-300' : 'text-red-300'
+                        }`}>
+                          {selectedGame.overallStats?.overallRiskLevel === 'Not Danger' ? 'අවදානමක් නැත' :
+                           selectedGame.overallStats?.overallRiskLevel === 'Less Danger' ? 'අඩු අවදානම' : 'අවදානම'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Level-wise Data Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-white/20">
+                            <th className="text-left text-white/80 p-2">මට්ටම</th>
+                            <th className="text-left text-white/80 p-2">ලකුණු</th>
+                            <th className="text-left text-white/80 p-2">නිරවද්‍යතාව</th>
+                            <th className="text-left text-white/80 p-2">සාමාන්‍ය කාලය</th>
+                            <th className="text-left text-white/80 p-2">අවදානම් මට්ටම</th>
+                            <th className="text-left text-white/80 p-2">සම්පූර්ණ කළ දිනය</th>
+                            <th className="text-left text-white/80 p-2">ක්‍රියාමාර්ග</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedGame.levels && Object.entries(selectedGame.levels).map(([levelKey, levelData]) => (
+                            <tr key={levelKey} className="border-b border-white/10 hover:bg-white/5">
+                              <td className="text-white p-2 font-medium">
+                                මට්ටම {levelKey.replace('level', '')}
+                              </td>
+                              <td className="text-white p-2">
+                                {levelData.score}/{levelData.totalQuestions}
+                              </td>
+                              <td className="text-white p-2">
+                                {levelData.accuracy?.toFixed(1) || 0}%
+                              </td>
+                              <td className="text-white p-2">
+                                {selectedGame.gameType === 'Dyspraxia' 
+                                  ? `${(levelData.averageReactionTime / 1000)?.toFixed(1) || 0}තත්`
+                                  : `${levelData.averageTime?.toFixed(1) || 0}තත්`
+                                }
+                              </td>
+                              <td className="p-2">
+                                <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                  levelData.riskLevel === 'Not Danger' ? 'bg-green-500/20 text-green-300' :
+                                  levelData.riskLevel === 'Less Danger' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-red-500/20 text-red-300'
+                                }`}>
+                                  {levelData.riskLevel === 'Not Danger' ? 'අවදානමක් නැත' :
+                                   levelData.riskLevel === 'Less Danger' ? 'අඩු අවදානම' : 'අවදානම'}
+                                </span>
+                              </td>
+                              <td className="text-white/80 p-2 text-xs">
+                                {levelData.completedAt ? new Date(levelData.completedAt).toLocaleDateString('si-LK') : 'N/A'}
+                              </td>
+                              <td className="p-2">
+                                <button
+                                  onClick={() => {
+                                    // This will be connected to backend for detailed analysis
+                                    console.log('Level data for backend:', {
+                                      userId: user.uid,
+                                      gameType: selectedGame.gameType,
+                                      level: levelKey,
+                                      data: levelData
+                                    });
+                                    alert(`${levelKey} දත්ත backend වෙත යවනු ලැබේ`);
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs transition-colors duration-300"
+                                >
+                                  විශ්ලේෂණය
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Raw Data for Backend Integration */}
+                    <div className="mt-6 p-4 bg-white/5 rounded-lg">
+                      <h4 className="text-white font-bold mb-2">Backend Integration Data:</h4>
+                      <div className="bg-black/20 p-3 rounded text-xs text-white/80 font-mono overflow-x-auto">
+                        <pre>{JSON.stringify({
+                          userId: user.uid,
+                          userName: user.name,
+                          gameType: selectedGame.gameType,
+                          overallStats: selectedGame.overallStats,
+                          levels: selectedGame.levels,
+                          lastUpdated: selectedGame.lastUpdated
+                        }, null, 2)}</pre>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify({
+                            userId: user.uid,
+                            userName: user.name,
+                            gameType: selectedGame.gameType,
+                            overallStats: selectedGame.overallStats,
+                            levels: selectedGame.levels,
+                            lastUpdated: selectedGame.lastUpdated
+                          }, null, 2));
+                          alert('දත්ත clipboard වෙත copy කරන ලදී');
+                        }}
+                        className="mt-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs transition-colors duration-300"
+                      >
+                        📋 Copy JSON Data
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-white/60">
+                    ක්‍රීඩාවක් තෝරන්න විස්තරාත්මක දත්ත බැලීමට
+                  </div>
+                )}
               </div>
             )}
           </div>
