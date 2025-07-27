@@ -15,6 +15,7 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [appReady, setAppReady] = useState(false);
   const [userType, setUserType] = useState('user'); // 'user' or 'admin'
+  const [showIntroVideo, setShowIntroVideo] = useState(false);
   
   useEffect(() => {
     // Preload critical resources
@@ -80,16 +81,17 @@ const App = () => {
 
   const handleSignup = (userData) => {
     setUser(userData);
-    if (userData.role === 'admin') {
-      setCurrentScreen('admin-home');
-    } else {
-      setCurrentScreen('home');
-    }
+    setShowIntroVideo(true);
   };
 
   const handleSignin = (userData) => {
     setUser(userData);
-    if (userData.role === 'admin') {
+    setShowIntroVideo(true);
+  };
+
+  const handleIntroVideoEnd = () => {
+    setShowIntroVideo(false);
+    if (user?.role === 'admin') {
       setCurrentScreen('admin-home');
     } else {
       setCurrentScreen('home');
@@ -98,6 +100,7 @@ const App = () => {
 
   const handleLogout = () => {
     setUser(null);
+    setShowIntroVideo(false);
     if (userType === 'admin') {
       setCurrentScreen('admin-signin');
     } else {
@@ -108,6 +111,28 @@ const App = () => {
   return (
     <AuthProvider>
       <div>
+        {showIntroVideo && (
+          <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
+            <video
+              src="/images/intro.mp4"
+              autoPlay
+              playsInline
+              onEnded={handleIntroVideoEnd}
+              className="w-screen h-screen object-cover"
+              onError={() => {
+                console.warn('Intro video failed to load, skipping...');
+                handleIntroVideoEnd();
+              }}
+            />
+            {/* Skip button */}
+            <button
+              onClick={handleIntroVideoEnd}
+              className="absolute top-4 right-4 bg-black/50 text-white px-4 py-2 rounded-full font-bold hover:bg-black/70 transition-colors duration-300 z-10"
+            >
+              Skip →
+            </button>
+          </div>
+        )}
         {currentScreen === 'loading' && <LoadingPage onLoadComplete={handleLoadComplete} />}
         {currentScreen === 'signup' && (
           <SignUpPage 
