@@ -5,6 +5,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
   const [gameHistory, setGameHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedGameDetails, setSelectedGameDetails] = useState(null);
 
   useEffect(() => {
     const fetchGameHistory = async () => {
@@ -300,30 +301,98 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                 <p className="text-white">තවම ක්‍රීඩා කර නැත</p>
               </div>
             ) : (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {gameHistory.map((game, index) => (
-                  <div key={index} className="bg-white/10 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-bold text-white">{getGameTypeInSinhala(game.gameType)}</h3>
-                        <p className="text-white/60 text-sm">
-                          {new Date(game.timestamp).toLocaleDateString('si-LK')} - {new Date(game.timestamp).toLocaleTimeString('si-LK')}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-yellow-300 font-bold">{game.score} ලකුණු</div>
-                        {game.accuracy && (
-                          <div className="text-white/60 text-sm">{game.accuracy.toFixed(1)}% නිරවද්‍යතාව</div>
-                        )}
-                      </div>
-                    </div>
-                    {game.duration && (
-                      <div className="text-white/60 text-sm">
-                        කාලය: {Math.round(game.duration / 1000)} තත්පර
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full text-white">
+                  <thead>
+                    <tr className="border-b border-white/20">
+                      <th className="text-left py-3 px-2 font-bold">ක්‍රීඩාව</th>
+                      <th className="text-center py-3 px-2 font-bold">මට්ටම්</th>
+                      <th className="text-center py-3 px-2 font-bold">මුළු ලකුණු</th>
+                      <th className="text-center py-3 px-2 font-bold">නිරවද්‍යතාව</th>
+                      <th className="text-center py-3 px-2 font-bold">අවදානම් මට්ටම</th>
+                      <th className="text-center py-3 px-2 font-bold">සාමාන්‍ය කාලය</th>
+                      <th className="text-center py-3 px-2 font-bold">අවසන් වූ දිනය</th>
+                      <th className="text-center py-3 px-2 font-bold">විස්තර</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {gameHistory.map((game, index) => {
+                      const overallStats = game.overallStats || {};
+                      const levelsCompleted = overallStats.levelsCompleted || 0;
+                      const totalScore = overallStats.totalScore || 0;
+                      const overallAccuracy = overallStats.overallAccuracy || 0;
+                      const overallRiskLevel = overallStats.overallRiskLevel || 'Unknown';
+                      const overallAvgTime = overallStats.overallAvgTime || overallStats.overallAvgReactionTime || 0;
+                      
+                      const getRiskColor = (risk) => {
+                        switch (risk) {
+                          case 'Danger': return 'text-red-400';
+                          case 'Less Danger': return 'text-yellow-400';
+                          case 'Not Danger': return 'text-green-400';
+                          default: return 'text-gray-400';
+                        }
+                      };
+                      
+                      const getRiskTextSinhala = (risk) => {
+                        switch (risk) {
+                          case 'Danger': return 'ඉහළ අවදානම';
+                          case 'Less Danger': return 'අඩු අවදානම';
+                          case 'Not Danger': return 'අවදානමක් නැත';
+                          default: return 'නොදන්නා';
+                        }
+                      };
+                      
+                      return (
+                        <tr key={index} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                          <td className="py-3 px-2">
+                            <div className="font-semibold">{getGameTypeInSinhala(game.gameType)}</div>
+                            <div className="text-xs text-white/60">{game.gameType}</div>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-sm">
+                              {levelsCompleted}/3
+                            </span>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <span className="text-yellow-300 font-bold">{totalScore}</span>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <span className="font-semibold">{overallAccuracy.toFixed(1)}%</span>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <span className={`font-semibold ${getRiskColor(overallRiskLevel)}`}>
+                              {getRiskTextSinhala(overallRiskLevel)}
+                            </span>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <span className="text-sm">
+                              {game.gameType === 'Dyspraxia' 
+                                ? `${(overallAvgTime / 1000).toFixed(1)}තත්`
+                                : `${overallAvgTime.toFixed(1)}තත්`
+                              }
+                            </span>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <div className="text-sm">
+                              {new Date(game.lastUpdated).toLocaleDateString('si-LK')}
+                            </div>
+                            <div className="text-xs text-white/60">
+                              {new Date(game.lastUpdated).toLocaleTimeString('si-LK')}
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <button 
+                              onClick={() => setSelectedGameDetails(game)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-full text-sm transition-colors duration-300"
+                            >
+                              විස්තර
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
@@ -363,6 +432,127 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
           </div>
         )}
       </div>
+
+      {/* Game Details Modal */}
+      {selectedGameDetails && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">
+                {getGameTypeInSinhala(selectedGameDetails.gameType)} - විස්තරාත්මක ප්‍රතිඵල
+              </h2>
+              <button
+                onClick={() => setSelectedGameDetails(null)}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full font-bold transition-colors duration-300"
+              >
+                ✕ වසන්න
+              </button>
+            </div>
+
+            {/* Overall Statistics */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-white mb-3">සමස්ත සංඛ්‍යාලේඛන</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-white/60 text-sm">මුළු ලකුණු</div>
+                  <div className="text-white font-bold text-xl">{selectedGameDetails.overallStats?.totalScore || 0}</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-white/60 text-sm">සමස්ත නිරවද්‍යතාව</div>
+                  <div className="text-white font-bold text-xl">{(selectedGameDetails.overallStats?.overallAccuracy || 0).toFixed(1)}%</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-white/60 text-sm">සම්පූර්ණ මට්ටම්</div>
+                  <div className="text-white font-bold text-xl">{selectedGameDetails.overallStats?.levelsCompleted || 0}/3</div>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <div className="text-white/60 text-sm">ඉහළම මට්ටම</div>
+                  <div className="text-white font-bold text-xl">{selectedGameDetails.overallStats?.highestLevel || 0}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Level-wise Performance */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-white mb-3">මට්ටම් අනුව කාර්ය සාධනය</h3>
+              <div className="space-y-4">
+                {selectedGameDetails.levels && Object.entries(selectedGameDetails.levels).map(([levelKey, levelData]) => {
+                  const levelNumber = levelKey.replace('level', '');
+                  return (
+                    <div key={levelKey} className="bg-white/10 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-bold text-white">මට්ටම {levelNumber}</h4>
+                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                          levelData.riskLevel === 'Danger' ? 'bg-red-500/20 text-red-300' :
+                          levelData.riskLevel === 'Less Danger' ? 'bg-yellow-500/20 text-yellow-300' :
+                          'bg-green-500/20 text-green-300'
+                        }`}>
+                          {levelData.riskLevel === 'Danger' ? 'ඉහළ අවදානම' :
+                           levelData.riskLevel === 'Less Danger' ? 'අඩු අවදානම' : 'අවදානමක් නැත'}
+                        </span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="text-center">
+                          <div className="text-white/60 text-xs">ලකුණු</div>
+                          <div className="text-white font-bold">{levelData.score}/{levelData.totalQuestions}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-white/60 text-xs">නිරවද්‍යතාව</div>
+                          <div className="text-white font-bold">{(levelData.accuracy || 0).toFixed(1)}%</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-white/60 text-xs">සාමාන්‍ය කාලය</div>
+                          <div className="text-white font-bold">
+                            {selectedGameDetails.gameType === 'Dyspraxia' 
+                              ? `${((levelData.averageReactionTime || 0) / 1000).toFixed(1)}තත්`
+                              : `${(levelData.averageTime || 0).toFixed(1)}තත්`
+                            }
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-white/60 text-xs">සම්පූර්ණ කළ දිනය</div>
+                          <div className="text-white font-bold text-xs">
+                            {new Date(levelData.completedAt).toLocaleDateString('si-LK')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional game-specific metrics */}
+                      {selectedGameDetails.gameType === 'Dyspraxia' && levelData.timeoutRate && (
+                        <div className="mt-3 pt-3 border-t border-white/20">
+                          <div className="text-center">
+                            <div className="text-white/60 text-xs">කාල අවසන් වීමේ අනුපාතය</div>
+                            <div className="text-white font-bold">{levelData.timeoutRate.toFixed(1)}%</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Response Analysis (for detailed debugging) */}
+            {selectedGameDetails.levels && (
+              <div>
+                <h3 className="text-lg font-bold text-white mb-3">ප්‍රතිචාර විශ්ලේෂණය</h3>
+                <div className="bg-white/5 rounded-lg p-4 max-h-60 overflow-y-auto">
+                  <div className="text-sm text-white/80">
+                    <p className="mb-2">මෙම කොටස backend සම්බන්ධතාවයෙන් පසු විස්තරාත්මක ප්‍රතිචාර දත්ත පෙන්වනු ඇත:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li>ප්‍රශ්න-අනුව ප්‍රතිචාර කාලය</li>
+                      <li>වැරදි පිළිතුරු රටා</li>
+                      <li>දුෂ්කරතා මට්ටම් අනුව කාර්ය සාධනය</li>
+                      <li>ප්‍රගති ප්‍රවණතා</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
