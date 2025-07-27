@@ -235,3 +235,65 @@ export const getLeaderboard = async (gameType = null) => {
     };
   }
 };
+
+
+export const saveDysgraphiaResult = async (userId, predictionData) => {
+  try {
+    const resultsRef = collection(db, 'dysgraphiaResults');
+    
+    const resultDoc = {
+      userId,
+      label: predictionData.label,
+      probability: predictionData.probability,
+      confidence: predictionData.confidence,
+      timestamp: new Date(),
+      testType: 'handwriting_analysis'
+    };
+    
+    await addDoc(resultsRef, resultDoc);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving dysgraphia result:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+export const getAllUsersWithGameScores = async () => {
+  try {
+    const usersSnapshot = await getDocs(collection(db, "users"));
+    const gameScoresSnapshot = await getDocs(collection(db, "gameScores"));
+
+    // Step 1: Convert snapshots to arrays
+    const users = [];
+    usersSnapshot.forEach((doc) => {
+      users.push({ id: doc.id, ...doc.data() });
+    });
+
+    const scores = [];
+    gameScoresSnapshot.forEach((doc) => {
+      scores.push({ id: doc.id, ...doc.data() });
+    });
+
+    // Step 2: Merge user with their scores
+    const merged = users.map(user => {
+      const userGameScore = scores.find(score => score.userId === user.id);
+      return {
+        ...user,
+        gameStats: userGameScore?.overallStats || null,
+        gameType: userGameScore?.gameType || null
+      };
+    });
+
+    return {
+      success: true,
+      data: merged
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
+
