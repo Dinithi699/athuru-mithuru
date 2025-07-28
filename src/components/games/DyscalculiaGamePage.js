@@ -18,6 +18,78 @@ const DyscalculiaGamePage = ({ onBack }) => {
   const [showEndingVideo, setShowEndingVideo] = useState(false);
   const videoRef = useRef(null);
 
+  // Audio effects using Web Audio API
+  const playCorrectSound = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Happy ascending melody
+    const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5
+    
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1 + index * 0.1);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3 + index * 0.1);
+      
+      oscillator.start(audioContext.currentTime + index * 0.1);
+      oscillator.stop(audioContext.currentTime + 0.3 + index * 0.1);
+    });
+  };
+
+  const playWrongSound = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Descending sad melody
+    const frequencies = [440, 392, 349.23]; // A4, G4, F4
+    
+    frequencies.forEach((freq, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+      oscillator.type = 'triangle';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1 + index * 0.15);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4 + index * 0.15);
+      
+      oscillator.start(audioContext.currentTime + index * 0.15);
+      oscillator.stop(audioContext.currentTime + 0.4 + index * 0.15);
+    });
+  };
+
+  const playTimeoutSound = () => {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Low buzzing sound for timeout
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+    oscillator.type = 'sawtooth';
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.8);
+  };
+
   // Game data for each level - 5 questions each
   const gameData = {
     1: [
@@ -225,6 +297,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
   }, [currentQuestion, totalQuestions, completeLevel]);
 
   const handleTimeUp = useCallback(() => {
+    playTimeoutSound();
     const reactionTime = questionStartTime ? Date.now() - questionStartTime : 15000;
     setReactionTimes(prev => [...prev, reactionTime]);
     
@@ -290,6 +363,13 @@ const DyscalculiaGamePage = ({ onBack }) => {
     
     const isCorrect = answer === currentQuestions[currentQuestion].correct;
     const timeTaken = 15 - timeLeft;
+    
+    // Play audio feedback
+    if (isCorrect) {
+      playCorrectSound();
+    } else {
+      playWrongSound();
+    }
     
     setResponses(prev => [...prev, {
       question: currentQuestion,

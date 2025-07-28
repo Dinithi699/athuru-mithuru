@@ -323,19 +323,27 @@ const processHandwriting = async (imageDataUrl) => {
   const handleTimeUp = useCallback(() => {
     const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 60
 
-    setResponses((prev) => [
-      ...prev,
-      {
-        question: currentQuestion,
-        userAnswer: "",
-        correct: currentQuestions[currentQuestion].word,
-        timeTaken: timeTaken,
-        confidence: 0,
-        handwritingQuality: "timeout",
-        isCorrect: false,
-        completed: false,
-      },
-    ])
+    // Only add timeout response if not already added
+    setResponses((prev) => {
+      // Check if response for current question already exists
+      const existingResponse = prev.find(r => r.question === currentQuestion);
+      if (existingResponse) {
+        return prev; // Don't add duplicate
+      }
+      
+      return [
+        ...prev,
+        {
+          question: currentQuestion,
+          expectedWord: currentQuestions[currentQuestion].word,
+          timeTaken: timeTaken,
+          capturedImage: null,
+          timestamp: new Date().toISOString(),
+          timeout: true,
+          completed: false,
+        },
+      ];
+    });
 
     playLoseSound()
     stopCamera()
@@ -445,14 +453,17 @@ const processHandwriting = async (imageDataUrl) => {
   }
 
   const getDysgraphiaAnalysis = () => {
-    const totalResponses = responses.length
-    const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses
+    const validResponses = responses.filter(r => r && typeof r.timeTaken === 'number');
+    const totalResponses = validResponses.length;
+    const averageTime = totalResponses > 0 ? 
+      validResponses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses : 0;
+    const capturedImages = validResponses.filter(r => r.capturedImage && !r.timeout).length;
 
     return {
       totalQuestions: totalResponses,
       averageTime,
-      capturedImages: responses.length,
-      responses: responses, // Include all responses for backend analysis
+      capturedImages: capturedImages,
+      responses: validResponses, // Include all valid responses for backend analysis
     }
   }
 
@@ -698,8 +709,7 @@ const processHandwriting = async (imageDataUrl) => {
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-                    }
-                }
+                    
                 
                 
             <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
