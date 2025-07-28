@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react"
+import { saveDysgraphiaResult } from "../../firebase/firestore"
+import { useAuth } from "../../contexts/AuthContext"
 // Removed shadcn/ui imports as they are not present in your project
 // import { Button } from "@/components/ui/button"
 // import { Card, CardContent } from "@/components/ui/card"
@@ -23,7 +25,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [capturedImage, setCapturedImage] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [cameraError, setCameraError] = useState(null)
-
+  const { user } = useAuth(); 
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
 
@@ -161,44 +163,81 @@ const DysgraphiaGamePage = ({ onBack }) => {
     startCamera()
   }
 
-  const processHandwriting = async (imageDataUrl) => {
-    setIsProcessing(true)
-    setShowSuccessMessage(false) // Ensure success message is hidden before processing
+const processHandwriting = async (imageDataUrl) => {
+  setIsProcessing(true);
+  setShowSuccessMessage(false);
+ // Get the current user from your auth context
 
-    try {
-      const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 0
-      const currentWord = currentQuestions[currentQuestion].word
+  try {
+    const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 0;
+    const currentWord = currentQuestions[currentQuestion].word;
 
-      // Store the response with captured image for backend processing
-      setResponses((prev) => [
-        ...prev,
-        {
-          question: currentQuestion,
-          expectedWord: currentWord,
-          timeTaken: timeTaken,
-          capturedImage: imageDataUrl,
-          timestamp: new Date().toISOString(),
-        },
-      ])
+    // Convert data URL to blob
+    const blob = await fetch(imageDataUrl).then(res => res.blob());
+    
+    // Create FormData and append the image
+    const formData = new FormData();
+    formData.append('file', blob, 'handwriting.jpg');
 
-      // Simulate processing delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Send to your API
+    const response = await fetch('http://107.173.135.80/predict', {
+      method: 'POST',
+      body: formData
+    });
 
-      setShowSuccessMessage(true) // Show success message after processing
-      playWinSound() // Play success sound
-
-      // Move to next question after a short delay to show success message
-      setTimeout(() => {
-        setShowSuccessMessage(false) // Hide success message
-        nextQuestion()
-      }, 1500) // Short delay for success message visibility
-    } catch (error) {
-      console.error("Error processing image:", error)
-      setCameraError("ඡායාරූපය සුරැකීමේ දෝෂයක්. නැවත උත්සාහ කරන්න.")
-    } finally {
-      setIsProcessing(false)
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
     }
+
+    const result = await response.json();
+    console.log('API Result:', result);
+
+    // Save results to Firestore if user is logged in
+    if (user && user.uid) {
+      try {
+        const saveResult = await saveDysgraphiaResult(user.uid, {
+          label: result.label,
+          probability: result.probability,
+          confidence: result.confidence,
+          wordAttempted: currentWord,
+          imageUrl: imageDataUrl // Optional: store the image if you have storage configured
+        });
+        
+        if (!saveResult.success) {
+          console.warn('Failed to save results to Firestore');
+        }
+      } catch (dbError) {
+        console.error('Database save error:', dbError);
+      }
+    }
+
+    // Store the response with API result
+    setResponses((prev) => [
+      ...prev,
+      {
+        question: currentQuestion,
+        expectedWord: currentWord,
+        timeTaken: timeTaken,
+        capturedImage: imageDataUrl,
+        apiResult: result,
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+
+    setShowSuccessMessage(true);
+    playWinSound();
+
+    setTimeout(() => {
+      setShowSuccessMessage(false);
+      nextQuestion();
+    }, 1500);
+  } catch (error) {
+    console.error("Error processing image:", error);
+    setCameraError("පින්තූරය විශ්ලේෂණය කිරීමේ දෝෂයක්. නැවත උත්සාහ කරන්න.");
+  } finally {
+    setIsProcessing(false);
   }
+};
 
   // Audio effects
   const playWinSound = () => {

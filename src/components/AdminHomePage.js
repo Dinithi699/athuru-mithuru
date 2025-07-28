@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getAllUsers } from '../firebase/firestore';
+import { getAllUsers, getAllUsersWithGameScores } from '../firebase/firestore';
 import AdminUserProfile from './AdminUserProfile';
 
 const AdminHomePage = ({ onLogout, admin }) => {
@@ -9,23 +9,25 @@ const AdminHomePage = ({ onLogout, admin }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRisk, setFilterRisk] = useState('all');
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      const result = await getAllUsers();
-      if (result.success) {
-        // Calculate risk levels for each user
-        const usersWithRisk = result.data.map(user => ({
-          ...user,
-          riskLevel: calculateRiskLevel(user)
-        }));
-        setUsers(usersWithRisk);
-      }
-      setLoading(false);
-    };
+useEffect(() => {
+  const fetchUsers = async () => {
+    setLoading(true);
+    const result = await getAllUsersWithGameScores();
+    if (result.success) {
+      // Attach risk level
+      const usersWithRisk = result.data.map(user => ({
+        ...user,
+        riskLevel: calculateRiskLevel(user),
+      }));
+      setUsers(usersWithRisk);
+    }
+    setLoading(false);
+  };
 
-    fetchUsers();
-  }, []);
+  fetchUsers();
+}, []);
+
+console.log('Admin Home Page loaded with users:', users);
 
   const calculateRiskLevel = (user) => {
     // Simple risk calculation based on game performance
