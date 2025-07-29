@@ -20,7 +20,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
 
     fetchGameHistory();
   }, [user]);
-
+  console.log("Game History user:", user);
   const calculateRiskLevel = () => {
     if (gameHistory.length === 0)
       return { level: "low", color: "green", text: "අඩු අවදානම" };
@@ -361,135 +361,168 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(() => {
-                      // Map user data to game history format
-                      const gameStats = user.gameStats || {};
-                      const levels = user.levels || {};
-                      const levelsCompleted = gameStats.levelsCompleted || 0;
-                      const totalScore = gameStats.totalScore || 0;
-                      const overallAccuracy = gameStats.overallAccuracy || 0;
-                      const overallRiskLevel =
-                        gameStats.overallRiskLevel || "Unknown";
-                      const overallAvgTime =
-                        gameStats.overallAvgReactionTime || 0;
+                    {user.gameScores && user.gameScores.length > 0 ? (
+                      user.gameScores.map((gameScore, index) => {
+                        const gameType = gameScore.gameType;
+                        const gameStats = gameScore.overallStats || {};
+                        const levels = gameScore.levels || {};
+                        const levelsCompleted = gameStats.levelsCompleted || 0;
+                        const totalScore = gameStats.totalScore || 0;
+                        const overallAccuracy = gameStats.overallAccuracy || 0;
+                        const overallRiskLevel =
+                          gameStats.overallRiskLevel || "Unknown";
+                        const overallAvgTime =
+                          gameStats.overallAvgReactionTime ||
+                          gameStats.overallAvgTime ||
+                          0;
 
-                      // Get the last completed date from levels
-                      const lastCompletedDate =
-                        levels && typeof levels === "object"
-                          ? Object.values(levels)
-                              .filter((level) => level && level.completedAt)
-                              .sort(
-                                (a, b) =>
-                                  new Date(b.completedAt) -
-                                  new Date(a.completedAt)
-                              )[0]?.completedAt || user.createdAt
-                          : user.createdAt;
+                        // Get the last completed date from levels
+                        const lastCompletedDate =
+                          levels && typeof levels === "object"
+                            ? Object.values(levels)
+                                .filter((level) => level && level.completedAt)
+                                .sort(
+                                  (a, b) =>
+                                    new Date(b.completedAt) -
+                                    new Date(a.completedAt)
+                                )[0]?.completedAt || user.createdAt
+                            : user.createdAt;
 
-                      const getRiskColor = (risk) => {
-                        switch (risk) {
-                          case "Danger":
-                            return "text-red-400";
-                          case "Less Danger":
-                            return "text-yellow-400";
-                          case "Not Danger":
-                            return "text-green-400";
-                          default:
-                            return "text-gray-400";
-                        }
-                      };
+                        const getRiskColor = (risk) => {
+                          switch (risk) {
+                            case "Danger":
+                              return "text-red-400";
+                            case "Less Danger":
+                              return "text-yellow-400";
+                            case "Not Danger":
+                              return "text-green-400";
+                            default:
+                              return "text-gray-400";
+                          }
+                        };
 
-                      const getRiskTextSinhala = (risk) => {
-                        switch (risk) {
-                          case "Danger":
-                            return "ඉහළ අවදානම";
-                          case "Less Danger":
-                            return "අඩු අවදානම";
-                          case "Not Danger":
-                            return "අවදානමක් නැත";
-                          default:
-                            return "නොදන්නා";
-                        }
-                      };
+                        const getRiskTextSinhala = (risk) => {
+                          switch (risk) {
+                            case "Danger":
+                              return "ඉහළ අවදානම";
+                            case "Less Danger":
+                              return "අඩු අවදානම";
+                            case "Not Danger":
+                              return "අවදානමක් නැත";
+                            default:
+                              return "නොදන්නා";
+                          }
+                        };
 
-                      // Create single row for the user's game data
-                      return (
-                        <tr className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                          <td className="py-3 px-2">
-                            <div className="font-semibold">
-                              {getGameTypeInSinhala(user.gameType)}
-                            </div>
-                            <div className="text-xs text-white/60">
-                              {user.gameType}
-                            </div>
-                          </td>
-                          <td className="text-center py-3 px-2">
-                            <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-sm">
-                              {levelsCompleted}/3
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-2">
-                            <span className="text-yellow-300 font-bold">
-                              {totalScore}
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-2">
-                            <span className="font-semibold">
-                              {overallAccuracy.toFixed(1)}%
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-2">
-                            <span
-                              className={`font-semibold ${getRiskColor(
-                                overallRiskLevel
-                              )}`}
-                            >
-                              {getRiskTextSinhala(overallRiskLevel)}
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-2">
-                            <span className="text-sm">
-                              {user.gameType === "Dyspraxia"
-                                ? `${(overallAvgTime / 1000).toFixed(1)}තත්`
-                                : `${overallAvgTime.toFixed(1)}තත්`}
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-2">
-                            <div className="text-sm">
-                              {new Date(lastCompletedDate).toLocaleDateString(
-                                "si-LK"
-                              )}
-                            </div>
-                            <div className="text-xs text-white/60">
-                              {new Date(lastCompletedDate).toLocaleTimeString(
-                                "si-LK"
-                              )}
-                            </div>
-                          </td>
-                          <td className="text-center py-3 px-2">
-                            <button
-                              onClick={() =>
-                                setSelectedGameDetails({
-                                  gameType: user.gameType,
-                                  overallStats: {
-                                    totalScore: gameStats.totalScore,
-                                    overallAccuracy: gameStats.overallAccuracy,
-                                    levelsCompleted: gameStats.levelsCompleted,
-                                    highestLevel: gameStats.highestLevel,
-                                    overallAvgReactionTime:
-                                      gameStats.overallAvgReactionTime,
-                                  },
-                                  levels: user.levels,
-                                  lastUpdated: lastCompletedDate,
-                                })
-                              }
-                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-full text-sm transition-colors duration-300"
-                            >
-                              විස්තර
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })()}
+                        const getGameTypeInSinhala = (type) => {
+                          switch (type) {
+                            case "Dyslexia":
+                              return "දෘශ්‍ය වෙනස්කම් ක්‍රීඩාව";
+                            case "Dysgraphia":
+                              return "අකුරු ලිවීමේ ක්‍රීඩාව";
+                            case "Dyspraxia":
+                              return "තරු රටා ක්‍රීඩාව";
+                            case "Dyscalculia":
+                              return "සංඛ්‍යා සංසන්දන ක්‍රීඩාව"
+                            default:
+                              return "නොදන්නා ක්‍රීඩාව";
+                          }
+                        };
+
+                        return (
+                          <tr
+                            key={index}
+                            className="border-b border-white/10 hover:bg-white/5 transition-colors"
+                          >
+                            <td className="py-3 px-2">
+                              <div className="font-semibold">
+                                {getGameTypeInSinhala(gameType)}
+                              </div>
+                              <div className="text-xs text-white/60">
+                                {gameType}
+                              </div>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full text-sm">
+                                {levelsCompleted}/3
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span className="text-yellow-300 font-bold">
+                                {totalScore}
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span className="font-semibold">
+                                {overallAccuracy.toFixed(1)}%
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span
+                                className={`font-semibold ${getRiskColor(
+                                  overallRiskLevel
+                                )}`}
+                              >
+                                {getRiskTextSinhala(overallRiskLevel)}
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <span className="text-sm">
+                                {gameType === "Dyspraxia"
+                                  ? `${(overallAvgTime / 1000).toFixed(1)}තත්`
+                                  : `${overallAvgTime.toFixed(1)}තත්`}
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <div className="text-sm">
+                                {new Date(lastCompletedDate).toLocaleDateString(
+                                  "si-LK"
+                                )}
+                              </div>
+                              <div className="text-xs text-white/60">
+                                {new Date(lastCompletedDate).toLocaleTimeString(
+                                  "si-LK"
+                                )}
+                              </div>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <button
+                                onClick={() =>
+                                  setSelectedGameDetails({
+                                    gameType: gameType,
+                                    overallStats: {
+                                      totalScore: gameStats.totalScore,
+                                      overallAccuracy:
+                                        gameStats.overallAccuracy,
+                                      levelsCompleted:
+                                        gameStats.levelsCompleted,
+                                      highestLevel: gameStats.highestLevel,
+                                      overallAvgReactionTime:
+                                        gameStats.overallAvgReactionTime ||
+                                        gameStats.overallAvgTime,
+                                    },
+                                    levels: levels,
+                                    lastUpdated: lastCompletedDate,
+                                  })
+                                }
+                                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-full text-sm transition-colors duration-300"
+                              >
+                                විස්තර
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="8"
+                          className="text-center text-white/60 py-4"
+                        >
+                          මෙම පරිශීලකයාගේ ක්‍රීඩා දත්තයන් නොමැත
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
