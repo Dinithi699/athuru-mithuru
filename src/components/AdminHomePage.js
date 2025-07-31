@@ -1,6 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { getAllUsers, getAllUsersWithGameScores } from '../firebase/firestore';
 import AdminUserProfile from './AdminUserProfile';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+} from 'chart.js';
+import { Bar, Pie } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 
 const AdminHomePage = ({ onLogout, admin }) => {
   const [users, setUsers] = useState([]);
@@ -8,6 +29,7 @@ const AdminHomePage = ({ onLogout, admin }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRisk, setFilterRisk] = useState('all');
+  const [showCharts, setShowCharts] = useState(false);
 
 useEffect(() => {
   const fetchUsers = async () => {
@@ -119,6 +141,192 @@ console.log('Admin Home Page loaded with users:', users);
     return 'low';
   };
 
+  // Chart data preparation functions
+  const getEnrollmentData = () => {
+    const monthlyData = {};
+    users.forEach(user => {
+      if (user.createdAt) {
+        const month = new Date(user.createdAt).toLocaleDateString('si-LK', { 
+          year: 'numeric', 
+          month: 'short' 
+        });
+        monthlyData[month] = (monthlyData[month] || 0) + 1;
+      }
+    });
+
+    const sortedMonths = Object.keys(monthlyData).sort((a, b) => 
+      new Date(a) - new Date(b)
+    );
+
+    return {
+      labels: sortedMonths,
+      datasets: [{
+        label: 'ළමුන් ලියාපදිංචිය',
+        data: sortedMonths.map(month => monthlyData[month]),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 1
+      }]
+    };
+  };
+
+  const getRiskDistributionData = () => {
+    const riskCounts = { high: 0, medium: 0, low: 0 };
+    users.forEach(user => {
+      if (user.riskLevel === 'high') riskCounts.high++;
+      else if (user.riskLevel === 'medium') riskCounts.medium++;
+      else riskCounts.low++;
+    });
+
+    return {
+      labels: ['ඉහළ අවදානම', 'මධ්‍යම අවදානම', 'අඩු අවදානම'],
+      datasets: [{
+        data: [riskCounts.high, riskCounts.medium, riskCounts.low],
+        backgroundColor: [
+          'rgba(239, 68, 68, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(34, 197, 94, 0.8)'
+        ],
+        borderColor: [
+          'rgba(239, 68, 68, 1)',
+          'rgba(245, 158, 11, 1)',
+          'rgba(34, 197, 94, 1)'
+        ],
+        borderWidth: 2
+      }]
+    };
+  };
+
+  const getGamePlayData = () => {
+    const gameStats = {
+      'Dyslexia': 0,
+      'Dysgraphia': 0,
+      'Dyspraxia': 0,
+      'Dyscalculia': 0
+    };
+
+    users.forEach(user => {
+      if (user.gameScores && user.gameScores.length > 0) {
+        user.gameScores.forEach(gameScore => {
+          if (gameStats.hasOwnProperty(gameScore.gameType)) {
+            gameStats[gameScore.gameType]++;
+          }
+        });
+      }
+    });
+
+    return {
+      labels: ['දෘශ්‍ය වෙනස්කම්', 'අකුරු ලිවීම', 'තරු රටා', 'සංඛ්‍යා සංසන්දනය'],
+      datasets: [{
+        label: 'ක්‍රීඩා කළ ළමුන් ගණන',
+        data: [
+          gameStats['Dyslexia'],
+          gameStats['Dysgraphia'], 
+          gameStats['Dyspraxia'],
+          gameStats['Dyscalculia']
+        ],
+        backgroundColor: [
+          'rgba(251, 191, 36, 0.8)',
+          'rgba(239, 68, 68, 0.8)',
+          'rgba(139, 92, 246, 0.8)',
+          'rgba(59, 130, 246, 0.8)'
+        ],
+        borderColor: [
+          'rgba(251, 191, 36, 1)',
+          'rgba(239, 68, 68, 1)',
+          'rgba(139, 92, 246, 1)',
+          'rgba(59, 130, 246, 1)'
+        ],
+        borderWidth: 1
+      }]
+    };
+  };
+
+  const getPerformanceData = () => {
+    const performanceStats = { excellent: 0, good: 0, needsImprovement: 0 };
+    
+    users.forEach(user => {
+      if (user.gameScores && user.gameScores.length > 0) {
+        const avgAccuracy = user.gameScores.reduce((sum, game) => {
+          return sum + (game.overallStats?.overallAccuracy || 0);
+        }, 0) / user.gameScores.length;
+        
+        if (avgAccuracy >= 80) performanceStats.excellent++;
+        else if (avgAccuracy >= 60) performanceStats.good++;
+        else performanceStats.needsImprovement++;
+      }
+    });
+
+    return {
+      labels: ['විශිෂ්ට (80%+)', 'හොඳ (60-79%)', 'වැඩිදියුණු කළ යුතු (<60%)'],
+      datasets: [{
+        data: [performanceStats.excellent, performanceStats.good, performanceStats.needsImprovement],
+        backgroundColor: [
+          'rgba(34, 197, 94, 0.8)',
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(245, 158, 11, 0.8)'
+        ],
+        borderColor: [
+          'rgba(34, 197, 94, 1)',
+          'rgba(59, 130, 246, 1)',
+          'rgba(245, 158, 11, 1)'
+        ],
+        borderWidth: 2
+      }]
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: {
+            size: 12
+          }
+        }
+      },
+      title: {
+        display: true,
+        font: {
+          size: 14,
+          weight: 'bold'
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        }
+      }
+    }
+  };
+
+  const pieOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          font: {
+            size: 12
+          },
+          padding: 20
+        }
+      },
+      title: {
+        display: true,
+        font: {
+          size: 14,
+          weight: 'bold'
+        }
+      }
+    }
+  };
+
   const getRiskColor = (riskLevel) => {
     switch (riskLevel) {
       case 'high': return 'bg-red-500';
@@ -177,6 +385,12 @@ console.log('Admin Home Page loaded with users:', users);
               <div className="font-semibold">{admin?.school || 'පාසල'}</div>
             </div>
             <button
+              onClick={() => setShowCharts(!showCharts)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-full font-bold transition-colors duration-300"
+            >
+              {showCharts ? '📊 ප්‍රස්ථාර සඟවන්න' : '📊 ප්‍රස්ථාර පෙන්වන්න'}
+            </button>
+            <button
               onClick={onLogout}
               className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full font-bold transition-colors duration-300"
             >
@@ -188,6 +402,98 @@ console.log('Admin Home Page loaded with users:', users);
 
       {/* Search and Filter */}
       <div className="p-4 sm:p-6">
+        {/* Charts Section */}
+        {showCharts && (
+          <div className="mb-8">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6">
+              <h2 className="text-2xl font-bold text-white mb-6 text-center">📊 සංඛ්‍යාලේඛන ප්‍රස්ථාර</h2>
+              
+              {/* Charts Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Enrollment Chart */}
+                <div className="bg-white/10 rounded-xl p-4">
+                  <h3 className="text-lg font-bold text-white mb-4 text-center">මාසික ලියාපදිංචි වීම්</h3>
+                  <div className="h-64">
+                    <Bar 
+                      data={getEnrollmentData()} 
+                      options={{
+                        ...chartOptions,
+                        plugins: {
+                          ...chartOptions.plugins,
+                          title: {
+                            ...chartOptions.plugins.title,
+                            text: 'මාසික ලියාපදිංචි වීම්'
+                          }
+                        }
+                      }} 
+                    />
+                  </div>
+                </div>
+
+                {/* Risk Distribution Chart */}
+                <div className="bg-white/10 rounded-xl p-4">
+                  <h3 className="text-lg font-bold text-white mb-4 text-center">අවදානම් මට්ටම් ව්‍යාප්තිය</h3>
+                  <div className="h-64">
+                    <Pie 
+                      data={getRiskDistributionData()} 
+                      options={{
+                        ...pieOptions,
+                        plugins: {
+                          ...pieOptions.plugins,
+                          title: {
+                            ...pieOptions.plugins.title,
+                            text: 'අවදානම් මට්ටම් ව්‍යාප්තිය'
+                          }
+                        }
+                      }} 
+                    />
+                  </div>
+                </div>
+
+                {/* Game Play Statistics */}
+                <div className="bg-white/10 rounded-xl p-4">
+                  <h3 className="text-lg font-bold text-white mb-4 text-center">ක්‍රීඩා සහභාගිත්වය</h3>
+                  <div className="h-64">
+                    <Bar 
+                      data={getGamePlayData()} 
+                      options={{
+                        ...chartOptions,
+                        plugins: {
+                          ...chartOptions.plugins,
+                          title: {
+                            ...chartOptions.plugins.title,
+                            text: 'ක්‍රීඩා අනුව සහභාගිත්වය'
+                          }
+                        }
+                      }} 
+                    />
+                  </div>
+                </div>
+
+                {/* Performance Distribution */}
+                <div className="bg-white/10 rounded-xl p-4">
+                  <h3 className="text-lg font-bold text-white mb-4 text-center">කාර්ය සාධන ව්‍යාප්තිය</h3>
+                  <div className="h-64">
+                    <Pie 
+                      data={getPerformanceData()} 
+                      options={{
+                        ...pieOptions,
+                        plugins: {
+                          ...pieOptions.plugins,
+                          title: {
+                            ...pieOptions.plugins.title,
+                            text: 'සමස්ත කාර්ය සාධනය'
+                          }
+                        }
+                      }} 
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
