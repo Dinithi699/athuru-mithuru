@@ -639,7 +639,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
             </div>
 
             {/* Instructions */}
-            <div className="mb-6 sm:mb-8 p-4 bg-white/10 rounded-lg">
+            <div className="mb-6 sm:mb-8 p-10 bg-white/10 rounded-lg text-left">
               <h3 className="text-lg font-bold mb-2">උපදෙස්:</h3>
               <p className="text-sm sm:text-base">
                 1. කඩදාසියක මේ වචනය ලියන්න: <strong>{currentQ.word}</strong>

@@ -161,7 +161,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
   const riskLevel = calculateRiskLevel();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500">
+    <div className="min-h-screen bg-gradient-to-b from-purple-900 via-white-700 to-blue-500">
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-sm border-b border-white/20 p-4 sm:p-6">
         <div className="flex items-center justify-between">
