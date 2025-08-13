@@ -263,24 +263,33 @@ export const getAllUsersWithGameScores = async () => {
     const usersSnapshot = await getDocs(collection(db, "users"));
     const gameScoresSnapshot = await getDocs(collection(db, "gameScores"));
 
-    // Step 1: Convert snapshots to arrays
+    // Convert user documents to array
     const users = [];
     usersSnapshot.forEach((doc) => {
       users.push({ id: doc.id, ...doc.data() });
     });
 
+    // Convert game score documents to array
     const scores = [];
     gameScoresSnapshot.forEach((doc) => {
       scores.push({ id: doc.id, ...doc.data() });
     });
 
-    // Step 2: Merge user with their scores
+    // Group game scores by userId
+    const scoresByUser = {};
+    scores.forEach((score) => {
+      const { userId } = score;
+      if (!scoresByUser[userId]) {
+        scoresByUser[userId] = [];
+      }
+      scoresByUser[userId].push(score);
+    });
+
+    // Merge users with all their game scores
     const merged = users.map(user => {
-      const userGameScore = scores.find(score => score.userId === user.id);
       return {
         ...user,
-        gameStats: userGameScore?.overallStats || null,
-        gameType: userGameScore?.gameType || null
+        gameScores: scoresByUser[user.id] || []
       };
     });
 
@@ -296,4 +305,3 @@ export const getAllUsersWithGameScores = async () => {
     };
   }
 };
-
