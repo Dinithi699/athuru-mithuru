@@ -262,38 +262,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               </div>
             </div>
 
-            {/* Performance Stats */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4">
-                කාර්ය සාධන සංඛ්‍යාලේඛන
-              </h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-white/10 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {user?.points || 0}
-                  </div>
-                  <div className="text-white/60 text-sm">මුළු ලකුණු</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {user?.completedGames || 0}
-                  </div>
-                  <div className="text-white/60 text-sm">සම්පූර්ණ ක්‍රීඩා</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {user?.level || "ආරම්භක"}
-                  </div>
-                  <div className="text-white/60 text-sm">මට්ටම</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4 text-center">
-                  <div className="text-2xl font-bold text-white">
-                    {gameHistory.length}
-                  </div>
-                  <div className="text-white/60 text-sm">ක්‍රීඩා සැසි</div>
-                </div>
-              </div>
-            </div>
+            
 
             {/* Achievements */}
             {user?.achievements && user.achievements.length > 0 && (
