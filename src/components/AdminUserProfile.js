@@ -1110,6 +1110,8 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                               return "ඩිස්ග්‍රැෆියා";
                             case "Dyspraxia":
                               return "ඩිස්ප්‍රැක්සියා";
+                            case "Dyscalculia":
+                              return "ඩිස්කැල්කියුලියා";
                             default:
                               return "නොදන්නා ක්‍රීඩාව";
                           }
