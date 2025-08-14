@@ -278,7 +278,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
     } else {
       completeLevel()
     }
-  }, [currentQuestion, totalQuestions, completeLevel]) // Dependencies for useCallback
 
   // Timer effect
   const handleTimeUp = useCallback(() => {
@@ -324,17 +323,20 @@ const DysgraphiaGamePage = ({ onBack }) => {
   }, [timeLeft, gameStarted, gameCompleted, showResult, showSuccessMessage, handleTimeUp])
 
   useEffect(() => {
-    if (
-      gameStarted &&
-      !gameCompleted &&
-      currentQuestion < totalQuestions &&
-      currentQuestions &&
-      currentQuestions[currentQuestion]
-    ) {
-      const currentWord = currentQuestions[currentQuestion].word
-      speakWord(currentWord)
-    }
+  if (
+    gameStarted &&
+    !gameCompleted &&
+    currentQuestion < totalQuestions &&
+    currentQuestions[currentQuestion]
+  ) {
+    const currentWord = currentQuestions[currentQuestion].word
+    speakWord(currentWord)
+  }
 
+  return () => {
+    speechSynthesis.cancel()
+  }
+}, [currentQuestion]) // 👈 Only depends on currentQuestion
 
 
   useEffect(() => {
@@ -669,7 +671,8 @@ const DysgraphiaGamePage = ({ onBack }) => {
               <div className="mb-6">
                     
                 
-                
+                      }
+          
             <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
