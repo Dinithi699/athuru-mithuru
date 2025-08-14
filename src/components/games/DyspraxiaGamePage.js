@@ -262,6 +262,70 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }
   };
 
+  const getDyspraxiaAnalysis = () => {
+    const totalResponses = responses.length;
+    const correctResponses = responses.filter(r => r.isCorrect).length;
+    const timeoutResponses = responses.filter(r => r.timeout).length;
+    const averageReactionTime = responses
+      .filter(r => r.isCorrect)
+      .reduce((sum, r) => sum + r.reactionTime, 0) / Math.max(correctResponses, 1);
+    
+    const accuracy = totalResponses > 0 ? (correctResponses / totalResponses) * 100 : 0;
+    const timeoutRate = totalResponses > 0 ? (timeoutResponses / totalResponses) * 100 : 0;
+    
+    let riskLevel = 'Not Danger';
+    let riskLevelSinhala = 'අවදානමක් නැත';
+    let analysis = '';
+    let recommendations = [];
+    
+    // Dyspraxia risk assessment
+    const reactionThreshold = currentLevel === 1 ? 1500 : currentLevel === 2 ? 1200 : 1000;
+    
+    if (accuracy < 50 || averageReactionTime > reactionThreshold * 1.5 || timeoutRate > 40) {
+      riskLevel = 'Danger';
+      riskLevelSinhala = 'අවදානම';
+      analysis = 'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය, ප්‍රතික්‍රියා කාලය සහ අවධානය යොමු කිරීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ප්‍රැක්සියා අවදානමක් යෝජනා කරයි.';
+      recommendations = [
+        'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණ අභ්‍යාස',
+        'සියුම් මෝටර් කුසලතා වර්ධන ක්‍රියාකාරකම්',
+        'අවධානය යොමු කිරීමේ අභ්‍යාස',
+        'වෘත්තීය ප්‍රතිකාර විශේෂඥයෙකු සම්බන්ධ කරගන්න',
+        'නිතිපතා සංවේදී මෝටර් අභ්‍යාස'
+      ];
+    } else if (accuracy < 70 || averageReactionTime > reactionThreshold || timeoutRate > 25) {
+      riskLevel = 'Less Danger';
+      riskLevelSinhala = 'අඩු අවදානම';
+      analysis = 'දෘශ්‍ය සැකසීම සහ මෝටර් ප්‍රතිචාරවල සමහර අභියෝග. ඉලක්කගත අභ්‍යාස සමඟ වැඩිදියුණු කළ හැක.';
+      recommendations = [
+        'ඉලක්ක කරන ක්‍රීඩා නිතිපතා කරන්න',
+        'අත්-ඇස් සම්බන්ධීකරණ අභ්‍යාස',
+        'ප්‍රතික්‍රියා කාල වැඩිදියුණු කිරීමේ ක්‍රියාකාරකම්',
+        'දෘශ්‍ය අවධානය වර්ධන අභ්‍යාස',
+        'ප්‍රගතිය නිරීක්ෂණය කරන්න'
+      ];
+    } else {
+      riskLevel = 'Not Danger';
+      riskLevelSinhala = 'අවදානමක් නැත';
+      analysis = 'හොඳ දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය සහ ප්‍රතික්‍රියා කාලය. සාමාන්‍ය වර්ධනයක් පෙන්නුම් කරයි.';
+      recommendations = [
+        'වර්තමාන කුසලතා පවත්වාගෙන යන්න',
+        'වඩාත් අභියෝගාත්මක ක්‍රියාකාරකම් උත්සාහ කරන්න',
+        'ක්‍රීඩා සහ ශාරීරික ක්‍රියාකාරකම් දිරිමත් කරන්න',
+        'සියුම් මෝටර් කුසලතා දිගටම වර්ධනය කරන්න'
+      ];
+    }
+    
+    return { 
+      accuracy, 
+      averageReactionTime, 
+      timeoutRate, 
+      riskLevel, 
+      riskLevelSinhala,
+      analysis, 
+      recommendations 
+    };
+  };
+
   const completeLevel = useCallback(() => {
     // Save current level results
     const saveCurrentLevelResults = async () => {
@@ -365,70 +429,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
       3: 'උසස් මට්ටම - 7 තරු, 1.5 තත්පර'
     };
     return descriptions[level];
-  };
-
-  const getDyspraxiaAnalysis = () => {
-    const totalResponses = responses.length;
-    const correctResponses = responses.filter(r => r.isCorrect).length;
-    const timeoutResponses = responses.filter(r => r.timeout).length;
-    const averageReactionTime = responses
-      .filter(r => r.isCorrect)
-      .reduce((sum, r) => sum + r.reactionTime, 0) / Math.max(correctResponses, 1);
-    
-    const accuracy = totalResponses > 0 ? (correctResponses / totalResponses) * 100 : 0;
-    const timeoutRate = totalResponses > 0 ? (timeoutResponses / totalResponses) * 100 : 0;
-    
-    let riskLevel = 'Not Danger';
-    let riskLevelSinhala = 'අවදානමක් නැත';
-    let analysis = '';
-    let recommendations = [];
-    
-    // Dyspraxia risk assessment
-    const reactionThreshold = currentLevel === 1 ? 1500 : currentLevel === 2 ? 1200 : 1000;
-    
-    if (accuracy < 50 || averageReactionTime > reactionThreshold * 1.5 || timeoutRate > 40) {
-      riskLevel = 'Danger';
-      riskLevelSinhala = 'අවදානම';
-      analysis = 'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය, ප්‍රතික්‍රියා කාලය සහ අවධානය යොමු කිරීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ප්‍රැක්සියා අවදානමක් යෝජනා කරයි.';
-      recommendations = [
-        'දෘශ්‍ය-මෝටර් සම්බන්ධීකරණ අභ්‍යාස',
-        'සියුම් මෝටර් කුසලතා වර්ධන ක්‍රියාකාරකම්',
-        'අවධානය යොමු කිරීමේ අභ්‍යාස',
-        'වෘත්තීය ප්‍රතිකාර විශේෂඥයෙකු සම්බන්ධ කරගන්න',
-        'නිතිපතා සංවේදී මෝටර් අභ්‍යාස'
-      ];
-    } else if (accuracy < 70 || averageReactionTime > reactionThreshold || timeoutRate > 25) {
-      riskLevel = 'Less Danger';
-      riskLevelSinhala = 'අඩු අවදානම';
-      analysis = 'දෘශ්‍ය සැකසීම සහ මෝටර් ප්‍රතිචාරවල සමහර අභියෝග. ඉලක්කගත අභ්‍යාස සමඟ වැඩිදියුණු කළ හැක.';
-      recommendations = [
-        'ඉලක්ක කරන ක්‍රීඩා නිතිපතා කරන්න',
-        'අත්-ඇස් සම්බන්ධීකරණ අභ්‍යාස',
-        'ප්‍රතික්‍රියා කාල වැඩිදියුණු කිරීමේ ක්‍රියාකාරකම්',
-        'දෘශ්‍ය අවධානය වර්ධන අභ්‍යාස',
-        'ප්‍රගතිය නිරීක්ෂණය කරන්න'
-      ];
-    } else {
-      riskLevel = 'Not Danger';
-      riskLevelSinhala = 'අවදානමක් නැත';
-      analysis = 'හොඳ දෘශ්‍ය-මෝටර් සම්බන්ධීකරණය සහ ප්‍රතික්‍රියා කාලය. සාමාන්‍ය වර්ධනයක් පෙන්නුම් කරයි.';
-      recommendations = [
-        'වර්තමාන කුසලතා පවත්වාගෙන යන්න',
-        'වඩාත් අභියෝගාත්මක ක්‍රියාකාරකම් උත්සාහ කරන්න',
-        'ක්‍රීඩා සහ ශාරීරික ක්‍රියාකාරකම් දිරිමත් කරන්න',
-        'සියුම් මෝටර් කුසලතා දිගටම වර්ධනය කරන්න'
-      ];
-    }
-    
-    return { 
-      accuracy, 
-      averageReactionTime, 
-      timeoutRate, 
-      riskLevel, 
-      riskLevelSinhala,
-      analysis, 
-      recommendations 
-    };
   };
 
   if (!gameStarted) {
