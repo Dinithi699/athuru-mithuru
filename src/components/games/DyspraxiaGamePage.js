@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { saveGameScore } from '../../firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -17,7 +17,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
   const [showResult, setShowResult] = useState(false);
   const [resultType, setResultType] = useState('');
   const [timeLeft, setTimeLeft] = useState(0);
-  const [missedClicks, setMissedClicks] = useState(0);
   const audioRef = useRef(null);
   const [showEndingVideo, setShowEndingVideo] = useState(false);
   const videoRef = useRef(null);
@@ -170,7 +169,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setCurrentStar(0);
     setScore(0);
     setResponses([]);
-    setMissedClicks(0);
     setShowResult(false);
     
     // Generate star positions
@@ -207,7 +205,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setResultType('correct');
     } else {
       playWrongSound();
-      setMissedClicks(prev => prev + 1);
       setResultType('wrong');
     }
     
@@ -234,7 +231,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
 
   const handleStarTimeout = () => {
     playTimeoutSound();
-    setMissedClicks(prev => prev + 1);
     setResultType('timeout');
     
     // Record timeout response
@@ -344,7 +340,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setCurrentStar(0);
       setScore(0);
       setResponses([]);
-      setMissedClicks(0);
       setActiveStarIndex(-1);
       setIsFlashing(false);
       setShowResult(false);
@@ -358,7 +353,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setCurrentStar(0);
     setScore(0);
     setResponses([]);
-    setMissedClicks(0);
     setActiveStarIndex(-1);
     setIsFlashing(false);
     setShowResult(false);
