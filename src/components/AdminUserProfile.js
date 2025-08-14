@@ -1351,10 +1351,10 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                 </h3>
                 <div className="bg-white/5 rounded-lg p-4 max-h-60 overflow-y-auto">
                   <div className="text-sm text-white/80">
-                    <p className="mb-2">
+                    {/* <p className="mb-2">
                       මෙම කොටස backend සම්බන්ධතාවයෙන් පසු විස්තරාත්මක ප්‍රතිචාර
                       දත්ත පෙන්වනු ඇත:
-                    </p>
+                    </p> */}
                     <ul className="list-disc list-inside space-y-1 text-xs">
                       <li>ප්‍රශ්න-අනුව ප්‍රතිචාර කාලය</li>
                       <li>වැරදි පිළිතුරු රටා</li>

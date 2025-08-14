@@ -125,6 +125,61 @@ const DyslexiaGamePage = ({ onBack }) => {
   const currentQuestions = gameData[currentLevel];
   const totalQuestions = currentQuestions.length;
 
+  const getPerformanceAnalysis = useCallback(() => {
+    const totalResponses = responses.length;
+    const correctResponses = responses.filter(r => r.isCorrect).length;
+    const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses;
+    const accuracy = (correctResponses / totalResponses) * 100;
+    
+    let riskLevel = 'Not Danger';
+    let riskLevelSinhala = 'අවදානමක් නැත';
+    let analysis = '';
+    
+    if (accuracy < 50) {
+      riskLevel = 'Danger';
+      riskLevelSinhala = 'අවදානම';
+      analysis = 'අවධානය අවශ්‍යයි. දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ලෙක්සියා අවදානමක් යෝජනා කරයි.';
+    } else if (accuracy < 70) {
+      riskLevel = 'Less Danger';
+      riskLevelSinhala = 'අඩු අවදානම';
+      analysis = 'සාමාන්‍ය කාර්ය සාධනය. දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ සුළු දුෂ්කරතා ඇත. අමතර අභ්‍යාස ප්‍රයෝජනවත් වේ.';
+    } else {
+      analysis = 'විශිෂ්ට කාර්ය සාධනය! දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ හැකියාව හොඳයි.';
+    }
+    
+    return {
+      accuracy,
+      averageTime,
+      riskLevel,
+      riskLevelSinhala,
+      analysis
+    };
+  }, [responses]);
+
+  const nextQuestion = useCallback(() => {
+    if (currentQuestion < totalQuestions - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedAnswer(null);
+      setShowResult(false);
+      setTimeLeft(10);
+    } else {
+      completeLevel();
+    }
+  }, [currentQuestion, totalQuestions, completeLevel]);
+
+  // Timer effect
+  const handleTimeUp = useCallback(() => {
+    playTimeoutSound();
+    setResponses(prev => [...prev, {
+      question: currentQuestion,
+      userAnswer: null,
+      correct: currentQuestions[currentQuestion].correct,
+      timeTaken: 10,
+      isCorrect: false
+    }]);
+    nextQuestion();
+  }, [currentQuestion, currentQuestions, nextQuestion]);
+
   // Timer effect
   useEffect(() => {
     if (gameStarted && !gameCompleted && !showResult && timeLeft > 0) {
@@ -135,28 +190,16 @@ const DyslexiaGamePage = ({ onBack }) => {
     } else if (timeLeft === 0 && !showResult) {
       handleTimeUp();
     }
-  }, [timeLeft, gameStarted, gameCompleted, showResult]);
-
-  const handleTimeUp = () => {
-    playTimeoutSound();
-    setResponses(prev => [...prev, {
-      question: currentQuestion,
-      userAnswer: null,
-      correct: currentQuestions[currentQuestion].correct,
-      timeTaken: 10,
-      isCorrect: false
-    }]);
-    nextQuestion();
-  };
+  }, [timeLeft, gameStarted, gameCompleted, showResult, handleTimeUp]);
 
   useEffect(() => {
-  if (showEndingVideo && videoRef.current) {
-    const videoEl = videoRef.current;
-    if (videoEl.requestFullscreen) {
-      videoEl.requestFullscreen().catch((e) => console.warn("Fullscreen failed", e));
+    if (showEndingVideo && videoRef.current) {
+      const videoEl = videoRef.current;
+      if (videoEl.requestFullscreen) {
+        videoEl.requestFullscreen().catch((e) => console.warn("Fullscreen failed", e));
+      }
     }
-  }
-}, [showEndingVideo]);
+  }, [showEndingVideo]);
 
   const startGame = () => {
     setGameStarted(true);
@@ -199,44 +242,6 @@ const DyslexiaGamePage = ({ onBack }) => {
     setTimeout(() => {
       nextQuestion();
     }, 2000);
-  };
-
-  const nextQuestion = () => {
-    if (currentQuestion < totalQuestions - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-      setTimeLeft(10);
-    } else {
-      completeLevel();
-    }
-  };
-
-  const getPerformanceAnalysis = () => {
-    const totalResponses = responses.length;
-    const correctResponses = responses.filter(r => r.isCorrect).length;
-    const averageTime = responses.reduce((sum, r) => sum + r.timeTaken, 0) / totalResponses;
-    const accuracy = (correctResponses / totalResponses) * 100;
-    
-    let riskLevel = 'Not Danger';
-    let riskLevelSinhala = 'අවදානමක් නැත';
-    let analysis = '';
-    
-    if (accuracy < 50) {
-      riskLevel = 'Danger';
-      riskLevelSinhala = 'අවදානම';
-      analysis = 'අවධානය අවශ්‍යයි. දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ලෙක්සියා අවදානමක් යෝජනා කරයි.';
-    } else if (accuracy < 70) {
-      riskLevel = 'Less Danger';
-      riskLevelSinhala = 'අඩු අවදානම';
-      analysis = 'හොඳයි! තව ටිකක් අභ්‍යාස කිරීමෙන් වැඩිදියුණු කළ හැක.';
-    } else {
-      riskLevel = 'Not Danger';
-      riskLevelSinhala = 'අවදානමක් නැත';
-      analysis = 'විශිෂ්ට! දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ හැකියාව ඉතා හොඳයි.';
-    }
-    
-    return { accuracy, averageTime, riskLevel, riskLevelSinhala, analysis };
   };
 
   const completeLevel = useCallback(() => {
@@ -399,18 +404,19 @@ const DyslexiaGamePage = ({ onBack }) => {
   }
 
   if (showEndingVideo) {
-  return (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <video
-        src="/images/GameComplete.mp4" 
-        autoPlay
-        playsInline
-        onEnded={onBack}
-        className="w-screen h-screen object-cover"
-      />
-    </div>
-  )
-}
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <video
+          ref={videoRef}
+          src="/images/GameComplete.mp4" 
+          autoPlay
+          playsInline
+          onEnded={onBack}
+          className="w-screen h-screen object-cover"
+        />
+      </div>
+    );
+  }
 
   if (gameCompleted) {
     const analysis = getPerformanceAnalysis();
@@ -466,6 +472,13 @@ const DyslexiaGamePage = ({ onBack }) => {
                 className="bg-white text-yellow-600 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 text-sm sm:text-base"
               >
                 ← ආපසු යන්න
+              </button>
+              
+              <button
+                onClick={restartGame}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
+              >
+                🔄 නැවත ආරම්භ කරන්න
               </button>
             </div>
           </div>

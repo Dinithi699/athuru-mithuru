@@ -17,8 +17,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
   const [showResult, setShowResult] = useState(false);
   const [resultType, setResultType] = useState('');
   const [timeLeft, setTimeLeft] = useState(0);
-  const [missedClicks, setMissedClicks] = useState(0);
-  const audioRef = useRef(null);
   const [showEndingVideo, setShowEndingVideo] = useState(false);
   const videoRef = useRef(null);
 
@@ -110,11 +108,11 @@ const DyspraxiaGamePage = ({ onBack }) => {
     const margin = 60; // Margin from edges
     
     for (let i = 0; i < count; i++) {
-      let position;
+      let currentStarPosition;
       let attempts = 0;
       
       do {
-        position = {
+        currentStarPosition = {
           x: margin + Math.random() * (window.innerWidth - 2 * margin),
           y: margin + Math.random() * (window.innerHeight - margin - 100),
           id: i
@@ -122,16 +120,43 @@ const DyspraxiaGamePage = ({ onBack }) => {
         attempts++;
       } while (
         attempts < 50 && 
+        // eslint-disable-next-line no-loop-func
         positions.some(pos => 
-          Math.sqrt(Math.pow(pos.x - position.x, 2) + Math.pow(pos.y - position.y, 2)) < minDistance
+          Math.sqrt(Math.pow(pos.x - currentStarPosition.x, 2) + Math.pow(pos.y - currentStarPosition.y, 2)) < minDistance
         )
       );
       
-      positions.push(position);
+      positions.push(currentStarPosition);
     }
     
     return positions;
   };
+
+  const handleStarTimeout = useCallback(() => {
+    playTimeoutSound();
+    setResultType('timeout');
+    
+    // Record timeout response
+    setResponses(prev => [...prev, {
+      starNumber: currentStar + 1,
+      targetStarIndex: activeStarIndex,
+      clickedStarIndex: -1,
+      reactionTime: currentConfig.flashDuration,
+      isCorrect: false,
+      timeRemaining: 0,
+      timeout: true
+    }]);
+    
+    setShowResult(true);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    
+    setTimeout(() => {
+      setShowResult(false);
+      setCurrentStar(prev => prev + 1);
+      startNextStar();
+    }, 1000);
+  }, [currentStar, activeStarIndex, currentConfig.flashDuration, setCurrentStar, startNextStar]);
 
   // Timer effect for star flashing
   useEffect(() => {
@@ -143,7 +168,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     } else if (timeLeft <= 0 && activeStarIndex >= 0) {
       handleStarTimeout();
     }
-  }, [timeLeft, gameStarted, gameCompleted, activeStarIndex]);
+  }, [timeLeft, gameStarted, gameCompleted, activeStarIndex, handleStarTimeout]);
 
   // Flash effect
   useEffect(() => {
@@ -170,7 +195,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setCurrentStar(0);
     setScore(0);
     setResponses([]);
-    setMissedClicks(0);
     setShowResult(false);
     
     // Generate star positions
@@ -207,7 +231,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setResultType('correct');
     } else {
       playWrongSound();
-      setMissedClicks(prev => prev + 1);
       setResultType('wrong');
     }
     
@@ -232,33 +255,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }, 1000);
   };
 
-  const handleStarTimeout = () => {
-    playTimeoutSound();
-    setMissedClicks(prev => prev + 1);
-    setResultType('timeout');
-    
-    // Record timeout response
-    setResponses(prev => [...prev, {
-      starNumber: currentStar + 1,
-      targetStarIndex: activeStarIndex,
-      clickedStarIndex: -1,
-      reactionTime: currentConfig.flashDuration,
-      isCorrect: false,
-      timeRemaining: 0,
-      timeout: true
-    }]);
-    
-    setShowResult(true);
-    setActiveStarIndex(-1);
-    setIsFlashing(false);
-    
-    setTimeout(() => {
-      setShowResult(false);
-      setCurrentStar(prev => prev + 1);
-      startNextStar();
-    }, 1000);
-  };
-
   const handleBackgroundClick = (e) => {
     // Only count as wrong click if clicking on background, not on stars
     if (e.target.classList.contains('game-background') && activeStarIndex >= 0) {
@@ -266,7 +262,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }
   };
 
-  const completeLevel = () => {
+  const completeLevel = useCallback(() => {
     // Save current level results
     const saveCurrentLevelResults = async () => {
       if (user?.uid) {
@@ -334,7 +330,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     } else {
       setGameCompleted(true);
     }
-  };
+  }, [currentLevel, user?.uid, score, responses, currentConfig.totalStars, getDyspraxiaAnalysis]);
 
   const nextLevel = () => {
     if (currentLevel < 3) {
@@ -344,7 +340,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setCurrentStar(0);
       setScore(0);
       setResponses([]);
-      setMissedClicks(0);
       setActiveStarIndex(-1);
       setIsFlashing(false);
       setShowResult(false);
@@ -358,7 +353,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     setCurrentStar(0);
     setScore(0);
     setResponses([]);
-    setMissedClicks(0);
     setActiveStarIndex(-1);
     setIsFlashing(false);
     setShowResult(false);

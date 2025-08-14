@@ -91,7 +91,7 @@ export const AuthProvider = ({ children }) => {
       clearTimeout(loadingTimeout);
       unsubscribe();
     };
-  }, []);
+  }, [loading]);
 
   const value = {
     user,
