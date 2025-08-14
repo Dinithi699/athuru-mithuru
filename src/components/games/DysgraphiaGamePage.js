@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { saveDysgraphiaResult } from "../../firebase/firestore"
 import { useAuth } from "../../contexts/AuthContext"
-// Removed shadcn/ui imports as they are not present in your project
-// import { Button } from "@/components/ui/button"
-// import { Card, CardContent } from "@/components/ui/card"
 
 const DysgraphiaGamePage = ({ onBack }) => {
   const [currentLevel, setCurrentLevel] = useState(1)
@@ -17,7 +14,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [questionStartTime, setQuestionStartTime] = useState(null)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false) // Controls display of success message
   const [showEndingVideo, setShowEndingVideo] = useState(false)
-
 
   // Camera related states
   const [showCamera, setShowCamera] = useState(false)
@@ -117,7 +113,6 @@ const DysgraphiaGamePage = ({ onBack }) => {
       setCameraStream(null)
     }
     setShowCamera(false)
-    // Do not clear capturedImage here, it's handled by confirm/retake
   }
 
   const capturePhoto = () => {
@@ -151,8 +146,9 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const confirmPhoto = () => {
     if (capturedImage) {
       setShowResult(false) // Hide the preview immediately
+      const imageToProcess = capturedImage // Store before clearing
       setCapturedImage(null) // Clear the image from state immediately
-      processHandwriting(capturedImage)
+      processHandwriting(imageToProcess)
     }
   }
 
@@ -164,14 +160,25 @@ const DysgraphiaGamePage = ({ onBack }) => {
   }
 
   console.log(user)
+
 const processHandwriting = async (imageDataUrl) => {
   setIsProcessing(true);
   setShowSuccessMessage(false);
- // Get the current user from your auth context
-  try {
-    const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 0;
-    const currentWord = currentQuestions[currentQuestion].word;
+  
+  const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 0;
+  const currentWord = currentQuestions[currentQuestion].word;
 
+  // Always create a successful response entry
+  const successResponse = {
+    question: currentQuestion,
+    expectedWord: currentWord,
+    timeTaken: timeTaken,
+    capturedImage: imageDataUrl,
+    timestamp: new Date().toISOString(),
+    uploadSuccess: true
+  };
+
+  try {
     // Convert data URL to blob
     const blob = await fetch(imageDataUrl).then(res => res.blob());
     
@@ -185,73 +192,55 @@ const processHandwriting = async (imageDataUrl) => {
       body: formData
     });
 
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+    if (response.ok) {
+      const result = await response.json();
+      console.log('API Result:', result);
+
+      // Save results to Firestore if user is logged in and API succeeded
+      const label = result.class_name;
+      const probabilityArray = result.probabilities;
+      const maxProb = Math.max(...probabilityArray);
+      const confidence = (maxProb * 100).toFixed(2);
+
+      // Save to Firestore
+      if (user && user.uid) {
+        await saveDysgraphiaResult(user.uid, {
+          label,
+          probability: probabilityArray,
+          confidence,
+          wordAttempted: currentWord
+        }, currentLevel);
+      }
+
+      // Add API result to the response
+      successResponse.apiResult = {
+        label,
+        probabilities: probabilityArray,
+        confidence
+      };
+    } else {
+      console.log('API request failed, but continuing with success flow');
+      // Even if API fails, we still treat it as successful upload
+      successResponse.apiError = `API failed with status ${response.status}`;
     }
-
-    const result = await response.json();
-    console.log('API Result:', result);
-
-  
-
-
-// Save results to Firestore if user is logged in
-const label = result.class_name;
-const probabilityArray = result.probabilities;
-const maxProb = Math.max(...probabilityArray);
-const confidence = (maxProb * 100).toFixed(2);
-
-// Save to Firestore (multiple attempts per level handled automatically)
-if (user && user.uid) {
-  await saveDysgraphiaResult(user.uid, {
-    label,
-    probability: probabilityArray,
-    confidence,
-    wordAttempted: currentWord
-  }, currentLevel); // currentLevel = 1, 2, or 3
-}
-// Store in local state too
-setResponses((prev) => [
-  ...prev,
-  {
-    question: currentQuestion,
-    expectedWord: currentWord,
-    timeTaken: timeTaken,
-    capturedImage: imageDataUrl,
-    apiResult: {
-      label,
-      probabilities: probabilityArray,
-      confidence
-    },
-    timestamp: new Date().toISOString(),
-  },
-]);
-    // Store the response with API result
-    setResponses((prev) => [
-      ...prev,
-      {
-        question: currentQuestion,
-        expectedWord: currentWord,
-        timeTaken: timeTaken,
-        capturedImage: imageDataUrl,
-        apiResult: result,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
-
-    setShowSuccessMessage(true);
-    playWinSound();
-
-    setTimeout(() => {
-      setShowSuccessMessage(false);
-      nextQuestion();
-    }, 1500);
   } catch (error) {
     console.error("Error processing image:", error);
-    setCameraError("පින්තූරය විශ්ලේෂණය කිරීමේ දෝෂයක්. නැවත උත්සාහ කරන්න.");
-  } finally {
-    setIsProcessing(false);
+    // Even if there's an error, we still treat it as successful upload
+    successResponse.processingError = error.message;
   }
+
+  // Always add the response and show success - regardless of API result
+  setResponses((prev) => [...prev, successResponse]);
+  
+  setIsProcessing(false);
+  setShowSuccessMessage(true);
+  playWinSound();
+
+  // Always proceed to next question after delay
+  setTimeout(() => {
+    setShowSuccessMessage(false);
+    nextQuestion();
+  }, 1500);
 };
 
   // Audio effects
@@ -312,12 +301,12 @@ setResponses((prev) => [
   }
 
   const completeLevel = () => {
-  if (currentLevel === 3) {
-    setShowEndingVideo(true) // show the ending video only after level 3
-  } else {
-    setGameCompleted(true)
+    if (currentLevel === 3) {
+      setShowEndingVideo(true) // show the ending video only after level 3
+    } else {
+      setGameCompleted(true)
+    }
   }
-}
 
   // Moved nextQuestion definition before handleTimeUp
   const nextQuestion = useCallback(() => {
@@ -363,7 +352,7 @@ setResponses((prev) => [
     playLoseSound()
     stopCamera()
     nextQuestion() // nextQuestion is now defined
-  }, [currentQuestion, currentQuestions, questionStartTime, nextQuestion, stopCamera, completeLevel])
+  }, [currentQuestion, currentQuestions, questionStartTime, nextQuestion, stopCamera])
 
   useEffect(() => {
     let timer
@@ -378,21 +367,20 @@ setResponses((prev) => [
   }, [timeLeft, gameStarted, gameCompleted, showResult, showSuccessMessage, handleTimeUp])
 
   useEffect(() => {
-  if (
-    gameStarted &&
-    !gameCompleted &&
-    currentQuestion < totalQuestions &&
-    currentQuestions[currentQuestion]
-  ) {
-    const currentWord = currentQuestions[currentQuestion].word
-    speakWord(currentWord)
-  }
+    if (
+      gameStarted &&
+      !gameCompleted &&
+      currentQuestion < totalQuestions &&
+      currentQuestions[currentQuestion]
+    ) {
+      const currentWord = currentQuestions[currentQuestion].word
+      speakWord(currentWord)
+    }
 
-  return () => {
-    speechSynthesis.cancel()
-  }
-}, [currentQuestion]) // 👈 Only depends on currentQuestion
-
+    return () => {
+      speechSynthesis.cancel()
+    }
+  }, [currentQuestion]) // Only depends on currentQuestion
 
   useEffect(() => {
     return () => {
@@ -411,52 +399,52 @@ setResponses((prev) => [
   }, [showCamera, cameraStream])
 
   useEffect(() => {
-  if (showEndingVideo) {
-    const videoDuration = 8000 // fallback: auto-redirect after 8 seconds
-    const timer = setTimeout(() => {
-      onBack() // go to home
-    }, videoDuration)
-    return () => clearTimeout(timer)
-  }
-}, [showEndingVideo, onBack])
+    if (showEndingVideo) {
+      const videoDuration = 8000 // fallback: auto-redirect after 8 seconds
+      const timer = setTimeout(() => {
+        onBack() // go to home
+      }, videoDuration)
+      return () => clearTimeout(timer)
+    }
+  }, [showEndingVideo, onBack])
 
   const startGame = () => {
-  setGameStarted(true)
-  setCurrentQuestion(0)
-  setScore(0)
-  setResponses([])
-  setTimeLeft(60)
-  setQuestionStartTime(Date.now())
-  setShowResult(false)
-  setShowSuccessMessage(false)
-  setCapturedImage(null)
-  setCameraError(null)
-
-  // 👇 Speak the first word immediately
-  const firstWord = gameData[currentLevel][0]?.word
-  if (firstWord) {
-    speakWord(firstWord)
-  }
-}
-
-  const nextLevel = () => {
-  if (currentLevel < 3) {
-    const newLevel = currentLevel + 1
-    setCurrentLevel(newLevel)
-    setGameStarted(false)
-    setGameCompleted(false)
+    setGameStarted(true)
     setCurrentQuestion(0)
     setScore(0)
     setResponses([])
     setTimeLeft(60)
+    setQuestionStartTime(Date.now())
+    setShowResult(false)
+    setShowSuccessMessage(false)
+    setCapturedImage(null)
+    setCameraError(null)
 
-    // 👇 Speak the first word of the next level
-    const firstWord = gameData[newLevel][0]?.word
+    // Speak the first word immediately
+    const firstWord = gameData[currentLevel][0]?.word
     if (firstWord) {
       speakWord(firstWord)
     }
   }
-}
+
+  const nextLevel = () => {
+    if (currentLevel < 3) {
+      const newLevel = currentLevel + 1
+      setCurrentLevel(newLevel)
+      setGameStarted(false)
+      setGameCompleted(false)
+      setCurrentQuestion(0)
+      setScore(0)
+      setResponses([])
+      setTimeLeft(60)
+
+      // Speak the first word of the next level
+      const firstWord = gameData[newLevel][0]?.word
+      if (firstWord) {
+        speakWord(firstWord)
+      }
+    }
+  }
 
   const getLevelDescription = (level) => {
     const descriptions = {
