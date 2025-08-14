@@ -235,27 +235,41 @@ export const getLeaderboard = async (gameType = null) => {
   }
 };
 
-export const saveDysgraphiaResult = async (userId, predictionData, levelData = null) => {
+export const saveDysgraphiaResult = async (userId, predictionData, level) => {
   try {
-    // Save to dysgraphiaResults collection
-    const resultsRef = collection(db, 'dysgraphiaResults');
-    
-    const resultDoc = {
-      userId,
+    const docRef = doc(db, 'gameScores', userId);
+    const docSnap = await getDoc(docRef);
+
+    const newAttempt = {
       label: predictionData.label,
       probability: predictionData.probability,
       confidence: predictionData.confidence,
-      timestamp: new Date(),
-      testType: 'handwriting_analysis'
+      wordAttempted: predictionData.wordAttempted || null,
+      timestamp: new Date()
     };
-    
-    await addDoc(resultsRef, resultDoc);
-    
-    // Update gameScores collection if levelData is provided
-    if (levelData) {
-      await updateDysgraphiaGameScores(userId, levelData, predictionData);
+
+    let updatedLevels = {};
+    if (docSnap.exists() && docSnap.data().levels && docSnap.data().levels[`level${level}`]) {
+      // Append new attempt to existing array
+      updatedLevels = {
+        ...docSnap.data().levels,
+        [`level${level}`]: [...docSnap.data().levels[`level${level}`], newAttempt]
+      };
+    } else {
+      // First attempt for this level
+      updatedLevels = {
+        ...docSnap.data()?.levels,
+        [`level${level}`]: [newAttempt]
+      };
     }
-    
+
+    await setDoc(docRef, {
+      userId,
+      gameType: 'Dysgraphia',
+      levels: updatedLevels,
+      lastUpdated: new Date()
+    }, { merge: true });
+
     return { success: true };
   } catch (error) {
     console.error('Error saving dysgraphia result:', error);
@@ -263,150 +277,6 @@ export const saveDysgraphiaResult = async (userId, predictionData, levelData = n
   }
 };
 
-const updateDysgraphiaGameScores = async (userId, levelData, predictionData) => {
-  try {
-    const gameScoresRef = collection(db, 'gameScores');
-    const q = query(gameScoresRef, where('userId', '==', userId), where('gameType', '==', 'Dysgraphia'));
-    
-    const querySnapshot = await getDocs(q);
-    
-    if (!querySnapshot.empty) {
-      // Update existing document
-      const docRef = querySnapshot.docs[0].ref;
-      const existingData = querySnapshot.docs[0].data();
-      
-      // Determine the next level
-      const currentLevels = existingData.levels || {};
-      const levelNumbers = Object.keys(currentLevels).map(key => parseInt(key.replace('level', '')));
-      const nextLevel = levelNumbers.length > 0 ? Math.max(...levelNumbers) + 1 : 1;
-      
-      // Calculate risk level based on prediction
-      const riskLevel = calculateRiskLevel(predictionData.label, predictionData.confidence);
-      
-      // Create new level data
-      const newLevelData = {
-        [`level${nextLevel}`]: {
-          accuracy: levelData.accuracy || 0,
-          averageReactionTime: levelData.averageReactionTime || 0,
-          completedAt: new Date().toISOString(),
-          correctAnswers: levelData.correctAnswers || 0,
-          level: nextLevel,
-          responses: levelData.responses || [],
-          riskLevel: riskLevel,
-          score: levelData.score || 0,
-          timeoutRate: levelData.timeoutRate || 0,
-          totalQuestions: levelData.totalQuestions || 0,
-          predictionLabel: predictionData.label,
-          predictionConfidence: predictionData.confidence,
-          predictionProbability: predictionData.probability
-        }
-      };
-      
-      // Update overall stats
-      const updatedOverallStats = calculateOverallStats(
-        { ...currentLevels, ...newLevelData }, 
-        existingData.overallStats
-      );
-      
-      await updateDoc(docRef, {
-        levels: { ...currentLevels, ...newLevelData },
-        overallStats: updatedOverallStats,
-        lastUpdated: new Date().toISOString()
-      });
-      
-    } else {
-      // Create new document
-      const riskLevel = calculateRiskLevel(predictionData.label, predictionData.confidence);
-      
-      const newGameScore = {
-        userId,
-        gameType: 'Dysgraphia',
-        lastUpdated: new Date().toISOString(),
-        levels: {
-          level1: {
-            accuracy: levelData.accuracy || 0,
-            averageReactionTime: levelData.averageReactionTime || 0,
-            completedAt: new Date().toISOString(),
-            correctAnswers: levelData.correctAnswers || 0,
-            level: 1,
-            responses: levelData.responses || [],
-            riskLevel: riskLevel,
-            score: levelData.score || 0,
-            timeoutRate: levelData.timeoutRate || 0,
-            totalQuestions: levelData.totalQuestions || 0,
-            predictionLabel: predictionData.label,
-            predictionConfidence: predictionData.confidence,
-            predictionProbability: predictionData.probability
-          }
-        },
-        overallStats: {
-          highestLevel: 1,
-          levelsCompleted: 1,
-          overallAccuracy: levelData.accuracy || 0,
-          overallAvgReactionTime: levelData.averageReactionTime || 0,
-          overallRiskLevel: riskLevel,
-          totalQuestions: levelData.totalQuestions || 0,
-          totalScore: levelData.score || 0
-        }
-      };
-      
-      await addDoc(gameScoresRef, newGameScore);
-    }
-    
-  } catch (error) {
-    console.error('Error updating dysgraphia game scores:', error);
-    throw error;
-  }
-};
-
-const calculateRiskLevel = (label, confidence) => {
-  // Adjust risk level calculation based on your dysgraphia prediction logic
-  if (label === 'No Dysgraphia' || (label === 'Dysgraphia' && confidence < 0.3)) {
-    return 'Not Danger';
-  } else if (label === 'Dysgraphia' && confidence >= 0.3 && confidence < 0.7) {
-    return 'Less Danger';
-  } else if (label === 'Dysgraphia' && confidence >= 0.7) {
-    return 'High Danger';
-  }
-  return 'Less Danger'; // default
-};
-
-const calculateOverallStats = (allLevels, existingStats) => {
-  const levels = Object.values(allLevels);
-  const completedLevels = levels.length;
-  
-  const totalQuestions = levels.reduce((sum, level) => sum + (level.totalQuestions || 0), 0);
-  const totalScore = levels.reduce((sum, level) => sum + (level.score || 0), 0);
-  const totalCorrectAnswers = levels.reduce((sum, level) => sum + (level.correctAnswers || 0), 0);
-  
-  const overallAccuracy = totalQuestions > 0 ? (totalCorrectAnswers / totalQuestions) * 100 : 0;
-  
-  const avgReactionTimes = levels
-    .filter(level => level.averageReactionTime > 0)
-    .map(level => level.averageReactionTime);
-  const overallAvgReactionTime = avgReactionTimes.length > 0 
-    ? avgReactionTimes.reduce((sum, time) => sum + time, 0) / avgReactionTimes.length 
-    : 0;
-  
-  // Determine overall risk level (use the highest risk from all levels)
-  const riskLevels = levels.map(level => level.riskLevel);
-  let overallRiskLevel = 'Not Danger';
-  if (riskLevels.includes('High Danger')) {
-    overallRiskLevel = 'High Danger';
-  } else if (riskLevels.includes('Less Danger')) {
-    overallRiskLevel = 'Less Danger';
-  }
-  
-  return {
-    highestLevel: Math.max(...levels.map(level => level.level)),
-    levelsCompleted: completedLevels,
-    overallAccuracy: Math.round(overallAccuracy * 100) / 100,
-    overallAvgReactionTime: Math.round(overallAvgReactionTime * 100) / 100,
-    overallRiskLevel,
-    totalQuestions,
-    totalScore
-  };
-};
 
 export const getAllUsersWithGameScores = async () => {
   try {
