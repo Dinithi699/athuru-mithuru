@@ -193,31 +193,23 @@ const processHandwriting = async (imageDataUrl) => {
     console.log('API Result:', result);
 
   
-// Map API result to Firestore fields
+
+
+// Save results to Firestore if user is logged in
 const label = result.class_name;
 const probabilityArray = result.probabilities;
 const maxProb = Math.max(...probabilityArray);
-const confidence = (maxProb * 100).toFixed(2); // percentage
+const confidence = (maxProb * 100).toFixed(2);
 
-// Save results to Firestore if user is logged in
+// Save to Firestore (multiple attempts per level handled automatically)
 if (user && user.uid) {
-  try {
-    const saveResult = await saveDysgraphiaResult(user.uid, {
-      label,
-      probability: probabilityArray,
-      confidence,
-      wordAttempted: currentWord,
- 
-    });
-    
-    if (!saveResult.success) {
-      console.warn('Failed to save results to Firestore');
-    }
-  } catch (dbError) {
-    console.error('Database save error:', dbError);
-  }
+  await saveDysgraphiaResult(user.uid, {
+    label,
+    probability: probabilityArray,
+    confidence,
+    wordAttempted: currentWord
+  }, currentLevel); // currentLevel = 1, 2, or 3
 }
-
 // Store in local state too
 setResponses((prev) => [
   ...prev,
