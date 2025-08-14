@@ -141,84 +141,29 @@ const AdminHomePage = ({ onLogout, admin }) => {
   };
 
   const calculateRiskLevel = (user) => {
+    // Check game scores for risk levels
+    const gameScores = user.gameScores || [];
+    if (gameScores.length === 0) return 'low';
     
-    const gameHistory = user.gameHistory || [];
-    if (gameHistory.length === 0) return 'low'; 
-
-    let riskScore = 0;
-    let totalGames = gameHistory.length;
+    let hasHighRisk = false;
+    let hasMediumRisk = false;
     
-    const completedGames = gameHistory.filter(game => game.score !== undefined && game.score > 0).length;
-    const completionRate = completedGames / totalGames;
-    if (completionRate < 0.5) riskScore += 3;
-    else if (completionRate < 0.7) riskScore += 2;
-    else if (completionRate < 0.9) riskScore += 1;
-    
-    
-    const gamePerformances = gameHistory.map(game => {
-      if (game.gameType === 'Dysgraphia') {
-       
-        return game.capturedImage ? 1 : 0;
-      } else if (game.gameType === 'Dyspraxia') {
-        const accuracy = game.accuracy || 0;
-        const reactionTime = game.averageReactionTime || 5000;
-        if (accuracy < 60 || reactionTime > 3000) return 0;
-        else if (accuracy < 80 || reactionTime > 2000) return 0.5;
-        else return 1;
-      } else if (game.gameType === 'Dyscalculia') {
-        const accuracy = game.accuracy || 0;
-        if (accuracy < 50) return 0;
-        else if (accuracy < 70) return 0.5;
-        else return 1;
-      } else if (game.gameType === 'Dyslexia') {
-        const accuracy = game.accuracy || 0;
-        if (accuracy < 60) return 0;
-        else if (accuracy < 80) return 0.5;
-        else return 1;
+    // Check each game's overall risk level
+    gameScores.forEach(gameScore => {
+      const overallRiskLevel = gameScore.overallStats?.overallRiskLevel;
+      
+      if (overallRiskLevel === 'Danger' || overallRiskLevel === 'High Danger') {
+        hasHighRisk = true;
+      } else if (overallRiskLevel === 'Less Danger') {
+        hasMediumRisk = true;
       }
-      return 0.5; 
     });
     
-    const averagePerformance = gamePerformances.reduce((sum, perf) => sum + perf, 0) / gamePerformances.length;
-    if (averagePerformance < 0.3) riskScore += 4;
-    else if (averagePerformance < 0.6) riskScore += 2;
-    else if (averagePerformance < 0.8) riskScore += 1;
-    
-    const gameTypes = [...new Set(gameHistory.map(game => game.gameType))];
-    if (gameTypes.length >= 2) {
-      const typePerformances = gameTypes.map(type => {
-        const typeGames = gameHistory.filter(game => game.gameType === type);
-        const typeAvg = typeGames.reduce((sum, game) => {
-          return sum + (game.accuracy || game.score || 50);
-        }, 0) / typeGames.length;
-        return typeAvg;
-      });
-      
-      const variance = typePerformances.reduce((sum, perf) => {
-        const avg = typePerformances.reduce((s, p) => s + p, 0) / typePerformances.length;
-        return sum + Math.pow(perf - avg, 2);
-      }, 0) / typePerformances.length;
-      
-      if (variance > 1000) riskScore += 2; 
-      else if (variance > 500) riskScore += 1; 
-    }
-    
-    if (gameHistory.length >= 3) {
-      const recentGames = gameHistory.slice(-3);
-      const olderGames = gameHistory.slice(0, -3);
-      
-      if (olderGames.length > 0) {
-        const recentAvg = recentGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / recentGames.length;
-        const olderAvg = olderGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / olderGames.length;
-        
-        if (recentAvg < olderAvg - 10) riskScore += 2; 
-        else if (recentAvg < olderAvg) riskScore += 1; 
-      }
-    }
-
-
-    if (riskScore >= 6) return 'high';
-    if (riskScore >= 3) return 'medium';
+    // If any game shows high risk, child is high risk
+    if (hasHighRisk) return 'high';
+    // If any game shows medium risk, child is medium risk
+    if (hasMediumRisk) return 'medium';
+    // Otherwise, child is low risk
     return 'low';
   };
 
