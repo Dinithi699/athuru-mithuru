@@ -669,8 +669,7 @@ const DysgraphiaGamePage = ({ onBack }) => {
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-                <div className="relative bg-                }
-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
+                <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
                     autoPlay

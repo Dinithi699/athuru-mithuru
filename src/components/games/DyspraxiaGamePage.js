@@ -156,7 +156,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setCurrentStar(prev => prev + 1);
       startNextStar();
     }, 1000);
-  }, [currentStar, activeStarIndex, currentConfig.flashDuration]);
+  }, [currentStar, activeStarIndex, currentConfig.flashDuration, setCurrentStar, startNextStar]);
 
   // Timer effect for star flashing
   useEffect(() => {
@@ -330,7 +330,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     } else {
       setGameCompleted(true);
     }
-  }, [currentLevel, user?.uid, score, responses, currentConfig.totalStars]);
+  }, [currentLevel, user?.uid, score, responses, currentConfig.totalStars, getDyspraxiaAnalysis]);
 
   const nextLevel = () => {
     if (currentLevel < 3) {
