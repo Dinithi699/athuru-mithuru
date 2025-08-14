@@ -33,14 +33,14 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const gameData = {
     1: [
       {
-        word: "CAT",
+        word: "A black cat jumped",
         image: "/images/cat.png",
         audio: "cat",
         description: "බළලා",
         isCustomImage: true,
       },
       {
-        word: "SUN",
+        word: "The sun rises early",
         image: "/images/sun.png",
         audio: "sun",
         description: "සූර්යයා",
@@ -49,14 +49,14 @@ const DysgraphiaGamePage = ({ onBack }) => {
     ],
     2: [
       {
-        word: "BOOK",
+        word: "He wrote a book",
         image: "/images/book.png",
         audio: "book",
         description: "පොත",
         isCustomImage: true,
       },
       {
-        word: "SHIP",
+        word: "The ship sailed away",
         image: "/images/ship.png",
         audio: "ship",
         description: "නැව",
@@ -65,14 +65,14 @@ const DysgraphiaGamePage = ({ onBack }) => {
     ],
     3: [
       {
-        word: "APPLE",
+        word: "He ate an apple",
         image: "/images/apple.png",
         audio: "apple",
         description: "ඇපල්",
         isCustomImage: true,
       },
       {
-        word: "CHAIR",
+        word: "She sat on chair",
         image: "/images/chair.png",
         audio: "chair",
         description: "පුටුව",

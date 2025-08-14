@@ -68,76 +68,66 @@ export const signUpAdmin = async (email, password, name, mobile, school) => {
 };
 
 // Sign in admin with optimizations
+// Sign in admin with strict Firestore check
 export const signInAdmin = async (email, password) => {
   try {
     console.log('Starting admin signin process...');
-    
-    // Sign in admin
+
+    // Sign in with Firebase Auth
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    
+
     console.log('Admin signed in successfully:', user.uid);
-    
-    // Get admin data with timeout
+
+    // Fetch admin data with timeout
     let adminData = {};
     try {
       const adminDocPromise = getDoc(doc(db, "admins", user.uid));
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Firestore timeout')), 10000)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Firestore timeout")), 10000)
       );
-      
+
       const adminDoc = await Promise.race([adminDocPromise, timeoutPromise]);
-      
-      if (adminDoc.exists()) {
-        adminData = adminDoc.data();
-        console.log('Admin data retrieved successfully');
-      } else {
-        console.log('No admin document found, using basic admin data');
-        adminData = {
-          name: user.displayName || 'ගුරුතුමා',
-          email: user.email,
-          mobile: "",
-          school: "",
-          role: 'admin',
-          isActive: true,
-          createdAt: new Date().toISOString()
+
+      if (!adminDoc.exists()) {
+        console.error("No admin document found for this user.");
+        return {
+          success: false,
+          error: "No admin record found. Please contact the system administrator.",
         };
-        
-        // Save default admin data asynchronously
-        setDoc(doc(db, "admins", user.uid), adminData).catch(console.warn);
       }
+
+      adminData = adminDoc.data();
+      console.log("Admin data retrieved successfully:", adminData);
     } catch (firestoreError) {
-      console.warn('Admin firestore access failed, using basic admin data:', firestoreError);
-      adminData = {
-        name: user.displayName || 'ගුරුතුමා',
-        email: user.email,
-        mobile: "",
-        school: "",
-        role: 'admin',
-        isActive: true
+      console.error("Admin Firestore access failed:", firestoreError);
+      return {
+        success: false,
+        error: "Failed to fetch admin data. Please try again.",
       };
     }
-    
+
     return {
       success: true,
       user: {
         uid: user.uid,
-        name: adminData?.name || user.displayName || 'ගුරුතුමා',
+        name: adminData?.name || user.displayName || "ගුරුතුමා",
         email: user.email,
         mobile: adminData?.mobile || "",
         school: adminData?.school || "",
-        role: 'admin',
-        isActive: adminData?.isActive || true
-      }
+        role: adminData?.role || "unknown", // use DB role, fallback "unknown"
+        isActive: adminData?.isActive ?? false,
+      },
     };
   } catch (error) {
-    console.error('Admin signin error:', error);
+    console.error("Admin signin error:", error);
     return {
       success: false,
-      error: error.code || error.message
+      error: error.code || error.message,
     };
   }
 };
+
 
 // Sign up new user with optimizations
 export const signUpUser = async (email, password, name, mobile) => {

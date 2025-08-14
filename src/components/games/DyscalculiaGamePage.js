@@ -132,7 +132,7 @@ const DyscalculiaGamePage = ({ onBack }) => {
     let recommendations = [];
     
     // Updated scoring system: <50 = Danger, 50-70 = Less Danger, >70 = Not Danger
-    if (accuracy < 50) {
+    if (accuracy < 51) {
       riskLevel = 'Danger';
       riskLevelSinhala = 'අවදානම';
       if (currentLevel === 1) {

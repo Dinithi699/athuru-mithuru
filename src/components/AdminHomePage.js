@@ -1,77 +1,182 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { getAllUsers, getAllUsersWithGameScores } from '../firebase/firestore';
 import AdminUserProfile from './AdminUserProfile';
-
 const AdminHomePage = ({ onLogout, admin }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRisk, setFilterRisk] = useState('all');
+  const [downloadFormat, setDownloadFormat] = useState('xlsx'); 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setLoading(true);
+      const result = await getAllUsersWithGameScores();
+      if (result.success) {
+      
+        const usersWithRisk = result.data.map(user => ({
+          ...user,
+          riskLevel: calculateRiskLevel(user),
+        }));
+        setUsers(usersWithRisk);
+      }
+      setLoading(false);
+    };
 
-useEffect(() => {
-  const fetchUsers = async () => {
-    setLoading(true);
-    const result = await getAllUsersWithGameScores();
-    if (result.success) {
-      // Attach risk level
-      const usersWithRisk = result.data.map(user => ({
-        ...user,
-        riskLevel: calculateRiskLevel(user),
-      }));
-      setUsers(usersWithRisk);
-    }
-    setLoading(false);
+    fetchUsers();
+  }, []);
+
+
+  const prepareUserDataForExport = () => {
+    return users.map(user => {
+    
+      const baseData = {
+        'නම (Name)': user.name || 'නම නැත',
+        'ඊමේල් (Email)': user.email || '',
+        'දුරකථන (Mobile)': user.mobile || '',
+        'මට්ටම (Level)': user.level || 'ආරම්භක',
+        'ලකුණු (Points)': user.points || 0,
+        'සම්පූර්ණ ක්‍රීඩා (Completed Games)': user.completedGames || 0,
+        'අවදානම් මට්ටම (Risk Level)': getRiskText(user.riskLevel),
+        'ගිණුම් සෑදූ දිනය (Created Date)': user.createdAt ? new Date(user.createdAt).toLocaleDateString('si-LK') : '',
+      };
+
+      
+      if (user.gameScores && user.gameScores.length > 0) {
+        user.gameScores.forEach((game, index) => {
+          const gamePrefix = `ක්‍රීඩාව ${index + 1} (Game ${index + 1})`;
+          baseData[`${gamePrefix} - වර්ගය (Type)`] = game.gameType || '';
+          baseData[`${gamePrefix} - සම්පූර්ණ මට්ටම් (Levels Completed)`] = game.overallStats?.levelsCompleted || 0;
+          baseData[`${gamePrefix} - මුළු ලකුණු (Total Score)`] = game.overallStats?.totalScore || 0;
+          baseData[`${gamePrefix} - සම්පූර්ණ නිරවද්‍යතාවය (Overall Accuracy)`] = game.overallStats?.overallAccuracy ? `${game.overallStats.overallAccuracy.toFixed(2)}%` : '0%';
+          baseData[`${gamePrefix} - අවදානම් මට්ටම (Risk Level)`] = game.overallStats?.overallRiskLevel || 'Not Available';
+          baseData[`${gamePrefix} - අවසන් යාවත්කරණය (Last Updated)`] = game.lastUpdated ? new Date(game.lastUpdated).toLocaleDateString('si-LK') : '';
+        });
+      }
+
+      return baseData;
+    });
   };
 
-  fetchUsers();
-}, []);
+ 
+  const downloadAsXLSX = () => {
+    try {
+      const data = prepareUserDataForExport();
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      
+  
+      const maxWidths = {};
+      data.forEach(row => {
+        Object.keys(row).forEach(key => {
+          const value = String(row[key] || '');
+          maxWidths[key] = Math.max(maxWidths[key] || 0, value.length, key.length);
+        });
+      });
+      
+      worksheet['!cols'] = Object.keys(maxWidths).map(key => ({
+        wch: Math.min(maxWidths[key] + 2, 50) 
+      }));
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'ළමුන්ගේ දත්ත');
+      
+      const filename = `students_data_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, filename);
+      
+      console.log('XLSX file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading XLSX:', error);
+      alert('ගොනුව බාගත කිරීමේදී දෝෂයක් ඇති විය. කරුණාකර නැවත උත්සහ කරන්න.');
+    }
+  };
 
-console.log('Admin Home Page loaded with users:', users);
+
+  const downloadAsCSV = () => {
+    try {
+      const data = prepareUserDataForExport();
+      const headers = Object.keys(data[0] || {});
+      
+      
+      let csvContent = headers.join(',') + '\n';
+      
+      data.forEach(row => {
+        const values = headers.map(header => {
+          const value = row[header] || '';
+          
+          return `"${String(value).replace(/"/g, '""')}"`;
+        });
+        csvContent += values.join(',') + '\n';
+      });
+      
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `students_data_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('CSV file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      alert('ගොනුව බාගත කිරීමේදී දෝෂයක් ඇති විය. කරුණාකර නැවත උත්සහ කරන්න.');
+    }
+  };
+
+
+  const handleDownload = () => {
+    if (users.length === 0) {
+      alert('බාගත කිරීමට දත්ත නොමැත.');
+      return;
+    }
+
+    if (downloadFormat === 'xlsx') {
+      downloadAsXLSX();
+    } else {
+      downloadAsCSV();
+    }
+  };
 
   const calculateRiskLevel = (user) => {
-    // Simple risk calculation based on game performance
-    // This would be more sophisticated in a real application
+    
     const gameHistory = user.gameHistory || [];
-    if (gameHistory.length === 0) return 'low'; // Default to low risk if no data
+    if (gameHistory.length === 0) return 'low'; 
 
-    // Calculate comprehensive risk based on multiple factors
     let riskScore = 0;
     let totalGames = gameHistory.length;
     
-    // Factor 1: Game completion rate
     const completedGames = gameHistory.filter(game => game.score !== undefined && game.score > 0).length;
     const completionRate = completedGames / totalGames;
     if (completionRate < 0.5) riskScore += 3;
     else if (completionRate < 0.7) riskScore += 2;
     else if (completionRate < 0.9) riskScore += 1;
     
-    // Factor 2: Average performance across games
+    
     const gamePerformances = gameHistory.map(game => {
       if (game.gameType === 'Dysgraphia') {
-        // For handwriting, check if images were captured successfully
+       
         return game.capturedImage ? 1 : 0;
       } else if (game.gameType === 'Dyspraxia') {
-        // For motor skills, check accuracy and reaction time
         const accuracy = game.accuracy || 0;
         const reactionTime = game.averageReactionTime || 5000;
         if (accuracy < 60 || reactionTime > 3000) return 0;
         else if (accuracy < 80 || reactionTime > 2000) return 0.5;
         else return 1;
       } else if (game.gameType === 'Dyscalculia') {
-        // For math, check accuracy
         const accuracy = game.accuracy || 0;
         if (accuracy < 50) return 0;
         else if (accuracy < 70) return 0.5;
         else return 1;
       } else if (game.gameType === 'Dyslexia') {
-        // For visual processing, check accuracy
         const accuracy = game.accuracy || 0;
         if (accuracy < 60) return 0;
         else if (accuracy < 80) return 0.5;
         else return 1;
       }
-      return 0.5; // Default moderate performance
+      return 0.5; 
     });
     
     const averagePerformance = gamePerformances.reduce((sum, perf) => sum + perf, 0) / gamePerformances.length;
@@ -79,7 +184,6 @@ console.log('Admin Home Page loaded with users:', users);
     else if (averagePerformance < 0.6) riskScore += 2;
     else if (averagePerformance < 0.8) riskScore += 1;
     
-    // Factor 3: Consistency across different game types
     const gameTypes = [...new Set(gameHistory.map(game => game.gameType))];
     if (gameTypes.length >= 2) {
       const typePerformances = gameTypes.map(type => {
@@ -95,11 +199,10 @@ console.log('Admin Home Page loaded with users:', users);
         return sum + Math.pow(perf - avg, 2);
       }, 0) / typePerformances.length;
       
-      if (variance > 1000) riskScore += 2; // High inconsistency
-      else if (variance > 500) riskScore += 1; // Moderate inconsistency
+      if (variance > 1000) riskScore += 2; 
+      else if (variance > 500) riskScore += 1; 
     }
     
-    // Factor 4: Recent performance trend
     if (gameHistory.length >= 3) {
       const recentGames = gameHistory.slice(-3);
       const olderGames = gameHistory.slice(0, -3);
@@ -108,12 +211,12 @@ console.log('Admin Home Page loaded with users:', users);
         const recentAvg = recentGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / recentGames.length;
         const olderAvg = olderGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / olderGames.length;
         
-        if (recentAvg < olderAvg - 10) riskScore += 2; // Declining performance
-        else if (recentAvg < olderAvg) riskScore += 1; // Slight decline
+        if (recentAvg < olderAvg - 10) riskScore += 2; 
+        else if (recentAvg < olderAvg) riskScore += 1; 
       }
     }
 
-    // Determine final risk level
+
     if (riskScore >= 6) return 'high';
     if (riskScore >= 3) return 'medium';
     return 'low';
@@ -144,7 +247,6 @@ console.log('Admin Home Page loaded with users:', users);
     return matchesSearch && matchesFilter;
   });
 
-  // Sort users by risk level (high risk first)
   const sortedUsers = filteredUsers.sort((a, b) => {
     const riskOrder = { 'high': 0, 'medium': 1, 'low': 2 };
     return riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
@@ -172,6 +274,28 @@ console.log('Admin Home Page loaded with users:', users);
             <p className="text-white/80">සාදරයෙන් පිළිගනිමු, {admin?.name || 'ගුරුතුමා'}</p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Download Section */}
+            <div className="flex items-center gap-2">
+              <select
+                value={downloadFormat}
+                onChange={(e) => setDownloadFormat(e.target.value)}
+                className="px-3 py-2 bg-white/80 rounded-full border border-white/30 text-sm focus:border-blue-400 focus:outline-none"
+              >
+                {/* <option value="xlsx">Excel (.xlsx)</option> */}
+                <option value="csv">CSV (.csv)</option>
+              </select>
+              <button 
+                onClick={handleDownload}
+                disabled={users.length === 0}
+                className={`text-white rounded-full p-2 px-4 font-bold transition-colors duration-300 ${
+                  users.length === 0 
+                    ? 'bg-gray-500 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                📥 විස්තර ලබා ගන්න
+              </button>
+            </div>
             <div className="text-white text-right">
               <div className="text-sm opacity-80">පාසල</div>
               <div className="font-semibold">{admin?.school || 'පාසල'}</div>

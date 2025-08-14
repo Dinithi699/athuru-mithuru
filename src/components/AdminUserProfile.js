@@ -50,7 +50,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
         else return 1;
       } else if (game.gameType === "Dyscalculia") {
         const accuracy = game.accuracy || 0;
-        if (accuracy < 50) return 0;
+        if (accuracy < 51) return 0;
         else if (accuracy < 70) return 0.5;
         else return 1;
       } else if (game.gameType === "Dyslexia") {
@@ -159,7 +159,158 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
   };
 
   const riskLevel = calculateRiskLevel();
+const downloadGameResultsAsCSV = (user, gameHistory) => {
+  // Helper function to get game type in Sinhala
+  const getGameTypeInSinhala = (gameType) => {
+    const gameTypes = {
+      Dysgraphia: "අකුරු ලිවීම",
+      Dyspraxia: "තරු රටා", 
+      Dyscalculia: "සංඛ්‍යා සංසන්දනය",
+      Dyslexia: "දෘශ්‍ය වෙනස්කම්",
+    };
+    return gameTypes[gameType] || gameType;
+  };
 
+  // Prepare CSV data
+  const csvData = [];
+  
+  // Add header row
+  csvData.push([
+    'Game Type (English)',
+    'Game Type (Sinhala)', 
+    'Level',
+    'Score',
+    'Total Questions',
+    'Correct Answers',
+    'Accuracy (%)',
+    'Average Time (seconds)',
+    'Average Reaction Time (ms)',
+    'Risk Level',
+    'Completed Date',
+    'Timeout Rate (%)',
+    'Overall Risk Level'
+  ]);
+
+  // Process each game in gameHistory
+  gameHistory.forEach(game => {
+    if (game.gameScores && Array.isArray(game.gameScores)) {
+      game.gameScores.forEach(gameScore => {
+        const gameType = gameScore.gameType;
+        const gameTypeSinhala = getGameTypeInSinhala(gameType);
+        const overallStats = gameScore.overallStats || {};
+        
+        // Add overall stats row
+        csvData.push([
+          gameType,
+          gameTypeSinhala,
+          'Overall',
+          overallStats.totalScore || 0,
+          overallStats.totalQuestions || 0,
+          '', // Correct answers not available in overall stats
+          (overallStats.overallAccuracy || 0).toFixed(2),
+          (overallStats.overallAvgTime || 0).toFixed(2),
+          (overallStats.overallAvgReactionTime || 0).toFixed(2),
+          overallStats.overallRiskLevel || '',
+          gameScore.lastUpdated ? new Date(gameScore.lastUpdated).toLocaleDateString() : '',
+          '',
+          overallStats.overallRiskLevel || ''
+        ]);
+
+        // Add level-specific data
+        if (gameScore.levels) {
+          Object.values(gameScore.levels).forEach(level => {
+            csvData.push([
+              gameType,
+              gameTypeSinhala,
+              level.level || '',
+              level.score || 0,
+              level.totalQuestions || 0,
+              level.correctAnswers || 0,
+              (level.accuracy || 0).toFixed(2),
+              (level.averageTime || 0).toFixed(2),
+              (level.averageReactionTime || 0).toFixed(2),
+              level.riskLevel || '',
+              level.completedAt ? new Date(level.completedAt).toLocaleDateString() : '',
+              (level.timeoutRate || 0).toFixed(2),
+              overallStats.overallRiskLevel || ''
+            ]);
+          });
+        }
+      });
+    }
+  });
+
+  // If using the user object from the second document
+  if (user.gameScores && Array.isArray(user.gameScores)) {
+    user.gameScores.forEach(gameScore => {
+      const gameType = gameScore.gameType;
+      const gameTypeSinhala = getGameTypeInSinhala(gameType);
+      const overallStats = gameScore.overallStats || {};
+      
+      // Add overall stats row
+      csvData.push([
+        gameType,
+        gameTypeSinhala,
+        'Overall',
+        overallStats.totalScore || 0,
+        overallStats.totalQuestions || 0,
+        '', // Correct answers not available in overall stats
+        (overallStats.overallAccuracy || 0).toFixed(2),
+        (overallStats.overallAvgTime || 0).toFixed(2),
+        (overallStats.overallAvgReactionTime || 0).toFixed(2),
+        overallStats.overallRiskLevel || '',
+        gameScore.lastUpdated ? new Date(gameScore.lastUpdated).toLocaleDateString() : '',
+        '',
+        overallStats.overallRiskLevel || ''
+      ]);
+
+      // Add level-specific data
+      if (gameScore.levels) {
+        Object.values(gameScore.levels).forEach(level => {
+          csvData.push([
+            gameType,
+            gameTypeSinhala,
+            level.level || '',
+            level.score || 0,
+            level.totalQuestions || 0,
+            level.correctAnswers || 0,
+            (level.accuracy || 0).toFixed(2),
+            (level.averageTime || 0).toFixed(2),
+            (level.averageReactionTime || 0).toFixed(2),
+            level.riskLevel || '',
+            level.completedAt ? new Date(level.completedAt).toLocaleDateString() : '',
+            (level.timeoutRate || 0).toFixed(2),
+            overallStats.overallRiskLevel || ''
+          ]);
+        });
+      }
+    });
+  }
+
+  // Convert to CSV string
+  const csvString = csvData.map(row => 
+    row.map(field => 
+      // Escape fields that contain commas, quotes, or newlines
+      typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))
+        ? `"${field.replace(/"/g, '""')}"`
+        : field
+    ).join(',')
+  ).join('\n');
+
+  // Create and download the file
+  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${user.name || 'user'}_game_results_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500">
       {/* Header */}
@@ -179,10 +330,19 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               <p className="text-white/80">{user?.email}</p>
             </div>
           </div>
+          <div className="flex items-center gap-4">
+
+           <button 
+      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full font-bold transition-colors duration-300 justify-end"
+      onClick={() => downloadGameResultsAsCSV(user, gameHistory)}
+    >
+      විස්තරාත්මක ප්‍රතිඵල
+    </button>
           <div
             className={`px-4 py-2 rounded-full text-white font-bold bg-${riskLevel.color}-500`}
           >
             {riskLevel.text}
+          </div>
           </div>
         </div>
       </header>
