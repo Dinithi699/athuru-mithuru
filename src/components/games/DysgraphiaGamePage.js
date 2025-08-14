@@ -324,20 +324,17 @@ const DysgraphiaGamePage = ({ onBack }) => {
   }, [timeLeft, gameStarted, gameCompleted, showResult, showSuccessMessage, handleTimeUp])
 
   useEffect(() => {
-  if (
-    gameStarted &&
-    !gameCompleted &&
-    currentQuestion < totalQuestions &&
-    currentQuestions[currentQuestion]
-  ) {
-    const currentWord = currentQuestions[currentQuestion].word
-    speakWord(currentWord)
-  }
+    if (
+      gameStarted &&
+      !gameCompleted &&
+      currentQuestion < totalQuestions &&
+      currentQuestions &&
+      currentQuestions[currentQuestion]
+    ) {
+      const currentWord = currentQuestions[currentQuestion].word
+      speakWord(currentWord)
+    }
 
-  return () => {
-    speechSynthesis.cancel()
-  }
-}, [currentQuestion]) // 👈 Only depends on currentQuestion
 
 
   useEffect(() => {

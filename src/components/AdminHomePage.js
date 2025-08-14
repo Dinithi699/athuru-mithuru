@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { getAllUsers, getAllUsersWithGameScores } from '../firebase/firestore';
+import { getAllUsersWithGameScores } from '../firebase/firestore';
 import AdminUserProfile from './AdminUserProfile';
 const AdminHomePage = ({ onLogout, admin }) => {
   const [users, setUsers] = useState([]);
