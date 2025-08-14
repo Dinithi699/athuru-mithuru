@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { saveGameScore } from '../../firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -132,6 +132,32 @@ const DyspraxiaGamePage = ({ onBack }) => {
     return positions;
   };
 
+  const handleStarTimeout = useCallback(() => {
+    playTimeoutSound();
+    setResultType('timeout');
+    
+    // Record timeout response
+    setResponses(prev => [...prev, {
+      starNumber: currentStar + 1,
+      targetStarIndex: activeStarIndex,
+      clickedStarIndex: -1,
+      reactionTime: currentConfig.flashDuration,
+      isCorrect: false,
+      timeRemaining: 0,
+      timeout: true
+    }]);
+    
+    setShowResult(true);
+    setActiveStarIndex(-1);
+    setIsFlashing(false);
+    
+    setTimeout(() => {
+      setShowResult(false);
+      setCurrentStar(prev => prev + 1);
+      startNextStar();
+    }, 1000);
+  }, [currentStar, activeStarIndex, currentConfig.flashDuration]);
+
   // Timer effect for star flashing
   useEffect(() => {
     if (gameStarted && !gameCompleted && activeStarIndex >= 0 && timeLeft > 0) {
@@ -229,32 +255,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }, 1000);
   };
 
-  const handleStarTimeout = useCallback(() => {
-    playTimeoutSound();
-    setResultType('timeout');
-    
-    // Record timeout response
-    setResponses(prev => [...prev, {
-      starNumber: currentStar + 1,
-      targetStarIndex: activeStarIndex,
-      clickedStarIndex: -1,
-      reactionTime: currentConfig.flashDuration,
-      isCorrect: false,
-      timeRemaining: 0,
-      timeout: true
-    }]);
-    
-    setShowResult(true);
-    setActiveStarIndex(-1);
-    setIsFlashing(false);
-    
-    setTimeout(() => {
-      setShowResult(false);
-      setCurrentStar(prev => prev + 1);
-      startNextStar();
-    }, 1000);
-  }, [currentStar, activeStarIndex, currentConfig.flashDuration, setCurrentStar]);
-
   const handleBackgroundClick = (e) => {
     // Only count as wrong click if clicking on background, not on stars
     if (e.target.classList.contains('game-background') && activeStarIndex >= 0) {
@@ -262,7 +262,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }
   };
 
-  const completeLevel = () => {
+  const completeLevel = useCallback(() => {
     // Save current level results
     const saveCurrentLevelResults = async () => {
       if (user?.uid) {
@@ -330,7 +330,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     } else {
       setGameCompleted(true);
     }
-  }, [currentLevel, user?.uid, score, totalQuestions, responses, getPerformanceAnalysis, startNextStar]);
+  }, [currentLevel, user?.uid, score, responses, currentConfig.totalStars]);
 
   const nextLevel = () => {
     if (currentLevel < 3) {
