@@ -88,6 +88,19 @@ const DyslexiaGamePage = ({ onBack }) => {
     oscillator.stop(audioContext.currentTime + 0.8);
   };
 
+  // Timer effect
+  const handleTimeUp = useCallback(() => {
+    playTimeoutSound();
+    setResponses(prev => [...prev, {
+      question: currentQuestion,
+      userAnswer: null,
+      correct: currentQuestions[currentQuestion].correct,
+      timeTaken: 10,
+      isCorrect: false
+    }]);
+    nextQuestion();
+  }, [currentQuestion, currentQuestions, nextQuestion]);
+
   // Game data for each level
   const gameData = {
     1: [
@@ -164,18 +177,6 @@ const DyslexiaGamePage = ({ onBack }) => {
       riskLevelSinhala = 'අවදානම';
       analysis = 'අවධානය අවශ්‍යයි. දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ සැලකිය යුතු දුෂ්කරතා ඩිස්ලෙක්සියා අවදානමක් යෝජනා කරයි.';
     } else if (accuracy < 70) {
-      riskLevel = 'Less Danger';
-      riskLevelSinhala = 'අඩු අවදානම';
-      analysis = 'හොඳයි! තව ටිකක් අභ්‍යාස කිරීමෙන් වැඩිදියුණු කළ හැක.';
-    } else {
-      riskLevel = 'Not Danger';
-      riskLevelSinhala = 'අවදානමක් නැත';
-      analysis = 'විශිෂ්ට! දෘශ්‍ය වෙනස්කම් හඳුනාගැනීමේ හැකියාව ඉතා හොඳයි.';
-    }
-    
-    return { accuracy, averageTime, riskLevel, riskLevelSinhala, analysis };
-  }, [responses]);
-
   useEffect(() => {
   if (showEndingVideo && videoRef.current) {
     const videoEl = videoRef.current;

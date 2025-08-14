@@ -17,7 +17,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
   const [showResult, setShowResult] = useState(false);
   const [resultType, setResultType] = useState('');
   const [timeLeft, setTimeLeft] = useState(0);
-  const audioRef = useRef(null);
   const [showEndingVideo, setShowEndingVideo] = useState(false);
   const videoRef = useRef(null);
 
@@ -109,11 +108,11 @@ const DyspraxiaGamePage = ({ onBack }) => {
     const margin = 60; // Margin from edges
     
     for (let i = 0; i < count; i++) {
-      let position;
+      let currentStarPosition;
       let attempts = 0;
       
       do {
-        position = {
+        currentStarPosition = {
           x: margin + Math.random() * (window.innerWidth - 2 * margin),
           y: margin + Math.random() * (window.innerHeight - margin - 100),
           id: i
@@ -122,11 +121,11 @@ const DyspraxiaGamePage = ({ onBack }) => {
       } while (
         attempts < 50 && 
         positions.some(pos => 
-          Math.sqrt(Math.pow(pos.x - position.x, 2) + Math.pow(pos.y - position.y, 2)) < minDistance
+          Math.sqrt(Math.pow(pos.x - currentStarPosition.x, 2) + Math.pow(pos.y - currentStarPosition.y, 2)) < minDistance
         )
       );
       
-      positions.push(position);
+      positions.push(currentStarPosition);
     }
     
     return positions;
@@ -229,7 +228,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     }, 1000);
   };
 
-  const handleStarTimeout = () => {
+  const handleStarTimeout = useCallback(() => {
     playTimeoutSound();
     setResultType('timeout');
     
@@ -253,7 +252,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
       setCurrentStar(prev => prev + 1);
       startNextStar();
     }, 1000);
-  };
+  }, [currentStar, activeStarIndex, currentConfig.flashDuration, setCurrentStar]);
 
   const handleBackgroundClick = (e) => {
     // Only count as wrong click if clicking on background, not on stars
