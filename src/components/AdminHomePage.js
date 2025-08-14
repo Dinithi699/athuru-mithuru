@@ -263,7 +263,7 @@ const AdminHomePage = ({ onLogout, admin }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-blue-700 to-blue-500">
+    <div className="min-h-screen bg-gradient-to-b from-purple-900 via-white-700 to-blue-500">
       {/* Header */}
       <header className="bg-white/10 backdrop-blur-sm border-b border-white/20 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -344,19 +344,19 @@ const AdminHomePage = ({ onLogout, admin }) => {
             <div className="text-2xl font-bold text-white">{users.length}</div>
             <div className="text-white/80 text-sm">මුළු ළමුන්</div>
           </div>
-          <div className="bg-red-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
+          <div className="bg-red-500/60 backdrop-blur-sm rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-white">
               {users.filter(u => u.riskLevel === 'high').length}
             </div>
             <div className="text-white/80 text-sm">ඉහළ අවදානම</div>
           </div>
-          <div className="bg-orange-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
+          <div className="bg-orange-500/40 backdrop-blur-sm rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-white">
               {users.filter(u => u.riskLevel === 'medium').length}
             </div>
             <div className="text-white/80 text-sm">මධ්‍යම අවදානම</div>
           </div>
-          <div className="bg-green-500/20 backdrop-blur-sm rounded-xl p-4 text-center">
+          <div className="bg-green-500/40 backdrop-blur-sm rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-white">
               {users.filter(u => u.riskLevel === 'low').length}
             </div>
