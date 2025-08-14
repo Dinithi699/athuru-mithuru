@@ -106,7 +106,6 @@ export const getUserGameHistory = async (userId) => {
     const q = query(
       collection(db, "gameScores"),
       where("userId", "==", userId),
-      orderBy("timestamp", "desc")
     );
     
     const querySnapshot = await getDocs(q);
