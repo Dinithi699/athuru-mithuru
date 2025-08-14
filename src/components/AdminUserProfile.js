@@ -858,7 +858,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                 {/* Overall Performance Radar */}
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-white mb-4">
-                    සමස් කාර්ය සාධනය
+                    සමස්ථ කාර්‍ය සාධනය
                   </h2>
                   <div className="h-64">
                     <PerformanceRadarChart user={user} />
@@ -869,7 +869,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               {/* Performance Across Levels */}
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                 <h2 className="text-xl font-bold text-white mb-4">
-                  මට්ටම් අනුව කාර්ය සාධනය
+                  මට්ටම් අනුව කාර්‍ය සාධනය
                 </h2>
                 <div className="h-80">
                   <LevelPerformanceChart user={user} />
@@ -1102,20 +1102,20 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                   }
                 };
 
-                const getGameTypeInSinhala = (type) => {
-                  switch (type) {
-                    case "Dyslexia":
-                      return "ඩිස්ලෙක්සියා";
-                    case "Dysgraphia":
-                      return "ඩිස්ග්‍රැෆියා";
-                    case "Dyspraxia":
-                      return "ඩිස්ප්‍රැක්සියා";
-                    case "Dyscalculia":
-                      return "ඩිස්කැල්කුලියා";
-                    default:
-                      return "නොදන්නා ක්‍රීඩාව";
-                  }
-                };
+                        const getGameTypeInSinhala = (type) => {
+                          switch (type) {
+                            case "Dyslexia":
+                              return "ඩිස්ලෙක්සියා";
+                            case "Dysgraphia":
+                              return "ඩිස්ග්‍රැෆියා";
+                            case "Dyspraxia":
+                              return "ඩිස්ප්‍රැක්සියා";
+                            case "Dyscalculia":
+                              return "ඩිස්කැල්කියුලියා";
+                            default:
+                              return "නොදන්නා ක්‍රීඩාව";
+                          }
+                        };
 
                 return (
                   <tr
