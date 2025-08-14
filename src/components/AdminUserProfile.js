@@ -1,11 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getUserGameHistory } from "../firebase/firestore";
+import * as Chart from 'chart.js';
 
 const AdminUserProfile = ({ user, onBack, admin }) => {
   const [gameHistory, setGameHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedGameDetails, setSelectedGameDetails] = useState(null);
+
+  // Register Chart.js components - FIXED VERSION
+  Chart.Chart.register(
+    Chart.CategoryScale,
+    Chart.LinearScale,
+    Chart.PointElement,
+    Chart.LineElement,
+    Chart.BarElement,
+    Chart.BarController,  // Added missing BarController
+    Chart.LineController, // Added missing LineController
+    Chart.PieController,  // Added missing PieController
+    Chart.RadarController, // Added missing RadarController
+    Chart.Title,
+    Chart.Tooltip,
+    Chart.Legend,
+    Chart.ArcElement,
+    Chart.RadialLinearScale,
+    Chart.Filler // Added for filled areas in charts
+  );
 
   useEffect(() => {
     const fetchGameHistory = async () => {
@@ -20,7 +40,9 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
 
     fetchGameHistory();
   }, [user]);
+
   console.log("Game History user:", user);
+
   const calculateRiskLevel = () => {
     if (gameHistory.length === 0)
       return { level: "low", color: "green", text: "අඩු අවදානම" };
@@ -68,40 +90,6 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
     if (averagePerformance < 0.3) riskScore += 4;
     else if (averagePerformance < 0.6) riskScore += 2;
     else if (averagePerformance < 0.8) riskScore += 1;
-
-    // Factor 3: Consistency across different game types
-    // const gameTypes = [...new Set(gameHistory.map(game => game.gameType))];
-    // if (gameTypes.length >= 2) {
-    //   const typePerformances = gameTypes.map(type => {
-    //     const typeGames = gameHistory.filter(game => game.gameType === type);
-    //     const typeAvg = typeGames.reduce((sum, game) => {
-    //       return sum + (game.accuracy || game.score || 50);
-    //     }, 0) / typeGames.length;
-    //     return typeAvg;
-    //   });
-
-    //   const variance = typePerformances.reduce((sum, perf) => {
-    //     const avg = typePerformances.reduce((s, p) => s + p, 0) / typePerformances.length;
-    //     return sum + Math.pow(perf - avg, 2);
-    //   }, 0) / typePerformances.length;
-
-    //   if (variance > 1000) riskScore += 2;
-    //   else if (variance > 500) riskScore += 1;
-    // }
-
-    // // Factor 4: Recent performance trend
-    // if (gameHistory.length >= 3) {
-    //   const recentGames = gameHistory.slice(-3);
-    //   const olderGames = gameHistory.slice(0, -3);
-
-    //   if (olderGames.length > 0) {
-    //     const recentAvg = recentGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / recentGames.length;
-    //     const olderAvg = olderGames.reduce((sum, game) => sum + (game.accuracy || game.score || 50), 0) / olderGames.length;
-
-    //     if (recentAvg < olderAvg - 10) riskScore += 2;
-    //     else if (recentAvg < olderAvg) riskScore += 1;
-    //   }
-    // }
 
     // Determine final risk level
     if (riskScore >= 6) {
@@ -159,42 +147,91 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
   };
 
   const riskLevel = calculateRiskLevel();
-const downloadGameResultsAsCSV = (user, gameHistory) => {
-  // Helper function to get game type in Sinhala
-  const getGameTypeInSinhala = (gameType) => {
-    const gameTypes = {
-      Dysgraphia: "අකුරු ලිවීම",
-      Dyspraxia: "තරු රටා", 
-      Dyscalculia: "සංඛ්‍යා සංසන්දනය",
-      Dyslexia: "දෘශ්‍ය වෙනස්කම්",
+
+  const downloadGameResultsAsCSV = (user, gameHistory) => {
+    // Helper function to get game type in Sinhala
+    const getGameTypeInSinhala = (gameType) => {
+      const gameTypes = {
+        Dysgraphia: "අකුරු ලිවීම",
+        Dyspraxia: "තරු රටා", 
+        Dyscalculia: "සංඛ්‍යා සංසන්දනය",
+        Dyslexia: "දෘශ්‍ය වෙනස්කම්",
+      };
+      return gameTypes[gameType] || gameType;
     };
-    return gameTypes[gameType] || gameType;
-  };
 
-  // Prepare CSV data
-  const csvData = [];
-  
-  // Add header row
-  csvData.push([
-    'Game Type (English)',
-    'Game Type (Sinhala)', 
-    'Level',
-    'Score',
-    'Total Questions',
-    'Correct Answers',
-    'Accuracy (%)',
-    'Average Time (seconds)',
-    'Average Reaction Time (ms)',
-    'Risk Level',
-    'Completed Date',
-    'Timeout Rate (%)',
-    'Overall Risk Level'
-  ]);
+    // Prepare CSV data
+    const csvData = [];
+    
+    // Add header row
+    csvData.push([
+      'Game Type (English)',
+      'Game Type (Sinhala)', 
+      'Level',
+      'Score',
+      'Total Questions',
+      'Correct Answers',
+      'Accuracy (%)',
+      'Average Time (seconds)',
+      'Average Reaction Time (ms)',
+      'Risk Level',
+      'Completed Date',
+      'Timeout Rate (%)',
+      'Overall Risk Level'
+    ]);
 
-  // Process each game in gameHistory
-  gameHistory.forEach(game => {
-    if (game.gameScores && Array.isArray(game.gameScores)) {
-      game.gameScores.forEach(gameScore => {
+    // Process each game in gameHistory
+    gameHistory.forEach(game => {
+      if (game.gameScores && Array.isArray(game.gameScores)) {
+        game.gameScores.forEach(gameScore => {
+          const gameType = gameScore.gameType;
+          const gameTypeSinhala = getGameTypeInSinhala(gameType);
+          const overallStats = gameScore.overallStats || {};
+          
+          // Add overall stats row
+          csvData.push([
+            gameType,
+            gameTypeSinhala,
+            'Overall',
+            overallStats.totalScore || 0,
+            overallStats.totalQuestions || 0,
+            '', // Correct answers not available in overall stats
+            (overallStats.overallAccuracy || 0).toFixed(2),
+            (overallStats.overallAvgTime || 0).toFixed(2),
+            (overallStats.overallAvgReactionTime || 0).toFixed(2),
+            overallStats.overallRiskLevel || '',
+            gameScore.lastUpdated ? new Date(gameScore.lastUpdated).toLocaleDateString() : '',
+            '',
+            overallStats.overallRiskLevel || ''
+          ]);
+
+          // Add level-specific data
+          if (gameScore.levels) {
+            Object.values(gameScore.levels).forEach(level => {
+              csvData.push([
+                gameType,
+                gameTypeSinhala,
+                level.level || '',
+                level.score || 0,
+                level.totalQuestions || 0,
+                level.correctAnswers || 0,
+                (level.accuracy || 0).toFixed(2),
+                (level.averageTime || 0).toFixed(2),
+                (level.averageReactionTime || 0).toFixed(2),
+                level.riskLevel || '',
+                level.completedAt ? new Date(level.completedAt).toLocaleDateString() : '',
+                (level.timeoutRate || 0).toFixed(2),
+                overallStats.overallRiskLevel || ''
+              ]);
+            });
+          }
+        });
+      }
+    });
+
+    // If using the user object from the second document
+    if (user.gameScores && Array.isArray(user.gameScores)) {
+      user.gameScores.forEach(gameScore => {
         const gameType = gameScore.gameType;
         const gameTypeSinhala = getGameTypeInSinhala(gameType);
         const overallStats = gameScore.overallStats || {};
@@ -238,79 +275,450 @@ const downloadGameResultsAsCSV = (user, gameHistory) => {
         }
       });
     }
-  });
 
-  // If using the user object from the second document
-  if (user.gameScores && Array.isArray(user.gameScores)) {
-    user.gameScores.forEach(gameScore => {
-      const gameType = gameScore.gameType;
-      const gameTypeSinhala = getGameTypeInSinhala(gameType);
-      const overallStats = gameScore.overallStats || {};
+    // Convert to CSV string
+    const csvString = csvData.map(row => 
+      row.map(field => 
+        // Escape fields that contain commas, quotes, or newlines
+        typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))
+          ? `"${field.replace(/"/g, '""')}"`
+          : field
+      ).join(',')
+    ).join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${user.name || 'user'}_game_results_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const AccuracyScoreChart = ({ user }) => {
+    const chartRef = useRef(null);
+    const chartInstance = useRef(null);
+
+    useEffect(() => {
+      if (!user?.gameScores || !Array.isArray(user.gameScores)) return;
+
+      const ctx = chartRef.current.getContext('2d');
       
-      // Add overall stats row
-      csvData.push([
-        gameType,
-        gameTypeSinhala,
-        'Overall',
-        overallStats.totalScore || 0,
-        overallStats.totalQuestions || 0,
-        '', // Correct answers not available in overall stats
-        (overallStats.overallAccuracy || 0).toFixed(2),
-        (overallStats.overallAvgTime || 0).toFixed(2),
-        (overallStats.overallAvgReactionTime || 0).toFixed(2),
-        overallStats.overallRiskLevel || '',
-        gameScore.lastUpdated ? new Date(gameScore.lastUpdated).toLocaleDateString() : '',
-        '',
-        overallStats.overallRiskLevel || ''
-      ]);
-
-      // Add level-specific data
-      if (gameScore.levels) {
-        Object.values(gameScore.levels).forEach(level => {
-          csvData.push([
-            gameType,
-            gameTypeSinhala,
-            level.level || '',
-            level.score || 0,
-            level.totalQuestions || 0,
-            level.correctAnswers || 0,
-            (level.accuracy || 0).toFixed(2),
-            (level.averageTime || 0).toFixed(2),
-            (level.averageReactionTime || 0).toFixed(2),
-            level.riskLevel || '',
-            level.completedAt ? new Date(level.completedAt).toLocaleDateString() : '',
-            (level.timeoutRate || 0).toFixed(2),
-            overallStats.overallRiskLevel || ''
-          ]);
-        });
+      // Destroy existing chart
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
       }
-    });
-  }
 
-  // Convert to CSV string
-  const csvString = csvData.map(row => 
-    row.map(field => 
-      // Escape fields that contain commas, quotes, or newlines
-      typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))
-        ? `"${field.replace(/"/g, '""')}"`
-        : field
-    ).join(',')
-  ).join('\n');
+      const accuracyData = user.gameScores.map(game => Math.round(game.overallStats?.overallAccuracy || 0));
+      const scoreData = user.gameScores.map(game => game.overallStats?.totalScore || 0);
+      const labels = user.gameScores.map(game => getGameTypeInSinhala(game.gameType));
 
-  // Create and download the file
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${user.name || 'user'}_game_results_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-};
+      chartInstance.current = new Chart.Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'නිරවද්‍යතාව (%)',
+              data: accuracyData,
+              backgroundColor: 'rgba(16, 185, 129, 0.8)',
+              borderColor: 'rgba(16, 185, 129, 1)',
+              borderWidth: 1,
+              borderRadius: 4,
+            },
+            {
+              label: 'ලකුණු',
+              data: scoreData,
+              backgroundColor: 'rgba(59, 130, 246, 0.8)',
+              borderColor: 'rgba(59, 130, 246, 1)',
+              borderWidth: 1,
+              borderRadius: 4,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: 'white',
+                font: {
+                  size: 14
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: 'white',
+                font: {
+                  size: 12
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            y: {
+              ticks: {
+                color: 'white',
+                font: {
+                  size: 12
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            }
+          }
+        }
+      });
+
+      return () => {
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+      };
+    }, [user]);
+
+    return <canvas ref={chartRef}></canvas>;
+  };
+
+  // Chart component for Risk Level Distribution
+  const RiskLevelChart = ({ user }) => {
+    const chartRef = useRef(null);
+    const chartInstance = useRef(null);
+
+    useEffect(() => {
+      if (!user?.gameScores || !Array.isArray(user.gameScores)) return;
+
+      const ctx = chartRef.current.getContext('2d');
+      
+      // Destroy existing chart
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+
+      const riskCounts = user.gameScores.reduce((acc, game) => {
+        const risk = game.overallStats?.overallRiskLevel || 'Unknown';
+        acc[risk] = (acc[risk] || 0) + 1;
+        return acc;
+      }, {});
+
+      const labels = Object.keys(riskCounts).map(risk => {
+        if (risk === 'high') return 'ඉහළ';
+        if (risk === 'medium') return 'මධ්‍යම';
+        if (risk === 'low') return 'අඩු';
+        if (risk === 'Not Danger') return 'අවදානම් නැත';
+        if (risk === 'Less Danger') return 'අඩු අවදානම';
+        if (risk === 'Danger') return 'අවදානමක්';
+        return risk;
+      });
+
+      const data = Object.values(riskCounts);
+      const colors = Object.keys(riskCounts).map(risk => {
+        if (risk === 'high' || risk === 'Danger') return '#ef4444';
+        if (risk === 'medium' || risk === 'Less Danger') return '#f97316';
+        return '#10b981';
+      });
+
+      chartInstance.current = new Chart.Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: 'white',
+                font: {
+                  size: 12
+                },
+                padding: 20
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              callbacks: {
+                label: function(context) {
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = ((context.parsed * 100) / total).toFixed(1);
+                  return `${context.label}: ${context.parsed} (${percentage}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return () => {
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+      };
+    }, [user]);
+
+    return <canvas ref={chartRef}></canvas>;
+  };
+
+  // Chart component for Performance Radar
+  const PerformanceRadarChart = ({ user }) => {
+    const chartRef = useRef(null);
+    const chartInstance = useRef(null);
+
+    useEffect(() => {
+      if (!user?.gameScores || !Array.isArray(user.gameScores)) return;
+
+      const ctx = chartRef.current.getContext('2d');
+      
+      // Destroy existing chart
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+
+      const labels = user.gameScores.map(game => getGameTypeInSinhala(game.gameType));
+      const accuracyData = user.gameScores.map(game => Math.round(game.overallStats?.overallAccuracy || 0));
+      const speedData = user.gameScores.map(game => {
+        const reactionTime = game.overallStats?.overallAvgReactionTime || 5000;
+        return Math.max(0, Math.min(100, 100 - (reactionTime / 50))); // Convert to speed score
+      });
+
+      chartInstance.current = new Chart.Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'නිරවද්‍යතාව',
+              data: accuracyData,
+              borderColor: 'rgba(16, 185, 129, 1)',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgba(16, 185, 129, 1)',
+              borderWidth: 2,
+              pointRadius: 4
+            },
+            {
+              label: 'වේගය',
+              data: speedData,
+              borderColor: 'rgba(59, 130, 246, 1)',
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+              borderWidth: 2,
+              pointRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: 'white',
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1
+            }
+          },
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                color: 'white',
+                font: {
+                  size: 10
+                },
+                stepSize: 25
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.2)'
+              },
+              pointLabels: {
+                color: 'white',
+                font: {
+                  size: 11
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return () => {
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+      };
+    }, [user]);
+
+    return <canvas ref={chartRef}></canvas>;
+  };
+
+  // Chart component for Level Performance Line Chart
+  const LevelPerformanceChart = ({ user }) => {
+    const chartRef = useRef(null);
+    const chartInstance = useRef(null);
+
+    useEffect(() => {
+      if (!user?.gameScores || !Array.isArray(user.gameScores)) return;
+
+      const ctx = chartRef.current.getContext('2d');
+      
+      // Destroy existing chart
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+
+      // Prepare level data
+      const levelData = [];
+      const gameColors = ['#00ff00', '#ffff00', '#ff0000', '#ef4444'];
+      const datasets = [];
+
+      user.gameScores.forEach((game, gameIndex) => {
+        if (game.levels) {
+          const gameName = getGameTypeInSinhala(game.gameType);
+          const levels = Object.values(game.levels).sort((a, b) => a.level - b.level);
+          
+          const accuracyData = levels.map(level => Math.round(level.accuracy || 0));
+          const labelData = levels.map(level => `මට්ටම ${level.level}`);
+          
+          if (gameIndex === 0) {
+            levelData.push(...labelData);
+          }
+
+          datasets.push({
+            label: gameName,
+            data: accuracyData,
+            borderColor: gameColors[gameIndex % gameColors.length],
+            backgroundColor: gameColors[gameIndex % gameColors.length] + '20',
+            borderWidth: 3,
+            fill: false,
+            tension: 0.4,
+            pointRadius: 6,
+            pointHoverRadius: 8
+          });
+        }
+      });
+
+      // Get unique level labels
+      const uniqueLabels = [...new Set(levelData)];
+
+      chartInstance.current = new Chart.Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: uniqueLabels,
+          datasets: datasets
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: {
+                color: 'white',
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: 'white',
+              bodyColor: 'white',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: 'white',
+                font: {
+                  size: 12
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: {
+                color: 'white',
+                font: {
+                  size: 12
+                },
+                callback: function(value) {
+                  return value + '%';
+                }
+              },
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            }
+          }
+        }
+      });
+
+      return () => {
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
+      };
+    }, [user]);
+
+    return <canvas ref={chartRef}></canvas>;
+  };
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-900 via-white-700 to-blue-500">
       {/* Header */}
@@ -385,63 +793,121 @@ const downloadGameResultsAsCSV = (user, gameHistory) => {
         </div>
 
         {/* Tab Content */}
-        {activeTab === "overview" && (
-          <div className="space-y-6">
-            {/* User Info */}
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4">
-                පරිශීලක විස්තර
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-white/60 text-sm">නම</div>
-                  <div className="text-white font-bold">
-                    {user?.name || "නම නැත"}
-                  </div>
+      {activeTab === "overview" && (
+        <div className="space-y-6">
+          {/* User Info */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">
+              පරිශීලක විස්තර
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="text-white/60 text-sm">නම</div>
+                <div className="text-white font-bold">
+                  {user?.name || "නම නැත"}
                 </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-white/60 text-sm">ඊමේල්</div>
-                  <div className="text-white font-bold text-sm">
-                    {user?.email || "ඊමේල් නැත"}
-                  </div>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="text-white/60 text-sm">ඊමේල්</div>
+                <div className="text-white font-bold text-sm">
+                  {user?.email || "ඊමේල් නැත"}
                 </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-white/60 text-sm">දුරකථන</div>
-                  <div className="text-white font-bold">
-                    {user?.mobile || "නැත"}
-                  </div>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="text-white/60 text-sm">දුරකථන</div>
+                <div className="text-white font-bold">
+                  {user?.mobile || "නැත"}
                 </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-white/60 text-sm">ලියාපදිංචි දිනය</div>
-                  <div className="text-white font-bold text-sm">
-                    {user?.createdAt
-                      ? new Date(user.createdAt).toLocaleDateString("si-LK")
-                      : "නොදන්නා"}
-                  </div>
+              </div>
+              <div className="bg-white/10 rounded-lg p-4">
+                <div className="text-white/60 text-sm">ලියාපදිංචි දිනය</div>
+                <div className="text-white font-bold text-sm">
+                  {user?.createdAt
+                    ? new Date(user.createdAt).toLocaleDateString("si-LK")
+                    : "නොදන්නා"}
                 </div>
               </div>
             </div>
+          </div>
 
-            
-
-            {/* Achievements */}
-            {user?.achievements && user.achievements.length > 0 && (
+          {/* Performance Charts */}
+          {user?.gameScores && user.gameScores.length > 0 && (
+            <>
+              {/* Accuracy and Score Comparison */}
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
-                <h2 className="text-xl font-bold text-white mb-4">ජයග්‍රහණ</h2>
-                <div className="flex flex-wrap gap-2">
-                  {user.achievements.map((achievement, index) => (
-                    <span
-                      key={index}
-                      className="bg-yellow-500/20 text-yellow-200 px-3 py-1 rounded-full text-sm"
-                    >
-                      🏆 {achievement}
-                    </span>
-                  ))}
+                <h2 className="text-xl font-bold text-white mb-4">
+                  ක්‍රීඩා අනුව නිරවද්‍යතාව සහ ලකුණු
+                </h2>
+                <div className="h-80">
+                  <AccuracyScoreChart user={user} />
                 </div>
               </div>
-            )}
-          </div>
-        )}
+
+              {/* Risk Level and Performance Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Risk Level Distribution */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+                  <h2 className="text-xl font-bold text-white mb-4">
+                    අවදානම් මට්ටම් ව්‍යාප්තිය
+                  </h2>
+                  <div className="h-64">
+                    <RiskLevelChart user={user} />
+                  </div>
+                </div>
+
+                {/* Overall Performance Radar */}
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+                  <h2 className="text-xl font-bold text-white mb-4">
+                    සමස් කාර්ය සාධනය
+                  </h2>
+                  <div className="h-64">
+                    <PerformanceRadarChart user={user} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Across Levels */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+                <h2 className="text-xl font-bold text-white mb-4">
+                  මට්ටම් අනුව කාර්ය සාධනය
+                </h2>
+                <div className="h-80">
+                  <LevelPerformanceChart user={user} />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Achievements */}
+          {user?.achievements && user.achievements.length > 0 && (
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-white mb-4">ජයග්‍රහණ</h2>
+              <div className="flex flex-wrap gap-2">
+                {user.achievements.map((achievement, index) => (
+                  <span
+                    key={index}
+                    className="bg-yellow-500/20 text-yellow-200 px-3 py-1 rounded-full text-sm"
+                  >
+                    🏆 {achievement}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No Data Message */}
+          {(!user?.gameScores || user.gameScores.length === 0) && (
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 text-center">
+              <div className="text-white/60 text-lg mb-2">📊</div>
+              <h3 className="text-white font-bold mb-2">ක්‍රීඩා දත්ත නොමැත</h3>
+              <p className="text-white/70 text-sm">
+                මෙම පරිශීලකයා තවම ක්‍රීඩා කර නොමැත. ක්‍රීඩා සම්පූර්ණ කිරීමෙන් පසු දත්ත මෙහි පෙන්වනු ඇත.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
 
         {activeTab === "games" && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">

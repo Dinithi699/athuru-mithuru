@@ -163,11 +163,11 @@ const DysgraphiaGamePage = ({ onBack }) => {
     startCamera()
   }
 
+  console.log(user)
 const processHandwriting = async (imageDataUrl) => {
   setIsProcessing(true);
   setShowSuccessMessage(false);
  // Get the current user from your auth context
-
   try {
     const timeTaken = questionStartTime ? (Date.now() - questionStartTime) / 1000 : 0;
     const currentWord = currentQuestions[currentQuestion].word;
@@ -180,7 +180,7 @@ const processHandwriting = async (imageDataUrl) => {
     formData.append('file', blob, 'handwriting.jpg');
 
     // Send to your API
-    const response = await fetch('http://107.173.135.80/predict', {
+    const response = await fetch('http://127.0.0.1:8000/predict', {
       method: 'POST',
       body: formData
     });
@@ -192,25 +192,48 @@ const processHandwriting = async (imageDataUrl) => {
     const result = await response.json();
     console.log('API Result:', result);
 
-    // Save results to Firestore if user is logged in
-    if (user && user.uid) {
-      try {
-        const saveResult = await saveDysgraphiaResult(user.uid, {
-          label: result.label,
-          probability: result.probability,
-          confidence: result.confidence,
-          wordAttempted: currentWord,
-          imageUrl: imageDataUrl // Optional: store the image if you have storage configured
-        });
-        
-        if (!saveResult.success) {
-          console.warn('Failed to save results to Firestore');
-        }
-      } catch (dbError) {
-        console.error('Database save error:', dbError);
-      }
-    }
+  
+// Map API result to Firestore fields
+const label = result.class_name;
+const probabilityArray = result.probabilities;
+const maxProb = Math.max(...probabilityArray);
+const confidence = (maxProb * 100).toFixed(2); // percentage
 
+// Save results to Firestore if user is logged in
+if (user && user.uid) {
+  try {
+    const saveResult = await saveDysgraphiaResult(user.uid, {
+      label,
+      probability: probabilityArray,
+      confidence,
+      wordAttempted: currentWord,
+ 
+    });
+    
+    if (!saveResult.success) {
+      console.warn('Failed to save results to Firestore');
+    }
+  } catch (dbError) {
+    console.error('Database save error:', dbError);
+  }
+}
+
+// Store in local state too
+setResponses((prev) => [
+  ...prev,
+  {
+    question: currentQuestion,
+    expectedWord: currentWord,
+    timeTaken: timeTaken,
+    capturedImage: imageDataUrl,
+    apiResult: {
+      label,
+      probabilities: probabilityArray,
+      confidence
+    },
+    timestamp: new Date().toISOString(),
+  },
+]);
     // Store the response with API result
     setResponses((prev) => [
       ...prev,
