@@ -180,7 +180,7 @@ const processHandwriting = async (imageDataUrl) => {
     formData.append('file', blob, 'handwriting.jpg');
 
     // Send to your API
-    const response = await fetch('http://127.0.0.1:8000/predict', {
+    const response = await fetch('http://107.173.135.80/predict', {
       method: 'POST',
       body: formData
     });

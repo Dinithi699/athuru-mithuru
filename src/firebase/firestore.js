@@ -265,7 +265,7 @@ export const saveDysgraphiaResult = async (userId, predictionData, level) => {
 
     await setDoc(docRef, {
       userId,
-      testType: 'handwriting_analysis',
+      gameType: 'Dysgraphia',
       levels: updatedLevels,
       lastUpdated: new Date()
     }, { merge: true });
