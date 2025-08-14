@@ -345,16 +345,7 @@ const AdminHomePage = ({ onLogout, admin }) => {
                     {getRiskText(user.riskLevel)}
                   </div>
                   
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-white/10 rounded-lg p-2">
-                      <div className="text-white/60">ලකුණු</div>
-                      <div className="text-white font-bold">{user.points || 0}</div>
-                    </div>
-                    <div className="bg-white/10 rounded-lg p-2">
-                      <div className="text-white/60">ක්‍රීඩා</div>
-                      <div className="text-white font-bold">{user.completedGames || 0}</div>
-                    </div>
-                  </div>
+                  
                 </div>
               </div>
             ))}

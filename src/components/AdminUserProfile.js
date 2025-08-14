@@ -858,7 +858,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                 {/* Overall Performance Radar */}
                 <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                   <h2 className="text-xl font-bold text-white mb-4">
-                    සමස් කාර්ය සාධනය
+                    සමස්ථ කාර්‍ය සාධනය
                   </h2>
                   <div className="h-64">
                     <PerformanceRadarChart user={user} />
@@ -1017,6 +1017,8 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                               return "ඩිස්ග්‍රැෆියා";
                             case "Dyspraxia":
                               return "ඩිස්ප්‍රැක්සියා";
+                            case "Dyscalculia":
+                              return "ඩිස්කැල්කියුලියා";
                             default:
                               return "නොදන්නා ක්‍රීඩාව";
                           }

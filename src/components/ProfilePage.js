@@ -81,20 +81,7 @@ const ProfilePage = ({ onBack, user }) => {
             )}
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-            <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-              <div className="text-xs sm:text-sm opacity-80">මට්ටම</div>
-              <div className="text-lg sm:text-xl font-bold">{user?.level || 'ආරම්භක'}</div>
-            </div>
-            <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-              <div className="text-xs sm:text-sm opacity-80">ලකුණු</div>
-              <div className="text-lg sm:text-xl font-bold">{user?.points || 0}</div>
-            </div>
-            <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-              <div className="text-xs sm:text-sm opacity-80">සම්පූර්ණ කළ ක්‍රීඩා</div>
-              <div className="text-lg sm:text-xl font-bold">{user?.completedGames || 0}</div>
-            </div>
-          </div>
+          
 
           {/* Achievements Section */}
           {user?.achievements && user.achievements.length > 0 && (
@@ -113,66 +100,7 @@ const ProfilePage = ({ onBack, user }) => {
             </div>
           )}
 
-          {/* Game History Section */}
-          <div className="mb-4 sm:mb-6">
-            <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">ක්‍රීඩා ඉතිහාසය</h3>
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="spinner mx-auto"></div>
-                <p className="mt-2 text-sm sm:text-base">පූරණය වෙමින්...</p>
-              </div>
-            ) : gameHistory.length > 0 ? (
-              <div className="max-h-96 overflow-y-auto space-y-3">
-                {gameHistory.map((game, index) => (
-                  <div key={index} className="bg-white/10 rounded-lg p-3 sm:p-4 text-left">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-semibold text-sm sm:text-base">
-                        {getGameTypeInSinhala(game.gameType)}
-                      </span>
-                      <span className="text-xs bg-purple-500/30 px-2 py-1 rounded">
-                        {formatDate(game.lastUpdated)}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                      <div>
-                        <div className="opacity-70">ලකුණු:</div>
-                        <div className="font-medium">{formatScore(game)}</div>
-                      </div>
-                      <div>
-                        <div className="opacity-70">නිවැරදි අනුපාතය:</div>
-                        <div className="font-medium">{game.overallStats?.overallAccuracy?.toFixed(1) || 0}%</div>
-                      </div>
-                      <div>
-                        <div className="opacity-70">අවදානම් මට්ටම:</div>
-                        <div className="font-medium">{formatRiskLevel(game.overallStats?.overallRiskLevel)}</div>
-                      </div>
-                      <div>
-                        <div className="opacity-70">ප්‍රමාණය:</div>
-                        <div className="font-medium">{game.overallStats?.levelsCompleted || 0} මට්ටම්</div>
-                      </div>
-                    </div>
-                    
-                    {game.levels && (
-                      <div className="mt-3 pt-3 border-t border-white/10">
-                        <h4 className="text-xs font-bold opacity-70 mb-1">මට්ටම් විස්තර:</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {Object.entries(game.levels).map(([level, details]) => (
-                            <div key={level} className="bg-white/5 rounded px-2 py-1 text-xs">
-                              <div className="font-medium">{level.replace('level', 'මට්ටම ')}</div>
-                              <div>{details.score || 0} ලකුණු</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-300 text-sm sm:text-base">තවම ක්‍රීඩා කර නැත</p>
-            )}
-          </div>
+          
           
           <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
             <button

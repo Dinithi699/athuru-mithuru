@@ -472,7 +472,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
                   <div className="text-xl sm:text-2xl font-bold">{currentConfig.flashDuration / 1000}තත්</div>
                 </div>
                 <div className="bg-white/10 rounded-lg p-3 sm:p-4">
-                  <div className="text-xs sm:text-sm opacity-80">මුළු තරු</div>
+                  <div className="text-xs sm:text-sm opacity-80">අවස්ථා ගණන</div>
                   <div className="text-xl sm:text-2xl font-bold">{currentConfig.totalStars}</div>
                 </div>
               </div>
