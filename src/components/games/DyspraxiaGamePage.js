@@ -120,6 +120,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
         attempts++;
       } while (
         attempts < 50 && 
+        // eslint-disable-next-line no-loop-func
         positions.some(pos => 
           Math.sqrt(Math.pow(pos.x - currentStarPosition.x, 2) + Math.pow(pos.y - currentStarPosition.y, 2)) < minDistance
         )
@@ -141,7 +142,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     } else if (timeLeft <= 0 && activeStarIndex >= 0) {
       handleStarTimeout();
     }
-  }, [timeLeft, gameStarted, gameCompleted, activeStarIndex]);
+  }, [timeLeft, gameStarted, gameCompleted, activeStarIndex, handleStarTimeout]);
 
   // Flash effect
   useEffect(() => {
@@ -329,7 +330,7 @@ const DyspraxiaGamePage = ({ onBack }) => {
     } else {
       setGameCompleted(true);
     }
-  };
+  }, [currentLevel, user?.uid, score, totalQuestions, responses, getPerformanceAnalysis, startNextStar]);
 
   const nextLevel = () => {
     if (currentLevel < 3) {

@@ -165,7 +165,7 @@ const DyslexiaGamePage = ({ onBack }) => {
     } else {
       completeLevel();
     }
-  }, [currentQuestion, totalQuestions]);
+  }, [currentQuestion, totalQuestions, completeLevel]);
 
   // Timer effect
   const handleTimeUp = useCallback(() => {
