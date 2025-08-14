@@ -132,6 +132,20 @@ const DyspraxiaGamePage = ({ onBack }) => {
     return positions;
   };
 
+  const startNextStar = () => {
+    if (currentStar >= currentConfig.totalStars) {
+      completeLevel();
+      return;
+    }
+    
+    // Random star position
+    const randomIndex = Math.floor(Math.random() * currentConfig.starCount);
+    setActiveStarIndex(randomIndex);
+    setIsFlashing(true);
+    setTimeLeft(currentConfig.flashDuration);
+    setStarStartTime(Date.now());
+  };
+
   const handleStarTimeout = useCallback(() => {
     playTimeoutSound();
     setResultType('timeout');
@@ -203,20 +217,6 @@ const DyspraxiaGamePage = ({ onBack }) => {
     
     // Start first star
     startNextStar();
-  };
-
-  const startNextStar = () => {
-    if (currentStar >= currentConfig.totalStars) {
-      completeLevel();
-      return;
-    }
-    
-    // Random star position
-    const randomIndex = Math.floor(Math.random() * currentConfig.starCount);
-    setActiveStarIndex(randomIndex);
-    setIsFlashing(true);
-    setTimeLeft(currentConfig.flashDuration);
-    setStarStartTime(Date.now());
   };
 
   const handleStarClick = (starIndex) => {
