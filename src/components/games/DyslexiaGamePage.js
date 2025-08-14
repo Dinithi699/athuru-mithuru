@@ -156,6 +156,75 @@ const DyslexiaGamePage = ({ onBack }) => {
     };
   }, [responses]);
 
+  const completeLevel = useCallback(() => {
+    // Save current level results
+    const saveCurrentLevelResults = async () => {
+      if (user?.uid) {
+        const analysis = getPerformanceAnalysis();
+        const levelData = {
+          level: currentLevel,
+          score: score,
+          accuracy: analysis.accuracy,
+          averageTime: analysis.averageTime,
+          riskLevel: analysis.riskLevel,
+          totalQuestions: totalQuestions,
+          correctAnswers: score,
+          responses: responses,
+          completedAt: new Date().toISOString()
+        };
+        
+        // Get existing game record or create new one
+        try {
+          const existingData = JSON.parse(localStorage.getItem(`Dyslexia_${user.uid}`) || '{}');
+          existingData.gameType = 'Dyslexia';
+          existingData.userId = user.uid;
+          existingData.lastUpdated = new Date().toISOString();
+          existingData.levels = existingData.levels || {};
+          existingData.levels[`level${currentLevel}`] = levelData;
+          
+          // Calculate overall game statistics
+          const allLevels = Object.values(existingData.levels);
+          const totalScore = allLevels.reduce((sum, level) => sum + level.score, 0);
+          const totalQuestionsAll = allLevels.reduce((sum, level) => sum + level.totalQuestions, 0);
+          const overallAccuracy = allLevels.reduce((sum, level) => sum + level.accuracy, 0) / allLevels.length;
+          const overallAvgTime = allLevels.reduce((sum, level) => sum + level.averageTime, 0) / allLevels.length;
+          
+          // Determine overall risk level
+          let overallRiskLevel = 'Not Danger';
+          if (overallAccuracy < 50) overallRiskLevel = 'Danger';
+          else if (overallAccuracy < 70) overallRiskLevel = 'Less Danger';
+          
+          existingData.overallStats = {
+            totalScore,
+            totalQuestions: totalQuestionsAll,
+            overallAccuracy,
+            overallAvgTime,
+            overallRiskLevel,
+            levelsCompleted: allLevels.length,
+            highestLevel: Math.max(...Object.keys(existingData.levels).map(k => parseInt(k.replace('level', ''))))
+          };
+          
+          // Save to localStorage temporarily
+          localStorage.setItem(`Dyslexia_${user.uid}`, JSON.stringify(existingData));
+          
+          // Save to Firestore (this will update the same document)
+          await saveGameScore(user.uid, 'Dyslexia', totalScore, 0, existingData);
+          console.log('Dyslexia game results saved successfully');
+        } catch (error) {
+          console.error('Failed to save Dyslexia game results:', error);
+        }
+      }
+    };
+    
+    saveCurrentLevelResults();
+    
+    if (currentLevel === 3) {
+      setShowEndingVideo(true); // show the ending video only after level 3
+    } else {
+      setGameCompleted(true);
+    }
+  }, [currentLevel, user?.uid, score, totalQuestions, responses, getPerformanceAnalysis]);
+
   const nextQuestion = useCallback(() => {
     if (currentQuestion < totalQuestions - 1) {
       setCurrentQuestion(currentQuestion + 1);
@@ -243,75 +312,6 @@ const DyslexiaGamePage = ({ onBack }) => {
       nextQuestion();
     }, 2000);
   };
-
-  const completeLevel = useCallback(() => {
-    // Save current level results
-    const saveCurrentLevelResults = async () => {
-      if (user?.uid) {
-        const analysis = getPerformanceAnalysis();
-        const levelData = {
-          level: currentLevel,
-          score: score,
-          accuracy: analysis.accuracy,
-          averageTime: analysis.averageTime,
-          riskLevel: analysis.riskLevel,
-          totalQuestions: totalQuestions,
-          correctAnswers: score,
-          responses: responses,
-          completedAt: new Date().toISOString()
-        };
-        
-        // Get existing game record or create new one
-        try {
-          const existingData = JSON.parse(localStorage.getItem(`Dyslexia_${user.uid}`) || '{}');
-          existingData.gameType = 'Dyslexia';
-          existingData.userId = user.uid;
-          existingData.lastUpdated = new Date().toISOString();
-          existingData.levels = existingData.levels || {};
-          existingData.levels[`level${currentLevel}`] = levelData;
-          
-          // Calculate overall game statistics
-          const allLevels = Object.values(existingData.levels);
-          const totalScore = allLevels.reduce((sum, level) => sum + level.score, 0);
-          const totalQuestionsAll = allLevels.reduce((sum, level) => sum + level.totalQuestions, 0);
-          const overallAccuracy = allLevels.reduce((sum, level) => sum + level.accuracy, 0) / allLevels.length;
-          const overallAvgTime = allLevels.reduce((sum, level) => sum + level.averageTime, 0) / allLevels.length;
-          
-          // Determine overall risk level
-          let overallRiskLevel = 'Not Danger';
-          if (overallAccuracy < 50) overallRiskLevel = 'Danger';
-          else if (overallAccuracy < 70) overallRiskLevel = 'Less Danger';
-          
-          existingData.overallStats = {
-            totalScore,
-            totalQuestions: totalQuestionsAll,
-            overallAccuracy,
-            overallAvgTime,
-            overallRiskLevel,
-            levelsCompleted: allLevels.length,
-            highestLevel: Math.max(...Object.keys(existingData.levels).map(k => parseInt(k.replace('level', ''))))
-          };
-          
-          // Save to localStorage temporarily
-          localStorage.setItem(`Dyslexia_${user.uid}`, JSON.stringify(existingData));
-          
-          // Save to Firestore (this will update the same document)
-          await saveGameScore(user.uid, 'Dyslexia', totalScore, 0, existingData);
-          console.log('Dyslexia game results saved successfully');
-        } catch (error) {
-          console.error('Failed to save Dyslexia game results:', error);
-        }
-      }
-    };
-    
-    saveCurrentLevelResults();
-    
-    if (currentLevel === 3) {
-      setShowEndingVideo(true); // show the ending video only after level 3
-    } else {
-      setGameCompleted(true);
-    }
-  }, [currentLevel, user?.uid, score, totalQuestions, responses, getPerformanceAnalysis]);
 
   const nextLevel = () => {
     if (currentLevel < 3) {
