@@ -869,7 +869,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               {/* Performance Across Levels */}
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
                 <h2 className="text-xl font-bold text-white mb-4">
-                  මට්ටම් අනුව කාර්ය සාධනය
+                  මට්ටම් අනුව කාර්‍ය සාධනය
                 </h2>
                 <div className="h-80">
                   <LevelPerformanceChart user={user} />
