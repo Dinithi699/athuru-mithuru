@@ -779,7 +779,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
             >
               ක්‍රීඩා ඉතිහාසය
             </button>
-            <button
+            {/* <button
               onClick={() => setActiveTab("recommendations")}
               className={`flex-1 px-4 py-2 rounded-xl font-bold transition-colors duration-300 ${
                 activeTab === "recommendations"
@@ -788,7 +788,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               }`}
             >
               නිර්දේශ
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -940,9 +940,9 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               <th className="text-center py-3 px-2 font-bold">
                 නිරවද්‍යතාව
               </th>
-              <th className="text-center py-3 px-2 font-bold">
+              {/* <th className="text-center py-3 px-2 font-bold">
                 අවදානම් මට්ටම
-              </th>
+              </th> */}
               <th className="text-center py-3 px-2 font-bold">
                 සාමාන්‍ය කාලය
               </th>
@@ -1016,7 +1016,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                 {avgConfidence.toFixed(1)}%
               </span>
             </td>
-            <td className="text-center py-3 px-2">
+            {/* <td className="text-center py-3 px-2">
               <span className={`font-semibold ${
                 overallRiskLevel === "Danger" ? "text-red-400" :
                 overallRiskLevel === "Less Danger" ? "text-yellow-400" : 
@@ -1026,7 +1026,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
                  overallRiskLevel === "Less Danger" ? "අඩු අවදානම" : 
                  "අවදානමක් නැත"}
               </span>
-            </td>
+            </td> */}
             <td className="text-center py-3 px-2">
               <span className="text-sm">
                 {avgTime.toFixed(1)}තත්
@@ -1152,11 +1152,11 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               {overallAccuracy.toFixed(1)}%
             </span>
           </td>
-          <td className="text-center py-3 px-2">
+          {/* <td className="text-center py-3 px-2">
             <span className={`font-semibold ${getRiskColor(overallRiskLevel)}`}>
               {getRiskTextSinhala(overallRiskLevel)}
             </span>
-          </td>
+          </td> */}
           <td className="text-center py-3 px-2">
             <span className="text-sm">
               {gameType === "Dyspraxia"
@@ -1209,7 +1209,7 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
     )}
   </div>
 )}
-        {activeTab === "recommendations" && (
+        {/* {activeTab === "recommendations" && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6">
             <h2 className="text-xl font-bold text-white mb-4">ගුරු නිර්දේශ</h2>
             <div
@@ -1244,14 +1244,14 @@ const AdminUserProfile = ({ user, onBack, admin }) => {
               </ul>
             </div>
 
-            {/* Contact Parents Button */}
+            
             <div className="mt-6 pt-6 border-t border-white/20">
               <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300">
                 📞 දෙමාපියන් සම්බන්ධ කරගන්න
               </button>
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Game Details Modal */}

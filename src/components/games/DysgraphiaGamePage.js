@@ -10,9 +10,9 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [gameCompleted, setGameCompleted] = useState(false)
   const [timeLeft, setTimeLeft] = useState(60)
   const [responses, setResponses] = useState([])
-  const [showResult, setShowResult] = useState(false) // Controls display of captured image preview
+  const [showResult, setShowResult] = useState(false)
   const [questionStartTime, setQuestionStartTime] = useState(null)
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false) // Controls display of success message
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
   const [showEndingVideo, setShowEndingVideo] = useState(false)
 
   // Camera related states
@@ -21,9 +21,11 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const [capturedImage, setCapturedImage] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [cameraError, setCameraError] = useState(null)
+  const [showImageOptions, setShowImageOptions] = useState(false) // New state for showing options
   const { user } = useAuth(); 
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const fileInputRef = useRef(null) // New ref for file input
 
   // Game data for each level
   const gameData = {
@@ -79,6 +81,40 @@ const DysgraphiaGamePage = ({ onBack }) => {
 
   const currentQuestions = gameData[currentLevel]
   const totalQuestions = currentQuestions.length
+
+  // New function to show image selection options
+  const showImageSelectionOptions = () => {
+    setShowImageOptions(true)
+  }
+
+  // New function to handle gallery selection
+  const selectFromGallery = () => {
+    fileInputRef.current?.click()
+    setShowImageOptions(false)
+  }
+
+  // New function to handle file selection from gallery
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0]
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setCapturedImage(e.target.result)
+        setShowResult(true)
+      }
+      reader.readAsDataURL(file)
+    } else {
+      setCameraError("කරුණාකර වලංගු ඡායාරූපයක් තෝරන්න")
+    }
+    // Clear the input value so the same file can be selected again if needed
+    event.target.value = ''
+  }
+
+  // Modified function to start camera (now called from options)
+  const selectFromCamera = () => {
+    setShowImageOptions(false)
+    startCamera()
+  }
 
   // Camera functions
   const startCamera = async () => {
@@ -156,7 +192,15 @@ const DysgraphiaGamePage = ({ onBack }) => {
   const retakePhoto = () => {
     setCapturedImage(null)
     setShowResult(false)
-    startCamera()
+    setShowImageOptions(true) // Show options again instead of directly starting camera
+  }
+
+  // Function to cancel image selection
+  const cancelImageSelection = () => {
+    setShowImageOptions(false)
+    setCapturedImage(null)
+    setShowResult(false)
+    setCameraError(null)
   }
 
   console.log(user)
@@ -319,6 +363,7 @@ const processHandwriting = async (imageDataUrl) => {
       setShowSuccessMessage(false) // Ensure no previous success message is shown
       setCapturedImage(null) // Clear any previously captured image
       setCameraError(null) // Clear any previous camera error
+      setShowImageOptions(false) // Reset image options
     } else {
       completeLevel()
     }
@@ -352,6 +397,7 @@ const processHandwriting = async (imageDataUrl) => {
 
     playLoseSound()
     stopCamera()
+    setShowImageOptions(false) // Reset image options on timeout
     nextQuestion() // nextQuestion is now defined
   }, [currentQuestion, currentQuestions, questionStartTime, nextQuestion, stopCamera])
 
@@ -420,6 +466,7 @@ const processHandwriting = async (imageDataUrl) => {
     setShowSuccessMessage(false)
     setCapturedImage(null)
     setCameraError(null)
+    setShowImageOptions(false)
 
     // Speak the first word immediately
     const firstWord = gameData[currentLevel][0]?.word
@@ -491,9 +538,7 @@ const processHandwriting = async (imageDataUrl) => {
             පින්තූරය බලා, ශබ්දය අසා, කඩදාසියේ වචනය ලියා කැමරාවට පෙන්වන්න!
           </p>
 
-          {/* Replaced Card with div */}
           <div className="bg-white/20 backdrop-blur-sm border-0 mb-6 sm:mb-8 rounded-lg shadow-md">
-            {/* Replaced CardContent with div */}
             <div className="p-4 sm:p-6 md:p-8">
               <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">මට්ටම {currentLevel}</h2>
               <p className="text-lg sm:text-xl mb-4 sm:mb-6">{getLevelDescription(currentLevel)}</p>
@@ -509,7 +554,7 @@ const processHandwriting = async (imageDataUrl) => {
                 </div>
                 <div className="bg-white/10 rounded-lg p-3 sm:p-4">
                   <div className="text-xs sm:text-sm opacity-80">ක්‍රමය</div>
-                  <div className="text-xl sm:text-2xl font-bold">📷 කැමරා</div>
+                  <div className="text-xl sm:text-2xl font-bold">📷 📁</div>
                 </div>
               </div>
 
@@ -518,13 +563,12 @@ const processHandwriting = async (imageDataUrl) => {
                 <ul className="text-left space-y-1 sm:space-y-2 max-w-md mx-auto text-sm sm:text-base">
                   <li>• පින්තූරය බලන්න සහ ශබ්දය අසන්න</li>
                   <li>• කඩදාසියේ වචනය ලියන්න</li>
-                  <li>• කැමරා ආරම්භ කරන්න</li>
-                  <li>• ලියූ කඩදාසිය කැමරාවට පෙන්වන්න</li>
-                  <li>• ඡායාරූපය ගන්න</li>
+                  <li>• කැමරාවෙන් ගන්න හෝ ගැලරියෙන් තෝරන්න</li>
+                  <li>• ලියූ කඩදාසිය පෙන්වන්න</li>
+                  <li>• ඡායාරූපය තහවුරු කරන්න</li>
                 </ul>
               </div>
 
-              {/* Replaced Button with button */}
               <button
                 onClick={startGame}
                 className="bg-white text-red-600 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-lg sm:text-xl hover:bg-gray-100 transition-all duration-300 shadow-lg transform hover:scale-105"
@@ -534,7 +578,6 @@ const processHandwriting = async (imageDataUrl) => {
             </div>
           </div>
 
-          {/* Replaced Button with button */}
           <button
             onClick={onBack}
             className="bg-white/20 text-white border border-white/30 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-white/30 transition-colors duration-300 text-sm sm:text-base"
@@ -571,9 +614,7 @@ const processHandwriting = async (imageDataUrl) => {
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 sm:mb-8">මට්ටම {currentLevel} සම්පූර්ණයි!</h1>
 
-          {/* Replaced Card with div */}
           <div className="bg-white/20 backdrop-blur-sm border-0 mb-6 sm:mb-8 rounded-lg shadow-md">
-            {/* Replaced CardContent with div */}
             <div className="p-4 sm:p-6 md:p-8">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 <div className="bg-white/10 rounded-lg p-3 sm:p-4">
@@ -599,7 +640,6 @@ const processHandwriting = async (imageDataUrl) => {
 
               <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
                 {currentLevel < 3 && (
-                  // Replaced Button with button
                   <button
                     onClick={nextLevel}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
@@ -608,7 +648,6 @@ const processHandwriting = async (imageDataUrl) => {
                   </button>
                 )}
 
-                {/* Replaced Button with button */}
                 <button
                   onClick={onBack}
                   className="bg-white text-red-600 px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold hover:bg-gray-100 transition-colors duration-300 transform hover:scale-105 text-sm sm:text-base"
@@ -637,7 +676,6 @@ const processHandwriting = async (imageDataUrl) => {
             </div>
           </div>
           <div className="text-center">
-            {/* Replaced Button with button */}
             <button
               onClick={onBack}
               className="bg-red-600 hover:bg-red-700 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-xs sm:text-sm"
@@ -663,16 +701,14 @@ const processHandwriting = async (imageDataUrl) => {
           ></div>
         </div>
 
-        {/* Game Area - Replaced Card with div */}
+        {/* Game Area */}
         <div className="bg-white/20 backdrop-blur-sm border-0 mb-4 sm:mb-6 rounded-lg shadow-md">
-          {/* Replaced CardContent with div */}
           <div className="p-4 sm:p-6">
             {/* Image and Audio */}
             <div className="mb-6 sm:mb-8">
               {renderImage(currentQ)}
               <div className="text-lg sm:text-xl md:text-2xl font-bold mb-2 sm:mb-3">{currentQ.description}</div>
               <div className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 text-yellow-300">{currentQ.word}</div>
-              {/* Replaced Button with button */}
               <button
                 onClick={() => speakWord(currentQ.word)}
                 className="bg-white/20 hover:bg-white/30 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold transition-colors duration-300 text-sm sm:text-base"
@@ -687,36 +723,73 @@ const processHandwriting = async (imageDataUrl) => {
               <p className="text-sm sm:text-base">
                 1. කඩදාසියක මේ වචනය ලියන්න: <strong>{currentQ.word}</strong>
                 <br />
-                2. කැමරා ආරම්භ කරන්න
+                2. ඡායාරූපය ගන්න (කැමරාව හෝ ගැලරිය)
                 <br />
-                3. ලියූ කඩදාසිය කැමරාවට පෙන්වන්න
+                3. ලියූ කඩදාසිය පැහැදිලිව පෙන්වන්න
                 <br />
-                4. ඡායාරූපය ගන්න
+                4. ඡායාරූපය තහවුරු කරන්න
               </p>
             </div>
 
-            {/* Camera Section */}
-            {!showCamera && !capturedImage && !isProcessing && !showSuccessMessage && (
+            {/* Image Selection Options */}
+            {!showCamera && !capturedImage && !isProcessing && !showSuccessMessage && !showImageOptions && (
               <div className="mb-6">
-                {/* Replaced Button with button */}
                 <button
-                  onClick={startCamera}
+                  onClick={showImageSelectionOptions}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold text-lg transition-colors duration-300"
                   disabled={isProcessing}
                 >
-                  📷 කැමරා ආරම්භ කරන්න
+                  📷 ඡායාරූපය එකතු කරන්න
                 </button>
                 {cameraError && <div className="mt-4 p-3 bg-red-500/20 rounded-lg text-red-200">{cameraError}</div>}
               </div>
             )}
 
+            {/* Image Options Modal */}
+            {showImageOptions && (
+              <div className="mb-6">
+                <div className="bg-white/10 rounded-lg p-6 border-2 border-white/20">
+                  <h3 className="text-lg font-bold mb-4 text-white">ඡායාරූපය කොහොමද ගන්නේ?</h3>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button
+                      onClick={selectFromCamera}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-lg font-bold transition-colors duration-300 flex items-center justify-center gap-2"
+                    >
+                      📷 කැමරාවෙන් ගන්න
+                    </button>
+                    <button
+                      onClick={selectFromGallery}
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-lg font-bold transition-colors duration-300 flex items-center justify-center gap-2"
+                    >
+                      📁 ගැලරියෙන් තෝරන්න
+                    </button>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={cancelImageSelection}
+                      className="bg-white/20 text-white border border-white/30 px-4 py-2 rounded-full font-bold hover:bg-white/30 transition-colors duration-300 text-sm"
+                    >
+                      ❌ අවලංගු කරන්න
+                    </button>
+                  </div>
+                </div>
+                {cameraError && <div className="mt-4 p-3 bg-red-500/20 rounded-lg text-red-200">{cameraError}</div>}
+              </div>
+            )}
+
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
+
             {/* Camera Preview */}
             {showCamera && (
               <div className="mb-6">
-                    
-                
-                
-            <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
+                <div className="relative bg-black rounded-lg overflow-hidden mb-4 mx-auto max-w-md">
                   <video
                     ref={videoRef}
                     autoPlay
@@ -743,7 +816,6 @@ const processHandwriting = async (imageDataUrl) => {
                 </div>
 
                 <div className="flex gap-4 justify-center">
-                  {/* Replaced Button with button */}
                   <button
                     onClick={capturePhoto}
                     className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300"
@@ -751,7 +823,6 @@ const processHandwriting = async (imageDataUrl) => {
                   >
                     📸 ඡායාරූපය ගන්න
                   </button>
-                  {/* Replaced Button with button */}
                   <button
                     onClick={stopCamera}
                     className="bg-white/20 text-white border border-white/30 px-6 py-3 rounded-full font-bold hover:bg-white/30 transition-colors duration-300"
@@ -784,14 +855,12 @@ const processHandwriting = async (imageDataUrl) => {
                   </div>
 
                   <div className="flex gap-4 justify-center">
-                    {/* Replaced Button with button */}
                     <button
                       onClick={confirmPhoto}
                       className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold transition-colors duration-300 flex items-center gap-2"
                     >
                       ✅ හරි, ඊළඟට යන්න
                     </button>
-                    {/* Replaced Button with button */}
                     <button
                       onClick={retakePhoto}
                       className="bg-white/20 text-white border border-white/30 px-6 py-3 rounded-full font-bold hover:bg-white/30 transition-colors duration-300 flex items-center gap-2"
@@ -833,7 +902,7 @@ const processHandwriting = async (imageDataUrl) => {
 
         {/* Instructions */}
         <div className="text-xs sm:text-sm opacity-80 px-4">
-          වචනය කඩදාසියේ ලියා කැමරාවට පෙන්වන්න. ඡායාරූපය ගැනීමට පෙර වචනය පැහැදිලිව පෙනෙන්නට වග බලා ගන්න.
+          වචනය කඩදාසියේ ලියා ඡායාරූපයක් ගන්න. කැමරාවෙන් හෝ ගැලරියෙන් තෝරා ගත හැක.
         </div>
       </div>
     </div>
