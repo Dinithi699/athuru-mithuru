@@ -235,7 +235,7 @@ export const getLeaderboard = async (gameType = null) => {
   }
 };
 
-export const saveDysgraphiaResult = async (userId, predictionData, level) => {
+export const saveDysgraphiaResult = async (userId, predictionData, level, timeTaken) => {
   try {
     const docRef = doc(db, 'gameScores', userId);
     const docSnap = await getDoc(docRef);
@@ -245,28 +245,41 @@ export const saveDysgraphiaResult = async (userId, predictionData, level) => {
       probability: predictionData.probability,
       confidence: predictionData.confidence,
       wordAttempted: predictionData.wordAttempted || null,
+      timeTaken: timeTaken || null, // Store time taken for this attempt
       timestamp: new Date()
     };
 
     let updatedLevels = {};
+    let attemptsArray = [];
+
     if (docSnap.exists() && docSnap.data().levels && docSnap.data().levels[`level${level}`]) {
-      // Append new attempt to existing array
-      updatedLevels = {
-        ...docSnap.data().levels,
-        [`level${level}`]: [...docSnap.data().levels[`level${level}`], newAttempt]
-      };
+      attemptsArray = [...docSnap.data().levels[`level${level}`], newAttempt];
     } else {
-      // First attempt for this level
-      updatedLevels = {
-        ...docSnap.data()?.levels,
-        [`level${level}`]: [newAttempt]
-      };
+      attemptsArray = [newAttempt];
     }
+
+    // Calculate average time for this level
+    const validTimes = attemptsArray
+      .map(a => a.timeTaken)
+      .filter(t => typeof t === "number" && !isNaN(t));
+
+    const averageTime = validTimes.length > 0
+      ? validTimes.reduce((sum, t) => sum + t, 0) / validTimes.length
+      : null;
+
+    updatedLevels = {
+      ...docSnap.data()?.levels,
+      [`level${level}`]: attemptsArray
+    };
 
     await setDoc(docRef, {
       userId,
       gameType: 'Dysgraphia',
       levels: updatedLevels,
+      averageTime: { // store per-level average times
+        ...(docSnap.data()?.averageTime || {}),
+        [`level${level}`]: averageTime
+      },
       lastUpdated: new Date()
     }, { merge: true });
 
@@ -276,6 +289,7 @@ export const saveDysgraphiaResult = async (userId, predictionData, level) => {
     return { success: false, error: error.message };
   }
 };
+
 
 
 export const getAllUsersWithGameScores = async () => {

@@ -177,6 +177,7 @@ const processHandwriting = async (imageDataUrl) => {
     timestamp: new Date().toISOString(),
     uploadSuccess: true
   };
+  
 
   try {
     // Convert data URL to blob
@@ -209,7 +210,7 @@ const processHandwriting = async (imageDataUrl) => {
           probability: probabilityArray,
           confidence,
           wordAttempted: currentWord
-        }, currentLevel);
+        }, currentLevel, timeTaken);
       }
 
       // Add API result to the response
